@@ -41,12 +41,10 @@ jobs:
       - name: Bauen
         run: npm run build
 
+      # Setzt voraus, dass unter Settings -> Pages als Quelle
+      # "GitHub Actions" eingestellt ist
       - name: Pages vorbereiten
         uses: actions/configure-pages@v5
-        with:
-          # Aktiviert Pages beim ersten Lauf selbst, damit es niemand
-          # von Hand in den Repo-Einstellungen einschalten muss
-          enablement: true
 
       - name: Ergebnis hochladen
         uses: actions/upload-pages-artifact@v3
