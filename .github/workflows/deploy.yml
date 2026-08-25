@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Quellcode holen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Node einrichten
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -43,6 +43,10 @@ jobs:
 
       - name: Pages vorbereiten
         uses: actions/configure-pages@v5
+        with:
+          # Aktiviert Pages beim ersten Lauf selbst, damit es niemand
+          # von Hand in den Repo-Einstellungen einschalten muss
+          enablement: true
 
       - name: Ergebnis hochladen
         uses: actions/upload-pages-artifact@v3
