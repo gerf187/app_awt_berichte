@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+.vite
+*.local
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Lokale Testausgaben (Beispiel-PDF/-DOCX aus scripts/)
+/beispiel/
+
+# Lokale Claude-Code-Einstellungen (geräteabhängig)
+.claude/settings.local.json

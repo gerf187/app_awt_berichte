@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------
+   Sika-Farben und Grundmaße.
+   Alles bewusst groß: Bedienung mit Handschuhen, eine Hand, Sonne.
+   --------------------------------------------------------------- */
+@theme {
+  --color-sika-gelb: #ffc400;
+  --color-sika-gelb-dunkel: #e0ac00;
+  --color-sika-rot: #d0021b;
+  --color-sika-gruen: #1a7f37;
+  --color-sika-schwarz: #1a1a1a;
+  --color-sika-grau: #6b7280;
+  --color-sika-hell: #f4f5f7;
+
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Verhindert das Zoom-Springen auf iOS beim Fokussieren von Feldern */
+    touch-action: manipulation;
+  }
+
+  body {
+    @apply bg-sika-hell text-sika-schwarz font-sans antialiased;
+    /* Randbereiche bei iPhones mit Notch/Home-Indikator freihalten */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior-y: none;
+  }
+
+  /* Schriftgröße 16px oder mehr, sonst zoomt iOS beim Antippen hinein. */
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  /* Sichtbarer Fokus für Tastaturbedienung am Desktop */
+  :focus-visible {
+    outline: 3px solid var(--color-sika-schwarz);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Mindestgröße aller Bedienelemente: 48px – Vorgabe aus der Spezifikation. */
+  .tippziel {
+    min-height: 3rem;
+  }
+}
+
+/* Ein Druck-Layout brauchen wir nicht – Ausgabe läuft über PDF/Word. */
+@media print {
+  body {
+    display: none;
+  }
+}

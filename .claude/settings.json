@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(du:*)",
+      "Bash(file:*)",
+      "Bash(unzip:*)",
+      "Bash(python3:*)",
+      "Read(//workspaces/app_awt_berichte/**)",
+      "Write(//workspaces/app_awt_berichte/**)",
+      "Edit(//workspaces/app_awt_berichte/**)"
+    ]
+  }
+}
