@@ -34,7 +34,13 @@ describe('docxErzeugen', () => {
         aufbau: [],
         fotos: [],
         unterschrift: undefined,
-        text: { ausgefuehrteArbeiten: '', besprochenes: '', maengel: '', empfehlung: '' },
+        text: {
+          ausgefuehrteArbeiten: '',
+          besprochenes: '',
+          maengel: '',
+          empfehlung: '',
+          offeneFragen: '',
+        },
       }),
     )
     expect(daten[0]).toBe(0x50)

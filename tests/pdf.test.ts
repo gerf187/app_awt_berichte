@@ -28,7 +28,13 @@ describe('pdfErzeugen', () => {
       aufbau: [],
       fotos: [],
       unterschrift: undefined,
-      text: { ausgefuehrteArbeiten: '', besprochenes: '', maengel: '', empfehlung: '' },
+      text: {
+        ausgefuehrteArbeiten: '',
+        besprochenes: '',
+        maengel: '',
+        empfehlung: '',
+        offeneFragen: '',
+      },
     }
     const blob = await pdfErzeugen(leer)
     expect(await kennung(blob)).toBe('%PDF-')

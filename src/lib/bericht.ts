@@ -4,11 +4,28 @@
  */
 
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
-import type { Bericht, Einstellungen } from './typen'
+import type { Absender, Bericht, BlattId, Berichtstext, Einstellungen } from './typen'
+
+export const LEERES_PROFIL: Absender = {
+  name: '',
+  funktion: '',
+  firma: '',
+  strasse: '',
+  ort: '',
+  telefon: '',
+  email: '',
+}
+
+export const LEERER_TEXT: Berichtstext = {
+  ausgefuehrteArbeiten: '',
+  besprochenes: '',
+  maengel: '',
+  empfehlung: '',
+  offeneFragen: '',
+}
 
 export const LEERE_EINSTELLUNGEN: Einstellungen = {
-  eigenerName: '',
-  eigeneEmail: '',
+  profil: LEERES_PROFIL,
   standardVertrieb: '',
   standardEmpfaenger: '',
   produkte: [],
@@ -85,12 +102,16 @@ export function neuerBericht(
       verarbeiterOrt: '',
       ansprechpartner: '',
       telefon: '',
-      awt: einstellungen.eigenerName,
+      awt: einstellungen.profil.name,
       vertrieb: einstellungen.standardVertrieb,
       zweck: '',
     },
     anwesende: [
-      { name: einstellungen.eigenerName, firma: EIGENE_FIRMA, funktion: EIGENE_FUNKTION },
+      {
+        name: einstellungen.profil.name,
+        firma: einstellungen.profil.firma || EIGENE_FIRMA,
+        funktion: einstellungen.profil.funktion || EIGENE_FUNKTION,
+      },
     ],
     untergrund: {
       art: '',
@@ -101,14 +122,64 @@ export function neuerBericht(
     },
     klima: [],
     aufbau: [],
-    text: {
-      ausgefuehrteArbeiten: '',
-      besprochenes: '',
-      maengel: '',
-      empfehlung: '',
-    },
+    text: { ...LEERER_TEXT },
     fotos: [],
+    absender: { ...einstellungen.profil },
   }
+}
+
+/**
+ * Ergänzt Felder, die es beim Speichern des Berichts noch nicht gab.
+ *
+ * Berichte liegen so in der Datenbank, wie sie geschrieben wurden – ein Bericht
+ * von vorletzter Woche kennt „Offene Fragen" und die Absenderzeile nicht. Statt
+ * die Datenbank umzuschreiben, wird beim Lesen aufgefüllt.
+ */
+export function berichtAuffuellen(bericht: Bericht): Bericht {
+  return {
+    ...bericht,
+    text: { ...LEERER_TEXT, ...bericht.text },
+    absender: { ...LEERES_PROFIL, ...bericht.absender },
+  }
+}
+
+/** Dasselbe für die Einstellungen: vor dem Profil standen Name und Mail einzeln da. */
+export function einstellungenAuffuellen(gespeichert: unknown): Einstellungen {
+  const alt = (gespeichert ?? {}) as Partial<Einstellungen> & {
+    eigenerName?: string
+    eigeneEmail?: string
+  }
+
+  return {
+    profil: {
+      ...LEERES_PROFIL,
+      name: alt.eigenerName ?? '',
+      email: alt.eigeneEmail ?? '',
+      ...alt.profil,
+    },
+    standardVertrieb: alt.standardVertrieb ?? '',
+    standardEmpfaenger: alt.standardEmpfaenger ?? '',
+    produkte: Array.isArray(alt.produkte) ? alt.produkte : [],
+  }
+}
+
+/**
+ * Die Absenderzeilen für PDF und Word. Leere Angaben fallen weg, damit keine
+ * einsamen Kommas oder Trennpunkte im Bericht stehen.
+ */
+export function absenderzeilen(absender: Absender): string[] {
+  const verbinde = (teile: string[], trenner: string) =>
+    teile
+      .map((teil) => teil.trim())
+      .filter(Boolean)
+      .join(trenner)
+
+  return [
+    verbinde([absender.name, absender.funktion], ' · '),
+    absender.firma.trim(),
+    verbinde([absender.strasse, absender.ort], ', '),
+    verbinde([absender.telefon, absender.email], ' · '),
+  ].filter(Boolean)
 }
 
 /**
@@ -130,8 +201,8 @@ export function kopfUebernehmen(ziel: Bericht, vorlage: Bericht): Bericht {
 
 export type FehlendesPflichtfeld = {
   feld: string
-  /** Bildschirmnummer aus der Spezifikation, damit der Abschluss dorthin springen kann. */
-  schritt: number
+  /** Blatt, auf dem die Angabe steht – der Abschluss springt direkt dorthin. */
+  blatt: BlattId
 }
 
 /**
@@ -142,14 +213,22 @@ export function fehlendePflichtfelder(bericht: Bericht): FehlendesPflichtfeld[] 
   const fehlt: FehlendesPflichtfeld[] = []
   const leer = (wert: string) => wert.trim().length === 0
 
-  if (leer(bericht.kopf.datum)) fehlt.push({ feld: 'Datum', schritt: 3 })
-  if (leer(bericht.kopf.projekt)) fehlt.push({ feld: 'Projekt / Bauvorhaben', schritt: 3 })
-  if (leer(bericht.kopf.verarbeiter)) fehlt.push({ feld: 'Verarbeiter', schritt: 3 })
-  if (leer(bericht.kopf.awt)) fehlt.push({ feld: 'Anwendungstechniker', schritt: 3 })
-  if (bericht.klima.length === 0) fehlt.push({ feld: 'Mindestens eine Klimamessung', schritt: 6 })
+  if (leer(bericht.kopf.datum)) fehlt.push({ feld: 'Datum', blatt: 'kopf' })
+  if (leer(bericht.kopf.projekt)) fehlt.push({ feld: 'Projekt / Bauvorhaben', blatt: 'kopf' })
+  if (leer(bericht.kopf.verarbeiter)) fehlt.push({ feld: 'Verarbeiter', blatt: 'kopf' })
+  if (leer(bericht.kopf.awt)) fehlt.push({ feld: 'Anwendungstechniker', blatt: 'kopf' })
+  if (bericht.klima.length === 0)
+    fehlt.push({ feld: 'Mindestens eine Klimamessung', blatt: 'klima' })
 
-  const hatText = Object.values(bericht.text).some((absatz) => absatz.trim().length > 0)
-  if (!hatText) fehlt.push({ feld: 'Mindestens ein Textabschnitt', schritt: 8 })
+  // „Offene Fragen" zählt hier bewusst nicht mit: das ist ein eigenes Blatt und
+  // ersetzt keinen Bericht darüber, was auf der Baustelle passiert ist.
+  const hatText = [
+    bericht.text.ausgefuehrteArbeiten,
+    bericht.text.besprochenes,
+    bericht.text.maengel,
+    bericht.text.empfehlung,
+  ].some((absatz) => absatz.trim().length > 0)
+  if (!hatText) fehlt.push({ feld: 'Mindestens ein Textabschnitt', blatt: 'text' })
 
   return fehlt
 }

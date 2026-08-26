@@ -107,9 +107,21 @@ export async function beispielBericht(): Promise<Bericht> {
       'Der Untergrund wurde kugelgestrahlt und abgesaugt. Anschließend wurde die Grundierung aufgebracht.',
     besprochenes:
       'Mit der Bauleitung wurde vereinbart, dass die Verlaufsbeschichtung erst nach Freigabe der Klimawerte erfolgt.',
-    maengel: 'Im Nassbereich wurden zwei Risse festgestellt, die vor der Beschichtung zu schließen sind.',
+    maengel:
+      'Im Nassbereich wurden zwei Risse festgestellt, die vor der Beschichtung zu schließen sind.',
     empfehlung:
       'Risse mit Sikadur-31 CF schließen. Vor Beschichtungsbeginn erneut Klimawerte messen; Abstand zum Taupunkt muss über 3 K liegen.',
+    offeneFragen: 'Wer stellt die Bauheizung? Freigabe der Randanschlüsse steht noch aus.',
+  }
+
+  bericht.absender = {
+    name: 'Björn Esser',
+    funktion: 'Anwendungstechniker',
+    firma: 'Sika Deutschland GmbH',
+    strasse: 'Kornwestheimer Str. 103–107',
+    ort: '70439 Stuttgart',
+    telefon: '0171 9876543',
+    email: 'esser.bjoern@example.de',
   }
 
   bericht.fotos = await Promise.all(

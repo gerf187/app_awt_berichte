@@ -9,6 +9,29 @@
 
 export type Status = 'Entwurf' | 'Abgeschlossen'
 
+/**
+ * Die Blätter, aus denen ein Bericht besteht. Reihenfolge und Inhalt stehen in
+ * `src/screens/schritte/liste.tsx`; hier steht nur, welche es gibt – damit auch
+ * die Prüffunktionen im lib-Verzeichnis auf ein Blatt zeigen können.
+ */
+export type BlattId =
+  | 'kopf'
+  | 'thematik'
+  | 'untergrund'
+  | 'klima'
+  | 'aufbau'
+  | 'text'
+  | 'fragen'
+  | 'fotos'
+  | 'abschluss'
+
+/**
+ * Zustand eines Blattes für Reiter und Kacheln.
+ * `fehlt` ist gelb und hält niemanden auf, `warnung` ist rot und meint Gefahr –
+ * heute nur der unterschrittene Taupunkt.
+ */
+export type BlattStand = 'fertig' | 'fehlt' | 'warnung' | 'neutral'
+
 export type Kopf = {
   berichtsnummer: string
   datum: string
@@ -67,6 +90,23 @@ export type Berichtstext = {
   besprochenes: string
   maengel: string
   empfehlung: string
+  /** Was am Besuchstag nicht geklärt werden konnte. */
+  offeneFragen: string
+}
+
+/**
+ * Wer den Bericht geschrieben hat. Wird beim Anlegen aus dem Profil in den
+ * Bericht kopiert – ändert der Kollege später sein Profil, bleiben alte
+ * Berichte so, wie sie verschickt wurden.
+ */
+export type Absender = {
+  name: string
+  funktion: string
+  firma: string
+  strasse: string
+  ort: string
+  telefon: string
+  email: string
 }
 
 export type Foto = {
@@ -89,6 +129,8 @@ export type Bericht = {
   aufbau: Aufbauzeile[]
   text: Berichtstext
   fotos: Foto[]
+  /** Absenderzeile des Berichts, aus dem Profil übernommen. */
+  absender: Absender
   /** PNG als Data-URL. Fehlt, wenn nicht unterschrieben wurde. */
   unterschrift?: string
 }
@@ -99,8 +141,8 @@ export type Bericht = {
  * alles in einem Rutsch mitnimmt.
  */
 export type Einstellungen = {
-  eigenerName: string
-  eigeneEmail: string
+  /** Das eigene Profil: füllt Anwesende und die Absenderzeile im Bericht. */
+  profil: Absender
   standardVertrieb: string
   standardEmpfaenger: string
   /** Vom Nutzer gepflegte Produktliste; überschreibt die Stammdaten, wenn gefüllt. */

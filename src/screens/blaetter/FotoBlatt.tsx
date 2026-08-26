@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
+import { Textbereich } from '../../components/Felder'
 import { Knopf } from '../../components/Knopf'
+import { Spracheingabe } from '../../components/Spracheingabe'
 import { fotoAufbereiten } from '../../lib/bilder'
 import { neueId } from '../../lib/bericht'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
-export function FotoSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
   const kamera = useRef<HTMLInputElement>(null)
   const galerie = useRef<HTMLInputElement>(null)
   const [laeuft, setLaeuft] = useState(false)
@@ -39,9 +41,7 @@ export function FotoSchritt({ bericht, aendern }: SchrittEigenschaften) {
   function beschreiben(id: string, text: string) {
     aendern((vorher) => ({
       ...vorher,
-      fotos: vorher.fotos.map((foto) =>
-        foto.id === id ? { ...foto, beschreibung: text } : foto,
-      ),
+      fotos: vorher.fotos.map((foto) => (foto.id === id ? { ...foto, beschreibung: text } : foto)),
     }))
   }
 
@@ -116,13 +116,24 @@ export function FotoSchritt({ bericht, aendern }: SchrittEigenschaften) {
               alt={foto.beschreibung || `Foto ${index + 1}`}
               className="max-h-72 w-full rounded-lg object-contain"
             />
-            <input
-              type="text"
+            <Textbereich
+              beschriftung={`Beschreibung zu Foto ${index + 1}`}
+              rows={2}
               value={foto.beschreibung}
               onChange={(e) => beschreiben(foto.id, e.target.value)}
-              placeholder="Beschreibung"
-              aria-label={`Beschreibung zu Foto ${index + 1}`}
-              className="border-sika-schwarz/15 tippziel focus:border-sika-schwarz w-full rounded-xl border-2 px-4 py-3 text-lg"
+              placeholder="Was ist zu sehen?"
+              nebenBeschriftung={
+                <Spracheingabe
+                  anhaengen={(gesprochen) =>
+                    beschreiben(
+                      foto.id,
+                      foto.beschreibung
+                        ? `${foto.beschreibung.trimEnd()} ${gesprochen}`
+                        : gesprochen,
+                    )
+                  }
+                />
+              }
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-sika-grau text-sm font-semibold">

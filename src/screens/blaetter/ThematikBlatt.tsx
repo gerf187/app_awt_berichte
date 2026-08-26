@@ -1,8 +1,8 @@
 import { Knopf } from '../../components/Knopf'
 import { Textbereich, Textfeld } from '../../components/Felder'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
-export function ThematikSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
   function setzeAnwesenden(index: number, feld: 'name' | 'firma' | 'funktion', wert: string) {
     aendern((vorher) => ({
       ...vorher,
@@ -51,7 +51,11 @@ export function ThematikSchritt({ bericht, aendern }: SchrittEigenschaften) {
             className="border-sika-schwarz/10 flex flex-col gap-3 rounded-xl border-2 bg-white p-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sika-grau text-sm font-semibold">Person {index + 1}</span>
+              <span className="text-sika-grau text-sm font-semibold">
+                {index === 0 && person.name.trim() && person.name === bericht.absender.name
+                  ? '👤 Aus deinem Profil'
+                  : `Person ${index + 1}`}
+              </span>
               <button
                 type="button"
                 onClick={() => entfernen(index)}

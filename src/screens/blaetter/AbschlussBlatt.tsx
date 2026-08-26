@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Knopf } from '../../components/Knopf'
 import { Unterschrift } from '../../components/Unterschrift'
-import { fehlendePflichtfelder } from '../../lib/bericht'
+import { absenderzeilen, fehlendePflichtfelder } from '../../lib/bericht'
 import { dateiname } from '../../lib/dateiname'
 import { einstellungenLaden } from '../../lib/db'
-import { betreff, dateiTeilen, herunterladen, kannDateiTeilen, mailtoAdresse, mailtext } from '../../lib/teilen'
+import {
+  betreff,
+  dateiTeilen,
+  herunterladen,
+  kannDateiTeilen,
+  mailtoAdresse,
+  mailtext,
+} from '../../lib/teilen'
 import type { Bericht } from '../../lib/typen'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
 type Format = 'pdf' | 'docx'
 
@@ -23,7 +30,7 @@ async function datei(bericht: Bericht, format: Format): Promise<File> {
   return new File([blob], dateiname(bericht, format), { type: blob.type })
 }
 
-export function AbschlussSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaften) {
   const [empfaenger, setEmpfaenger] = useState('')
   const [laeuft, setLaeuft] = useState<'' | Format | 'versand'>('')
   const [meldung, setMeldung] = useState('')
@@ -36,6 +43,7 @@ export function AbschlussSchritt({ bericht, aendern }: SchrittEigenschaften) {
   }, [])
 
   const fehlt = fehlendePflichtfelder(bericht)
+  const zeilen = absenderzeilen(bericht.absender)
 
   async function erzeugen(format: Format) {
     setLaeuft(format)
@@ -101,16 +109,42 @@ export function AbschlussSchritt({ bericht, aendern }: SchrittEigenschaften) {
       {fehlt.length > 0 && (
         <section className="border-sika-gelb bg-sika-gelb/15 rounded-xl border-2 p-4">
           <h2 className="font-bold">Diese Angaben fehlen noch</h2>
-          <ul className="mt-2 list-disc pl-5">
+          <ul className="mt-2 flex flex-col gap-1">
             {fehlt.map((eintrag) => (
-              <li key={eintrag.feld}>{eintrag.feld}</li>
+              <li key={eintrag.feld}>
+                <button
+                  type="button"
+                  onClick={() => zeigeBlatt(eintrag.blatt)}
+                  className="tippziel w-full text-left font-semibold underline"
+                >
+                  {eintrag.feld} →
+                </button>
+              </li>
             ))}
           </ul>
           <p className="text-sika-grau mt-2 text-sm">
-            Der Bericht lässt sich trotzdem erzeugen – die Angaben fehlen dann aber im Dokument.
+            Antippen führt zum richtigen Blatt. Der Bericht lässt sich trotzdem erzeugen – die
+            Angaben fehlen dann aber im Dokument.
           </p>
         </section>
       )}
+
+      {/* --- Absender ----------------------------------------------------- */}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-bold">Absender im Bericht</h2>
+        {zeilen.length > 0 ? (
+          <div className="border-sika-schwarz/10 rounded-xl border-2 bg-white p-4 text-sm leading-relaxed">
+            {zeilen.map((zeile) => (
+              <p key={zeile}>{zeile}</p>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sika-grau text-sm">
+            Noch kein Profil hinterlegt. Unter Einstellungen → „Mein Profil" eintragen; neue
+            Berichte übernehmen es dann automatisch.
+          </p>
+        )}
+      </section>
 
       {/* --- Unterschrift ------------------------------------------------ */}
       <section className="flex flex-col gap-3">
@@ -155,8 +189,8 @@ export function AbschlussSchritt({ bericht, aendern }: SchrittEigenschaften) {
       <section className="flex flex-col gap-3 pt-2">
         <h2 className="text-lg font-bold">Status</h2>
         <p className="text-sika-grau text-sm">
-          Ein abgeschlossener Bericht erscheint in der Liste mit grünem Punkt. Ändern lässt er
-          sich weiterhin.
+          Ein abgeschlossener Bericht erscheint in der Liste mit grünem Punkt. Ändern lässt er sich
+          weiterhin.
         </p>
         <Knopf
           art={bericht.status === 'Abgeschlossen' ? 'zweit' : 'haupt'}
@@ -168,9 +202,7 @@ export function AbschlussSchritt({ bericht, aendern }: SchrittEigenschaften) {
             }))
           }
         >
-          {bericht.status === 'Abgeschlossen'
-            ? 'Wieder als Entwurf führen'
-            : 'Bericht abschließen'}
+          {bericht.status === 'Abgeschlossen' ? 'Wieder als Entwurf führen' : 'Bericht abschließen'}
         </Knopf>
       </section>
     </>

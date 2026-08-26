@@ -123,20 +123,25 @@ Alle Auswahllisten liegen zentral in **einer** Datei `src/data/stammdaten.ts`. E
 
 ## 6. Bildschirme und Ablauf
 
-Assistent-Prinzip: ein Thema pro Bildschirm, unten **Zurück / Weiter**, oben eine Fortschrittsanzeige („Schritt 4 von 9"). **Kein Speichern-Knopf** – nach jeder Eingabe wird automatisch gespeichert (debounced).
+Blätter statt Schritte: Ein Bericht öffnet mit einer **Kachelübersicht** aller Blätter, jede Kachel mit Zeichen und Kurztext (siehe unten). Im Blatt steht oben eine waagerecht scrollbare **Reiterleiste**, unten bleiben **Zurück / Weiter**. Auf der Baustelle wird über den Tag zu einzelnen Punkten nachgetragen – ein Tipp führt ins Blatt, ohne Zurückblättern. **Kein Speichern-Knopf** – nach jeder Eingabe wird automatisch gespeichert (debounced).
+
+Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Pflichtangaben vollständig · **● gelb** Pflichtangabe fehlt noch (hält nicht auf) · **⚠ rot** Warnung, heute nur der unterschrittene Taupunkt. Blätter ohne Pflichtangaben bekommen kein Zeichen.
 
 1. **Start** – Sika-Logo, zwei große Schaltflächen: „Neuer Bericht", „Meine Berichte". Unten klein: „Einstellungen".
 2. **Meine Berichte** – Liste aller Berichte: Objekt, Datum, Status-Punkt (grau = Entwurf, grün = abgeschlossen). Suchfeld. Papierkorb-Symbol zum Löschen (mit Rückfrage). Tippen öffnet den Bericht.
 3. **Kopfdaten** – Felder aus `kopf`. Schaltfläche **„Aus letztem Bericht übernehmen"**. Telefonfeld mit `inputMode="tel"`.
-4. **Thematik & Anwesende** – Zweck-Feld + beliebig viele Anwesende. Erste Zeile vorbelegt mit Namen aus den Einstellungen / Firma „Sika" / Funktion „AWT".
+4. **Thematik & Anwesende** – Zweck-Feld + beliebig viele Anwesende. Erste Zeile aus dem Profil (Name, Firma, Funktion); ohne Profil greifen die Stammdaten „Sika" / „AWT".
 5. **Untergrund** – zwei Auswahllisten, Bemerkungsfeld erscheint automatisch bei „Sonstiges", CM-Wert und Haftzugfestigkeit.
 6. **Klimawerte** – Liste + „+ Messung". Uhrzeit vorbelegt. **Taupunkt und Abstand live berechnet.** Abstand < 3 K → rote Warnung: „Achtung: Abstand zum Taupunkt unter 3 K – Beschichtung nicht freigeben."
 7. **Aufbau** – Liste + Dialog für Bereich, Schicht, Produkt (Auswahl mit Freitext), Verbrauch, Charge, Fläche.
 8. **Bericht & Feststellungen** – vier Freitextfelder. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden).
-9. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
-10. **Abschluss** – Zusammenfassung, Hinweis auf fehlende Pflichtfelder, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**.
+9. **Offene Fragen** – ein Freitextfeld mit Spracheingabe: was am Besuchstag nicht geklärt wurde. Leer = im Dokument nicht vorhanden.
+10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto, ebenfalls mit Spracheingabe. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
+11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**.
 
-**Einstellungen:** eigener Name, eigene E-Mail, Standard-Vertriebskontakt, Standard-Empfängeradresse, „Alle Daten sichern (JSON)" und „Daten wiederherstellen".
+**Einstellungen:** **Profil** (Name, Funktion, Firma, Straße, PLZ/Ort, Telefon, E-Mail) – füllt „Anwesende" vor und liefert die Absenderzeile im Bericht; dazu Standard-Vertriebskontakt, Standard-Empfängeradresse, eigene Produktliste, „Alle Daten sichern (JSON)" und „Daten wiederherstellen".
+
+Das Profil wird beim Anlegen in den Bericht kopiert (`bericht.absender`). Ändert sich das Profil später, bleiben alte Berichte so, wie sie verschickt wurden.
 
 ---
 

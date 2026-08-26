@@ -1,7 +1,7 @@
 import { Textbereich } from '../../components/Felder'
 import { Spracheingabe } from '../../components/Spracheingabe'
 import type { Berichtstext } from '../../lib/typen'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
 const FELDER: { name: keyof Berichtstext; beschriftung: string; hinweis: string }[] = [
   {
@@ -14,11 +14,15 @@ const FELDER: { name: keyof Berichtstext; beschriftung: string; hinweis: string 
     beschriftung: 'Besprochenes',
     hinweis: 'Was wurde mit wem vereinbart?',
   },
-  { name: 'maengel', beschriftung: 'Mängel / Auffälligkeiten', hinweis: 'Was ist nicht in Ordnung?' },
+  {
+    name: 'maengel',
+    beschriftung: 'Mängel / Auffälligkeiten',
+    hinweis: 'Was ist nicht in Ordnung?',
+  },
   { name: 'empfehlung', beschriftung: 'Empfehlung', hinweis: 'Wie geht es weiter?' },
 ]
 
-export function TextSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function TextBlatt({ bericht, aendern }: BlattEigenschaften) {
   function setze(name: keyof Berichtstext, wert: string) {
     aendern((vorher) => ({ ...vorher, text: { ...vorher.text, [name]: wert } }))
   }

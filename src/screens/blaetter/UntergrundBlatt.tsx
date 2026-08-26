@@ -1,9 +1,9 @@
 import { Auswahlfeld, Textbereich, Textfeld } from '../../components/Felder'
 import { SONSTIGES, UNTERGRUND_ARTEN, UNTERGRUND_VORBEREITUNGEN } from '../../data/stammdaten'
 import type { Untergrund } from '../../lib/typen'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
-export function UntergrundSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function UntergrundBlatt({ bericht, aendern }: BlattEigenschaften) {
   function setze(feld: keyof Untergrund, wert: string) {
     aendern((vorher) => ({ ...vorher, untergrund: { ...vorher.untergrund, [feld]: wert } }))
   }

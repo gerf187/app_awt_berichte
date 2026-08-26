@@ -6,11 +6,13 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 
 ## Was die App kann
 
-- Bericht anlegen: Kopfdaten, Anwesende, Untergrund, Klimawerte, Aufbau, Text, Fotos
+- Bericht anlegen: Kopfdaten, Anwesende, Untergrund, Klimawerte, Aufbau, Text,
+  offene Fragen, Fotos
 - **Taupunkt wird mitgerechnet.** Liegt der Untergrund weniger als 3 K über dem
   Taupunkt, erscheint eine rote Warnung.
 - Fotos direkt aus der Kamera, automatisch verkleinert
-- Freitexte können diktiert werden (wenn das Handy es unterstützt)
+- Freitexte und Bildbeschreibungen können diktiert werden (wenn das Handy es
+  unterstützt)
 - Unterschrift mit dem Finger
 - Ausgabe als PDF und als Word-Datei, Versand über die Teilen-Funktion des Handys
 - **Alles bleibt auf Ihrem Gerät.** Die App schickt keine Daten irgendwohin.
@@ -24,13 +26,27 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 
 ## Bedienung
 
-Die App führt Schritt für Schritt durch den Bericht: ein Thema pro Bildschirm,
-unten **Zurück** und **Weiter**.
+Ein Bericht besteht aus **Blättern**. Beim Öffnen sehen Sie alle Blätter als
+Kacheln; im Blatt selbst können Sie oben über die Reiter direkt zu jedem anderen
+springen. So lässt sich über den Tag zu jedem Punkt nachtragen, ohne
+zurückzublättern.
+
+Das Zeichen an Reiter und Kachel sagt, wie es um das Blatt steht:
+
+| Zeichen | Bedeutung |
+|---------|-----------|
+| ✓ grün  | Pflichtangaben sind da |
+| ● gelb  | eine Pflichtangabe fehlt noch – hält Sie nicht auf |
+| ⚠ rot   | Warnung: der Untergrund liegt zu nah am Taupunkt |
+
+Blätter, auf denen nichts Pflicht ist, tragen kein Zeichen.
 
 - **Einen Speichern-Knopf gibt es nicht.** Alles wird sofort gespeichert.
-- Fehlende Pflichtangaben halten Sie nicht auf – sie werden am Ende gelb angezeigt.
-- Über **Einstellungen** tragen Sie Ihren Namen und die Standard-Empfängeradresse
-  ein; neue Berichte sind damit schon halb ausgefüllt.
+- Fehlende Pflichtangaben stehen am Ende noch einmal zusammen; ein Tipp darauf
+  führt zum richtigen Blatt.
+- Über **Einstellungen → Mein Profil** tragen Sie einmal Ihre Daten ein. Sie
+  stehen danach in jedem neuen Bericht unter „Anwesende" und in der
+  Adresszeile.
 
 ## Daten sichern
 

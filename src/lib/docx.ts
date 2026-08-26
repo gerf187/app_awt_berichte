@@ -15,7 +15,7 @@ import {
   TextRun,
   WidthType,
 } from 'docx'
-import { alsAnzeigedatum, kommazahl } from './bericht'
+import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import type { Bericht, Foto } from './typen'
 
@@ -166,6 +166,20 @@ function kopfdaten(bericht: Bericht): (Paragraph | Table)[] {
     ),
   ]
 
+  const absender = absenderzeilen(bericht.absender)
+  if (absender.length > 0) {
+    teile.push(
+      ueberschrift('Bericht erstellt von'),
+      ...absender.map(
+        (zeile) =>
+          new Paragraph({
+            children: [new TextRun({ text: zeile, size: 20, color: GRAU })],
+            spacing: { after: 40 },
+          }),
+      ),
+    )
+  }
+
   if (bericht.kopf.zweck.trim()) {
     teile.push(ueberschrift('Zweck des Besuchs'), ...absatz(bericht.kopf.zweck))
   }
@@ -268,6 +282,7 @@ function freitexte(bericht: Bericht): Paragraph[] {
     ['Besprochenes', bericht.text.besprochenes],
     ['Mängel / Auffälligkeiten', bericht.text.maengel],
     ['Empfehlung', bericht.text.empfehlung],
+    ['Offene Fragen', bericht.text.offeneFragen],
   ]
   return bloecke
     .filter(([, text]) => text.trim())

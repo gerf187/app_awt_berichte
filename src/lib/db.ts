@@ -7,7 +7,12 @@
  */
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import { LEERE_EINSTELLUNGEN, naechsteBerichtsnummer, neuerBericht } from './bericht'
+import {
+  berichtAuffuellen,
+  einstellungenAuffuellen,
+  naechsteBerichtsnummer,
+  neuerBericht,
+} from './bericht'
 import type { Bericht, Einstellungen, Sicherung } from './typen'
 
 const DB_NAME = 'awt-berichte'
@@ -49,11 +54,12 @@ function db(): Promise<IDBPDatabase<BerichtDB>> {
 /** Alle Berichte, zuletzt bearbeitete zuerst. */
 export async function alleBerichte(): Promise<Bericht[]> {
   const berichte = await (await db()).getAllFromIndex(BERICHTE, 'geaendertAm')
-  return berichte.reverse()
+  return berichte.reverse().map(berichtAuffuellen)
 }
 
 export async function berichtLaden(id: string): Promise<Bericht | undefined> {
-  return (await db()).get(BERICHTE, id)
+  const gefunden = await (await db()).get(BERICHTE, id)
+  return gefunden && berichtAuffuellen(gefunden)
 }
 
 /**
@@ -93,7 +99,7 @@ export async function berichtAnlegen(jetzt: Date = new Date()): Promise<Bericht>
 export async function einstellungenLaden(): Promise<Einstellungen> {
   const gespeichert = await (await db()).get(EINSTELLUNGEN, EINSTELLUNGEN_SCHLUESSEL)
   // Fehlende Felder auffüllen, damit ältere Datenstände nicht undefined liefern.
-  return { ...LEERE_EINSTELLUNGEN, ...gespeichert }
+  return einstellungenAuffuellen(gespeichert)
 }
 
 export async function einstellungenSpeichern(einstellungen: Einstellungen): Promise<void> {
@@ -122,12 +128,12 @@ export async function datenWiederherstellen(sicherung: Sicherung): Promise<numbe
   const transaktion = datenbank.transaction([BERICHTE, EINSTELLUNGEN], 'readwrite')
   const speicher = transaktion.objectStore(BERICHTE)
   for (const bericht of sicherung.berichte) {
-    await speicher.put(bericht)
+    await speicher.put(berichtAuffuellen(bericht))
   }
   if (sicherung.einstellungen) {
     await transaktion
       .objectStore(EINSTELLUNGEN)
-      .put({ ...LEERE_EINSTELLUNGEN, ...sicherung.einstellungen }, EINSTELLUNGEN_SCHLUESSEL)
+      .put(einstellungenAuffuellen(sicherung.einstellungen), EINSTELLUNGEN_SCHLUESSEL)
   }
   await transaktion.done
   return sicherung.berichte.length

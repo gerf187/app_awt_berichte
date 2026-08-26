@@ -10,7 +10,7 @@ export function StartBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => void }
     setLaeuft(true)
     try {
       const bericht = await berichtAnlegen()
-      zeige({ name: 'bericht', id: bericht.id, schritt: 1 })
+      zeige({ name: 'bericht', id: bericht.id })
     } finally {
       setLaeuft(false)
     }

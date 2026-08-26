@@ -4,7 +4,7 @@ import { Auswahlfeld, Textfeld } from '../../components/Felder'
 import { SCHICHTEN } from '../../data/stammdaten'
 import { useProdukte } from '../../lib/useProdukte'
 import type { Aufbauzeile } from '../../lib/typen'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
 const LEERE_ZEILE: Aufbauzeile = {
   bereich: '',
@@ -15,7 +15,7 @@ const LEERE_ZEILE: Aufbauzeile = {
   flaeche: '',
 }
 
-export function AufbauSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
   const produkte = useProdukte()
   const produktListeId = useId()
   // Welche Zeile gerade im Dialog bearbeitet wird; -1 heißt „neue Zeile".
@@ -64,9 +64,7 @@ export function AufbauSchritt({ bericht, aendern }: SchrittEigenschaften) {
               onClick={() => setBearbeitet({ index, zeile })}
               className="active:bg-sika-hell flex-1 p-4 text-left"
             >
-              <span className="block text-lg font-semibold">
-                {zeile.produkt || 'Ohne Produkt'}
-              </span>
+              <span className="block text-lg font-semibold">{zeile.produkt || 'Ohne Produkt'}</span>
               <span className="text-sika-grau mt-1 block text-sm">
                 {[zeile.bereich, zeile.schicht].filter(Boolean).join(' · ') || 'Ohne Bereich'}
               </span>

@@ -3,7 +3,7 @@ import type { Ansicht } from '../App'
 import { Knopf } from '../components/Knopf'
 import { Kopfzeile } from '../components/Kopfzeile'
 import { Textbereich, Textfeld } from '../components/Felder'
-import { PRODUKTE } from '../data/stammdaten'
+import { EIGENE_FIRMA, EIGENE_FUNKTION, PRODUKTE } from '../data/stammdaten'
 import { LEERE_EINSTELLUNGEN, alsDatumstext } from '../lib/bericht'
 import {
   alleDatenSichern,
@@ -12,7 +12,7 @@ import {
   einstellungenSpeichern,
   istSicherung,
 } from '../lib/db'
-import type { Einstellungen } from '../lib/typen'
+import type { Absender, Einstellungen } from '../lib/typen'
 
 export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => void }) {
   const [werte, setWerte] = useState<Einstellungen>(LEERE_EINSTELLUNGEN)
@@ -30,6 +30,15 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
   function aendern(teil: Partial<Einstellungen>) {
     setWerte((vorher) => {
       const nachher = { ...vorher, ...teil }
+      void einstellungenSpeichern(nachher)
+      return nachher
+    })
+  }
+
+  /** Einzelne Profilangabe ändern – der Rest des Profils bleibt stehen. */
+  function aendernProfil(teil: Partial<Absender>) {
+    setWerte((vorher) => {
+      const nachher = { ...vorher, profil: { ...vorher.profil, ...teil } }
       void einstellungenSpeichern(nachher)
       return nachher
     })
@@ -76,21 +85,63 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
       <Kopfzeile titel="Einstellungen" zurueck={() => zeige({ name: 'start' })} />
 
       <main className="flex flex-1 flex-col gap-5 p-4">
-        <Textfeld
-          beschriftung="Ihr Name"
-          hinweis="Wird als Anwendungstechniker in neue Berichte übernommen."
-          value={werte.eigenerName}
-          onChange={(e) => aendern({ eigenerName: e.target.value })}
-          autoComplete="name"
-        />
-        <Textfeld
-          beschriftung="Ihre E-Mail-Adresse"
-          type="email"
-          inputMode="email"
-          value={werte.eigeneEmail}
-          onChange={(e) => aendern({ eigeneEmail: e.target.value })}
-          autoComplete="email"
-        />
+        <section className="border-sika-schwarz/10 flex flex-col gap-4 rounded-xl border-2 bg-white p-4">
+          <div>
+            <h2 className="text-lg font-bold">Mein Profil</h2>
+            <p className="text-sika-grau mt-1 text-sm">
+              Steht in jedem neuen Bericht: als erste Zeile unter „Anwesende" und in der Adresszeile
+              des Berichts. Ältere Berichte bleiben unverändert.
+            </p>
+          </div>
+
+          <Textfeld
+            beschriftung="Name"
+            value={werte.profil.name}
+            onChange={(e) => aendernProfil({ name: e.target.value })}
+            autoComplete="name"
+          />
+          <Textfeld
+            beschriftung="Funktion"
+            placeholder={EIGENE_FUNKTION}
+            value={werte.profil.funktion}
+            onChange={(e) => aendernProfil({ funktion: e.target.value })}
+          />
+          <Textfeld
+            beschriftung="Firma"
+            placeholder={EIGENE_FIRMA}
+            value={werte.profil.firma}
+            onChange={(e) => aendernProfil({ firma: e.target.value })}
+            autoComplete="organization"
+          />
+          <Textfeld
+            beschriftung="Straße"
+            value={werte.profil.strasse}
+            onChange={(e) => aendernProfil({ strasse: e.target.value })}
+            autoComplete="street-address"
+          />
+          <Textfeld
+            beschriftung="PLZ und Ort"
+            value={werte.profil.ort}
+            onChange={(e) => aendernProfil({ ort: e.target.value })}
+          />
+          <Textfeld
+            beschriftung="Telefon"
+            type="tel"
+            inputMode="tel"
+            value={werte.profil.telefon}
+            onChange={(e) => aendernProfil({ telefon: e.target.value })}
+            autoComplete="tel"
+          />
+          <Textfeld
+            beschriftung="E-Mail-Adresse"
+            type="email"
+            inputMode="email"
+            value={werte.profil.email}
+            onChange={(e) => aendernProfil({ email: e.target.value })}
+            autoComplete="email"
+          />
+        </section>
+
         <Textfeld
           beschriftung="Standard-Vertriebskontakt"
           value={werte.standardVertrieb}

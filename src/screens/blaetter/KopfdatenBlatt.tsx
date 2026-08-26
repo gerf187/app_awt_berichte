@@ -4,9 +4,9 @@ import { Textfeld } from '../../components/Felder'
 import { alsAnzeigedatum, kopfUebernehmen } from '../../lib/bericht'
 import { letzterBericht } from '../../lib/db'
 import type { Bericht, Kopf } from '../../lib/typen'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
-export function KopfdatenSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function KopfdatenBlatt({ bericht, aendern }: BlattEigenschaften) {
   const [vorlage, setVorlage] = useState<Bericht | null>(null)
   const [uebernommen, setUebernommen] = useState(false)
 

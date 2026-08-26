@@ -74,7 +74,7 @@ export function BerichteBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => voi
             >
               <button
                 type="button"
-                onClick={() => zeige({ name: 'bericht', id: bericht.id, schritt: 1 })}
+                onClick={() => zeige({ name: 'bericht', id: bericht.id })}
                 className="active:bg-sika-hell flex-1 p-4 text-left"
               >
                 <span className="flex items-center gap-2">
@@ -111,8 +111,8 @@ export function BerichteBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => voi
           <div className="mx-auto w-full max-w-3xl rounded-2xl bg-white p-5">
             <h2 className="text-xl font-bold">Bericht löschen?</h2>
             <p className="text-sika-grau mt-2">
-              „{loeschKandidat.kopf.projekt || 'Ohne Bezeichnung'}" wird mit allen Fotos
-              entfernt. Das lässt sich nicht rückgängig machen.
+              „{loeschKandidat.kopf.projekt || 'Ohne Bezeichnung'}" wird mit allen Fotos entfernt.
+              Das lässt sich nicht rückgängig machen.
             </p>
             <div className="mt-5 flex flex-col gap-3">
               <Knopf art="gefahr" breit onClick={() => void loeschenBestaetigt(loeschKandidat)}>

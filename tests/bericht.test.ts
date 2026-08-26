@@ -1,19 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import {
+  absenderzeilen,
   alsDatumstext,
   alsUhrzeit,
+  berichtAuffuellen,
+  einstellungenAuffuellen,
   fehlendePflichtfelder,
   kopfUebernehmen,
   naechsteBerichtsnummer,
   neuerBericht,
 } from '../src/lib/bericht'
-import type { Einstellungen } from '../src/lib/typen'
+import type { Bericht, Einstellungen } from '../src/lib/typen'
 
 const EIN_TAG = new Date(2026, 7, 25, 9, 5) // 25.08.2026, 09:05 Ortszeit
 
 const einstellungen: Einstellungen = {
-  eigenerName: 'Björn Esser',
-  eigeneEmail: 'b.esser@example.de',
+  profil: {
+    name: 'Björn Esser',
+    funktion: 'Anwendungstechniker',
+    firma: 'Sika Deutschland GmbH',
+    strasse: 'Kornwestheimer Str. 103',
+    ort: '70439 Stuttgart',
+    telefon: '0171 9876543',
+    email: 'b.esser@example.de',
+  },
   standardVertrieb: 'M. Vertrieb',
   standardEmpfaenger: 'buero@example.de',
   produkte: [],
@@ -72,11 +82,34 @@ describe('neuerBericht', () => {
     expect(bericht.status).toBe('Entwurf')
   })
 
-  it('setzt die erste Zeile der Anwesenden auf den eigenen Namen', () => {
+  it('setzt die erste Zeile der Anwesenden aus dem Profil', () => {
     const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
     expect(bericht.anwesende).toEqual([
-      { name: 'Björn Esser', firma: 'Sika', funktion: 'AWT' },
+      { name: 'Björn Esser', firma: 'Sika Deutschland GmbH', funktion: 'Anwendungstechniker' },
     ])
+  })
+
+  it('fällt bei leerem Profil auf die Stammdaten zurück', () => {
+    const ohneProfil: Einstellungen = {
+      ...einstellungen,
+      profil: { ...einstellungen.profil, firma: '', funktion: '' },
+    }
+    const bericht = neuerBericht('2026-08-25-01', ohneProfil, EIN_TAG)
+    expect(bericht.anwesende[0]).toEqual({
+      name: 'Björn Esser',
+      firma: 'Sika',
+      funktion: 'AWT',
+    })
+  })
+
+  it('kopiert das Profil als Absender in den Bericht', () => {
+    const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    expect(bericht.absender).toEqual(einstellungen.profil)
+
+    // Ändert sich das Profil später, bleibt der Bericht wie verschickt.
+    einstellungen.profil.telefon = '0000'
+    expect(bericht.absender.telefon).toBe('0171 9876543')
+    einstellungen.profil.telefon = '0171 9876543'
   })
 
   it('vergibt eindeutige Ids', () => {
@@ -119,12 +152,39 @@ describe('fehlendePflichtfelder', () => {
     expect(felder).not.toContain('Anwendungstechniker')
   })
 
+  it('nennt zu jeder fehlenden Angabe das Blatt, auf dem sie steht', () => {
+    const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    const nach = Object.fromEntries(
+      fehlendePflichtfelder(bericht).map((eintrag) => [eintrag.feld, eintrag.blatt]),
+    )
+
+    expect(nach['Projekt / Bauvorhaben']).toBe('kopf')
+    expect(nach['Mindestens eine Klimamessung']).toBe('klima')
+    expect(nach['Mindestens ein Textabschnitt']).toBe('text')
+  })
+
+  it('lässt „Offene Fragen" allein nicht als Bericht durchgehen', () => {
+    const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    bericht.text.offeneFragen = 'Wer stellt die Bauheizung?'
+    expect(fehlendePflichtfelder(bericht).map((e) => e.feld)).toContain(
+      'Mindestens ein Textabschnitt',
+    )
+  })
+
   it('ist leer, wenn alles ausgefüllt ist', () => {
     const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
     bericht.kopf.projekt = 'Halle 3'
     bericht.kopf.verarbeiter = 'Boden Meier GmbH'
     bericht.klima = [
-      { uhrzeit: '09:00', luft: 20, boden: 15, feuchte: 50, taupunkt: 9.3, abstandTaupunkt: 5.7, warnung: false },
+      {
+        uhrzeit: '09:00',
+        luft: 20,
+        boden: 15,
+        feuchte: 50,
+        taupunkt: 9.3,
+        abstandTaupunkt: 5.7,
+        warnung: false,
+      },
     ]
     bericht.text.ausgefuehrteArbeiten = 'Grundierung aufgebracht.'
 
@@ -135,5 +195,89 @@ describe('fehlendePflichtfelder', () => {
     const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
     bericht.kopf.projekt = '   '
     expect(fehlendePflichtfelder(bericht).map((e) => e.feld)).toContain('Projekt / Bauvorhaben')
+  })
+})
+
+describe('absenderzeilen', () => {
+  it('setzt Name, Funktion, Firma, Anschrift und Kontakt zusammen', () => {
+    expect(absenderzeilen(einstellungen.profil)).toEqual([
+      'Björn Esser · Anwendungstechniker',
+      'Sika Deutschland GmbH',
+      'Kornwestheimer Str. 103, 70439 Stuttgart',
+      '0171 9876543 · b.esser@example.de',
+    ])
+  })
+
+  it('lässt leere Angaben weg, statt einsame Trennzeichen zu setzen', () => {
+    expect(
+      absenderzeilen({
+        name: 'B. Esser',
+        funktion: '',
+        firma: '',
+        strasse: '',
+        ort: '70439 Stuttgart',
+        telefon: '',
+        email: 'b@example.de',
+      }),
+    ).toEqual(['B. Esser', '70439 Stuttgart', 'b@example.de'])
+  })
+
+  it('gibt bei leerem Profil eine leere Liste zurück', () => {
+    expect(
+      absenderzeilen({
+        name: '',
+        funktion: '',
+        firma: '',
+        strasse: '',
+        ort: '',
+        telefon: '',
+        email: '',
+      }),
+    ).toEqual([])
+  })
+})
+
+describe('berichtAuffuellen', () => {
+  it('ergänzt Felder, die es beim Speichern noch nicht gab', () => {
+    const alt = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    // So liegt ein Bericht aus der Zeit vor „Offene Fragen" in der Datenbank.
+    delete (alt.text as Partial<Bericht['text']>).offeneFragen
+    delete (alt as Partial<Bericht>).absender
+
+    const aufgefuellt = berichtAuffuellen(alt)
+    expect(aufgefuellt.text.offeneFragen).toBe('')
+    expect(aufgefuellt.absender.name).toBe('')
+    // Vorhandenes bleibt unangetastet.
+    expect(aufgefuellt.kopf.berichtsnummer).toBe('2026-08-25-01')
+  })
+
+  it('lässt einen vollständigen Bericht inhaltlich unverändert', () => {
+    const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    bericht.text.offeneFragen = 'Wer stellt die Bauheizung?'
+    expect(berichtAuffuellen(bericht)).toEqual(bericht)
+  })
+})
+
+describe('einstellungenAuffuellen', () => {
+  it('macht aus dem alten Namensfeld ein Profil', () => {
+    const alt = {
+      eigenerName: 'B. Esser',
+      eigeneEmail: 'b@example.de',
+      produkte: ['Sikafloor-161'],
+    }
+    const neu = einstellungenAuffuellen(alt)
+
+    expect(neu.profil.name).toBe('B. Esser')
+    expect(neu.profil.email).toBe('b@example.de')
+    expect(neu.profil.firma).toBe('')
+    expect(neu.produkte).toEqual(['Sikafloor-161'])
+  })
+
+  it('lässt ein vorhandenes Profil stehen', () => {
+    expect(einstellungenAuffuellen(einstellungen)).toEqual(einstellungen)
+  })
+
+  it('verkraftet eine leere Datenbank', () => {
+    expect(einstellungenAuffuellen(undefined).profil.name).toBe('')
   })
 })

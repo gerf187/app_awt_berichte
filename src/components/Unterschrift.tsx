@@ -95,7 +95,7 @@ export function Unterschrift({
         onPointerLeave={beenden}
         aria-label="Feld zum Unterschreiben"
         // touch-none: sonst scrollt die Seite beim Unterschreiben weg.
-        className="border-sika-schwarz/20 h-40 w-full touch-none rounded-xl border-2 border-dashed bg-white"
+        className="border-sika-schwarz/20 h-28 w-full touch-none rounded-xl border-2 border-dashed bg-white"
       />
       <div className="flex items-center justify-between gap-3">
         <span className="text-sika-grau text-sm">

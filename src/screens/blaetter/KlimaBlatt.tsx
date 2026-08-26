@@ -2,7 +2,7 @@ import { Knopf } from '../../components/Knopf'
 import { alsUhrzeit, kommazahl } from '../../lib/bericht'
 import { MINDESTABSTAND_TAUPUNKT, klimaBerechnen } from '../../lib/taupunkt'
 import type { Klimawert } from '../../lib/typen'
-import type { SchrittEigenschaften } from './liste'
+import type { BlattEigenschaften } from './liste'
 
 /** Startwerte einer neuen Messung – realistische Baustellenwerte, nicht null. */
 const VORGABE = { luft: 20, boden: 18, feuchte: 55 }
@@ -38,7 +38,7 @@ function Messfeld({
   )
 }
 
-export function KlimaSchritt({ bericht, aendern }: SchrittEigenschaften) {
+export function KlimaBlatt({ bericht, aendern }: BlattEigenschaften) {
   function messungAendern(index: number, teil: Partial<Klimawert>) {
     aendern((vorher) => ({
       ...vorher,
@@ -54,10 +54,7 @@ export function KlimaSchritt({ bericht, aendern }: SchrittEigenschaften) {
   function hinzufuegen() {
     aendern((vorher) => ({
       ...vorher,
-      klima: [
-        ...vorher.klima,
-        { uhrzeit: alsUhrzeit(), ...VORGABE, ...klimaBerechnen(VORGABE) },
-      ],
+      klima: [...vorher.klima, { uhrzeit: alsUhrzeit(), ...VORGABE, ...klimaBerechnen(VORGABE) }],
     }))
   }
 
@@ -137,8 +134,8 @@ export function KlimaSchritt({ bericht, aendern }: SchrittEigenschaften) {
 
           {messung.warnung && (
             <p role="alert" className="bg-sika-rot rounded-xl p-3 font-semibold text-white">
-              Achtung: Abstand zum Taupunkt unter {MINDESTABSTAND_TAUPUNKT} K – Beschichtung
-              nicht freigeben.
+              Achtung: Abstand zum Taupunkt unter {MINDESTABSTAND_TAUPUNKT} K – Beschichtung nicht
+              freigeben.
             </p>
           )}
         </section>

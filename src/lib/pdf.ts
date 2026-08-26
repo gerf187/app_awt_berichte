@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { alsAnzeigedatum, kommazahl } from './bericht'
+import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import type { Bericht } from './typen'
 
@@ -125,6 +125,21 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
   })
 
+  const absender = absenderzeilen(bericht.absender)
+  if (absender.length > 0) {
+    ueberschrift('Bericht erstellt von')
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(...GRAU)
+    for (const zeile of absender) {
+      platz(6)
+      doc.text(zeile, RAND, y)
+      y += 5
+    }
+    doc.setTextColor(...SCHWARZ)
+    y += 5
+  }
+
   if (bericht.kopf.zweck.trim()) {
     ueberschrift('Zweck des Besuchs')
     absatz(bericht.kopf.zweck)
@@ -219,6 +234,7 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
     ['Besprochenes', bericht.text.besprochenes],
     ['Mängel / Auffälligkeiten', bericht.text.maengel],
     ['Empfehlung', bericht.text.empfehlung],
+    ['Offene Fragen', bericht.text.offeneFragen],
   ]
   for (const [titel, inhalt] of textbloecke) {
     if (!inhalt.trim()) continue
