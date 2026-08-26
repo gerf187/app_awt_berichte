@@ -54,6 +54,7 @@ export async function beispielBericht(): Promise<Bericht> {
     bemerkung: '',
     restfeuchteCM: '1,8',
     haftzugfestigkeit: '1,5',
+    rauhtiefe: '0,6',
   }
 
   bericht.klima = [
@@ -73,6 +74,7 @@ export async function beispielBericht(): Promise<Bericht> {
       schicht: 'Grundierung',
       produkt: 'Sikafloor-161',
       verbrauch: '0,4',
+      gesamtmenge: '180',
       charge: 'A12345',
       flaeche: '450',
     },
@@ -81,6 +83,7 @@ export async function beispielBericht(): Promise<Bericht> {
       schicht: 'Kratzspachtelung',
       produkt: 'Sikafloor-161 + Quarzsand',
       verbrauch: '1,2',
+      gesamtmenge: '540',
       charge: 'A12345',
       flaeche: '450',
     },
@@ -89,6 +92,7 @@ export async function beispielBericht(): Promise<Bericht> {
       schicht: 'Verlaufsbeschichtung',
       produkt: 'Sikafloor-264',
       verbrauch: '2,0',
+      gesamtmenge: '900',
       charge: 'B98765',
       flaeche: '450',
     },
@@ -97,6 +101,7 @@ export async function beispielBericht(): Promise<Bericht> {
       schicht: 'Hohlkehle',
       produkt: 'Sikadur-31 CF',
       verbrauch: '0,8',
+      gesamtmenge: '28',
       charge: 'C55512',
       flaeche: '35',
     },

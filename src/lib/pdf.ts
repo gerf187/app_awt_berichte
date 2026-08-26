@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
+import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import type { Bericht } from './typen'
 
@@ -107,7 +108,7 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
     ['Datum', alsAnzeigedatum(bericht.kopf.datum)],
     ['Projekt / Bauvorhaben', bericht.kopf.projekt],
     ['Objekt', [bericht.kopf.objektStrasse, bericht.kopf.objektOrt].filter(Boolean).join(', ')],
-    ['Auftraggeber', bericht.kopf.kunde],
+    ['Kunde', bericht.kopf.kunde],
     ['Verarbeiter', bericht.kopf.verarbeiter],
     [
       'Verarbeiter-Anschrift',
@@ -120,7 +121,7 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
   ]
 
   tabelle({
-    body: kopfPaare.map(([bezeichnung, wert]) => [bezeichnung, wert || '–']),
+    body: kopfPaare.map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.']),
     theme: 'grid',
     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
   })
@@ -156,22 +157,26 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
   }
 
   // --- Untergrund -------------------------------------------------------
+  // Messwerte stehen auch dann im Bericht, wenn nicht gemessen wurde: „k.A." ist
+  // eine Aussage, eine fehlende Zeile lässt den Leser rätseln.
   const untergrundPaare: [string, string][] = [
     ['Art', bericht.untergrund.art],
     ['Vorbereitung', bericht.untergrund.vorbereitung],
     ['Bemerkung', bericht.untergrund.bemerkung],
-    ['Restfeuchte (CM-%)', bericht.untergrund.restfeuchteCM],
-    ['Haftzugfestigkeit (N/mm²)', bericht.untergrund.haftzugfestigkeit],
   ].filter(([, wert]) => wert.trim()) as [string, string][]
 
-  if (untergrundPaare.length > 0) {
-    ueberschrift('Untergrund')
-    tabelle({
-      body: untergrundPaare,
-      theme: 'grid',
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
-    })
-  }
+  const messwerte: [string, string][] = [
+    ['Restfeuchte (CM-%)', bericht.untergrund.restfeuchteCM],
+    ['Haftzugfestigkeit (N/mm²)', bericht.untergrund.haftzugfestigkeit],
+    ['Rauhtiefe (mm)', bericht.untergrund.rauhtiefe],
+  ].map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.']) as [string, string][]
+
+  ueberschrift('Untergrund')
+  tabelle({
+    body: [...untergrundPaare, ...messwerte],
+    theme: 'grid',
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
+  })
 
   // --- Klimawerte -------------------------------------------------------
   if (bericht.klima.length > 0) {
@@ -216,14 +221,15 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
   if (bericht.aufbau.length > 0) {
     ueberschrift('Aufbau')
     tabelle({
-      head: [['Bereich', 'Schicht', 'Produkt', 'kg/m²', 'Charge', 'm²']],
+      head: [['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Charge']],
       body: bericht.aufbau.map((zeile) => [
         zeile.bereich,
         zeile.schicht,
         zeile.produkt,
-        zeile.verbrauch,
+        verbrauchText(zeile.verbrauch),
+        zeile.flaeche && `${zeile.flaeche} m²`,
+        mengeText(zeile.gesamtmenge),
         zeile.charge,
-        zeile.flaeche,
       ]),
     })
   }
@@ -287,6 +293,18 @@ export async function pdfErzeugen(bericht: Bericht): Promise<Blob> {
 }
 
 /** Bildmaße so verkleinern, dass sie in den vorgegebenen Kasten passen. */
+/** Verbrauch für die Tabelle – die Einheit richtet sich nach der Größe. */
+function verbrauchText(gespeichert: string): string {
+  const wert = zahlLesen(gespeichert)
+  return wert === null ? '' : verbrauchAnzeigen(wert)
+}
+
+/** Gesamtmenge für die Tabelle. */
+function mengeText(gespeichert: string): string {
+  const wert = zahlLesen(gespeichert)
+  return wert === null ? '' : mengeAnzeigen(wert)
+}
+
 function einpassen(
   doc: jsPDF,
   dataUrl: string,

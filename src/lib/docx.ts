@@ -16,6 +16,7 @@ import {
   WidthType,
 } from 'docx'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
+import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import type { Bericht, Foto } from './typen'
 
@@ -147,7 +148,7 @@ function kopfdaten(bericht: Bericht): (Paragraph | Table)[] {
     ['Datum', alsAnzeigedatum(bericht.kopf.datum)],
     ['Projekt / Bauvorhaben', bericht.kopf.projekt],
     ['Objekt', [bericht.kopf.objektStrasse, bericht.kopf.objektOrt].filter(Boolean).join(', ')],
-    ['Auftraggeber', bericht.kopf.kunde],
+    ['Kunde', bericht.kopf.kunde],
     ['Verarbeiter', bericht.kopf.verarbeiter],
     [
       'Verarbeiter-Anschrift',
@@ -161,7 +162,7 @@ function kopfdaten(bericht: Bericht): (Paragraph | Table)[] {
 
   const teile: (Paragraph | Table)[] = [
     tabelle(
-      paare.map(([bezeichnung, wert]) => [bezeichnung, wert || '–']),
+      paare.map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.']),
       false,
     ),
   ]
@@ -202,18 +203,24 @@ function anwesende(bericht: Bericht): (Paragraph | Table)[] {
 }
 
 function untergrund(bericht: Bericht): (Paragraph | Table)[] {
-  const paare = (
+  const beschreibung = (
     [
       ['Art', bericht.untergrund.art],
       ['Vorbereitung', bericht.untergrund.vorbereitung],
       ['Bemerkung', bericht.untergrund.bemerkung],
-      ['Restfeuchte (CM-%)', bericht.untergrund.restfeuchteCM],
-      ['Haftzugfestigkeit (N/mm²)', bericht.untergrund.haftzugfestigkeit],
     ] as [string, string][]
   ).filter(([, wert]) => wert.trim())
 
-  if (paare.length === 0) return []
-  return [ueberschrift('Untergrund'), tabelle(paare, false)]
+  // Nicht gemessen heißt „k.A." – eine fehlende Zeile lässt den Leser rätseln.
+  const messwerte = (
+    [
+      ['Restfeuchte (CM-%)', bericht.untergrund.restfeuchteCM],
+      ['Haftzugfestigkeit (N/mm²)', bericht.untergrund.haftzugfestigkeit],
+      ['Rauhtiefe (mm)', bericht.untergrund.rauhtiefe],
+    ] as [string, string][]
+  ).map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.'])
+
+  return [ueberschrift('Untergrund'), tabelle([...beschreibung, ...messwerte], false)]
 }
 
 function klima(bericht: Bericht): (Paragraph | Table)[] {
@@ -261,19 +268,32 @@ function aufbau(bericht: Bericht): (Paragraph | Table)[] {
     ueberschrift('Aufbau'),
     tabelle(
       [
-        ['Bereich', 'Schicht', 'Produkt', 'kg/m²', 'Charge', 'm²'],
+        ['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Charge'],
         ...bericht.aufbau.map((zeile) => [
           zeile.bereich,
           zeile.schicht,
           zeile.produkt,
-          zeile.verbrauch,
+          verbrauchText(zeile.verbrauch),
+          zeile.flaeche ? `${zeile.flaeche} m²` : '',
+          mengeText(zeile.gesamtmenge),
           zeile.charge,
-          zeile.flaeche,
         ]),
       ],
       true,
     ),
   ]
+}
+
+/** Verbrauch für die Tabelle – die Einheit richtet sich nach der Größe. */
+function verbrauchText(gespeichert: string): string {
+  const wert = zahlLesen(gespeichert)
+  return wert === null ? '' : verbrauchAnzeigen(wert)
+}
+
+/** Gesamtmenge für die Tabelle. */
+function mengeText(gespeichert: string): string {
+  const wert = zahlLesen(gespeichert)
+  return wert === null ? '' : mengeAnzeigen(wert)
 }
 
 function freitexte(bericht: Bericht): Paragraph[] {

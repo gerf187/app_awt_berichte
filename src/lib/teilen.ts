@@ -80,8 +80,12 @@ export function mailtext(bericht: Bericht, mitAnhangHinweis: boolean): string {
   return zeilen.join('\n')
 }
 
-/** Fertige `mailto:`-Adresse mit Empfänger, Betreff und Text. */
-export function mailtoAdresse(bericht: Bericht, empfaenger: string, mitAnhangHinweis = true): string {
+/**
+ * Fertige `mailto:`-Adresse mit Betreff und Text. Der Empfänger bleibt leer,
+ * wenn keiner übergeben wird – wer den Bericht bekommt, entscheidet sich
+ * ohnehin erst im Mailprogramm.
+ */
+export function mailtoAdresse(bericht: Bericht, empfaenger = '', mitAnhangHinweis = true): string {
   const felder = new URLSearchParams({
     subject: betreff(bericht),
     body: mailtext(bericht, mitAnhangHinweis),

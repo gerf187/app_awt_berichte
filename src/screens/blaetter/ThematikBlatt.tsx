@@ -1,8 +1,13 @@
 import { Knopf } from '../../components/Knopf'
 import { Textbereich, Textfeld } from '../../components/Felder'
+import { Spracheingabe } from '../../components/Spracheingabe'
 import type { BlattEigenschaften } from './liste'
 
 export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
+  function setzeZweck(wert: string) {
+    aendern((vorher) => ({ ...vorher, kopf: { ...vorher.kopf, zweck: wert } }))
+  }
+
   function setzeAnwesenden(index: number, feld: 'name' | 'firma' | 'funktion', wert: string) {
     aendern((vorher) => ({
       ...vorher,
@@ -33,8 +38,14 @@ export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
         hinweis="Warum waren Sie auf der Baustelle?"
         rows={4}
         value={bericht.kopf.zweck}
-        onChange={(e) =>
-          aendern((vorher) => ({ ...vorher, kopf: { ...vorher.kopf, zweck: e.target.value } }))
+        onChange={(e) => setzeZweck(e.target.value)}
+        nebenBeschriftung={
+          <Spracheingabe
+            anhaengen={(gesprochen) => {
+              const bisher = bericht.kopf.zweck
+              setzeZweck(bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
+            }}
+          />
         }
       />
 

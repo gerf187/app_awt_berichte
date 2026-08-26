@@ -6,9 +6,9 @@ import {
   berichtAuffuellen,
   einstellungenAuffuellen,
   fehlendePflichtfelder,
-  kopfUebernehmen,
   naechsteBerichtsnummer,
   neuerBericht,
+  produktMerken,
 } from '../src/lib/bericht'
 import type { Bericht, Einstellungen } from '../src/lib/typen'
 
@@ -24,9 +24,7 @@ const einstellungen: Einstellungen = {
     telefon: '0171 9876543',
     email: 'b.esser@example.de',
   },
-  standardVertrieb: 'M. Vertrieb',
-  standardEmpfaenger: 'buero@example.de',
-  produkte: [],
+  gemerkteProdukte: [],
 }
 
 describe('alsDatumstext', () => {
@@ -74,11 +72,10 @@ describe('naechsteBerichtsnummer', () => {
 })
 
 describe('neuerBericht', () => {
-  it('belegt Datum, Techniker und Vertrieb aus den Einstellungen vor', () => {
+  it('belegt Datum und Techniker aus dem Profil vor', () => {
     const bericht = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
     expect(bericht.kopf.datum).toBe('2026-08-25')
     expect(bericht.kopf.awt).toBe('Björn Esser')
-    expect(bericht.kopf.vertrieb).toBe('M. Vertrieb')
     expect(bericht.status).toBe('Entwurf')
   })
 
@@ -116,25 +113,6 @@ describe('neuerBericht', () => {
     const a = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
     const b = neuerBericht('2026-08-25-02', einstellungen, EIN_TAG)
     expect(a.id).not.toBe(b.id)
-  })
-})
-
-describe('kopfUebernehmen', () => {
-  it('übernimmt die Baustellendaten, behält aber Nummer und Datum des neuen Berichts', () => {
-    const vorlage = neuerBericht('2026-08-24-01', einstellungen, new Date(2026, 7, 24))
-    vorlage.kopf.projekt = 'Halle 3'
-    vorlage.kopf.verarbeiter = 'Boden Meier GmbH'
-    vorlage.kopf.zweck = 'Erstbesuch'
-
-    const neu = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
-    const ergebnis = kopfUebernehmen(neu, vorlage)
-
-    expect(ergebnis.kopf.projekt).toBe('Halle 3')
-    expect(ergebnis.kopf.verarbeiter).toBe('Boden Meier GmbH')
-    expect(ergebnis.kopf.berichtsnummer).toBe('2026-08-25-01')
-    expect(ergebnis.kopf.datum).toBe('2026-08-25')
-    // Der Grund des Besuchs ist jedes Mal ein anderer.
-    expect(ergebnis.kopf.zweck).toBe('')
   })
 })
 
@@ -243,10 +221,12 @@ describe('berichtAuffuellen', () => {
     // So liegt ein Bericht aus der Zeit vor „Offene Fragen" in der Datenbank.
     delete (alt.text as Partial<Bericht['text']>).offeneFragen
     delete (alt as Partial<Bericht>).absender
+    delete (alt.untergrund as Partial<Bericht['untergrund']>).rauhtiefe
 
     const aufgefuellt = berichtAuffuellen(alt)
     expect(aufgefuellt.text.offeneFragen).toBe('')
     expect(aufgefuellt.absender.name).toBe('')
+    expect(aufgefuellt.untergrund.rauhtiefe).toBe('')
     // Vorhandenes bleibt unangetastet.
     expect(aufgefuellt.kopf.berichtsnummer).toBe('2026-08-25-01')
   })
@@ -270,7 +250,8 @@ describe('einstellungenAuffuellen', () => {
     expect(neu.profil.name).toBe('B. Esser')
     expect(neu.profil.email).toBe('b@example.de')
     expect(neu.profil.firma).toBe('')
-    expect(neu.produkte).toEqual(['Sikafloor-161'])
+    // Aus der früher von Hand gepflegten Liste werden gemerkte Produkte.
+    expect(neu.gemerkteProdukte).toEqual(['Sikafloor-161'])
   })
 
   it('lässt ein vorhandenes Profil stehen', () => {
@@ -279,5 +260,25 @@ describe('einstellungenAuffuellen', () => {
 
   it('verkraftet eine leere Datenbank', () => {
     expect(einstellungenAuffuellen(undefined).profil.name).toBe('')
+  })
+})
+
+describe('produktMerken', () => {
+  it('nimmt ein neues Produkt auf und sortiert die Liste', () => {
+    expect(produktMerken(['Sikafloor-264'], 'Sikagard-720')).toEqual([
+      'Sikafloor-264',
+      'Sikagard-720',
+    ])
+  })
+
+  it('merkt dasselbe Produkt nicht zweimal, auch nicht anders geschrieben', () => {
+    const liste = ['Sikafloor-264']
+    expect(produktMerken(liste, 'sikafloor-264')).toBe(liste)
+    expect(produktMerken(liste, '  Sikafloor-264  ')).toBe(liste)
+  })
+
+  it('ignoriert leere Eingaben', () => {
+    const liste = ['Sikafloor-264']
+    expect(produktMerken(liste, '   ')).toBe(liste)
   })
 })

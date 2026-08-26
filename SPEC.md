@@ -60,7 +60,7 @@ type Bericht = {
     projekt: string;          // Bauvorhaben / Objektbezeichnung
     objektStrasse: string;
     objektOrt: string;
-    kunde: string;            // Auftraggeber
+    kunde: string;            // Kunde
     verarbeiter: string;      // ausführende Firma
     verarbeiterStrasse: string;
     verarbeiterOrt: string;
@@ -117,7 +117,9 @@ type Bericht = {
 
 **Auswahlliste Untergrundvorbereitung:** Kugelstrahlen, Schleifen/Diamantschleifen, Fräsen, Absaugen, Grundierung vorhanden, Keine Vorbereitung, Sonstiges
 
-Alle Auswahllisten liegen zentral in **einer** Datei `src/data/stammdaten.ts`. Ebenso eine bearbeitbare Produktliste (20 Platzhalter).
+Alle Auswahllisten liegen zentral in **einer** Datei `src/data/stammdaten.ts`.
+
+**Keine Produktliste.** Sika führt rund 33.000 Produkte – jede mitgelieferte Auswahl wäre die falsche. Das Produkt wird im Bericht getippt; die App merkt sich, was schon einmal eingetragen wurde, und bietet es beim nächsten Mal an (`Einstellungen.gemerkteProdukte`). Zum Filtern dieser Vorschläge gibt es die Produktgruppen Sikafloor, Sikagard, Sikalastic, SikaEpoCem, Sikaflex, Sikabond.
 
 ---
 
@@ -129,17 +131,20 @@ Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Pflichtang
 
 1. **Start** – Sika-Logo, zwei große Schaltflächen: „Neuer Bericht", „Meine Berichte". Unten klein: „Einstellungen".
 2. **Meine Berichte** – Liste aller Berichte: Objekt, Datum, Status-Punkt (grau = Entwurf, grün = abgeschlossen). Suchfeld. Papierkorb-Symbol zum Löschen (mit Rückfrage). Tippen öffnet den Bericht.
-3. **Kopfdaten** – Felder aus `kopf`. Schaltfläche **„Aus letztem Bericht übernehmen"**. Telefonfeld mit `inputMode="tel"`.
-4. **Thematik & Anwesende** – Zweck-Feld + beliebig viele Anwesende. Erste Zeile aus dem Profil (Name, Firma, Funktion); ohne Profil greifen die Stammdaten „Sika" / „AWT".
-5. **Untergrund** – zwei Auswahllisten, Bemerkungsfeld erscheint automatisch bei „Sonstiges", CM-Wert und Haftzugfestigkeit.
+3. **Kopfdaten** – Felder aus `kopf`. Telefonfeld mit `inputMode="tel"`. Kunde und Verarbeiter sind zwei Angaben, nicht drei – „Auftraggeber" gibt es nicht mehr.
+4. **Thematik & Anwesende** – Zweck-Feld (mit Spracheingabe) + beliebig viele Anwesende. Erste Zeile aus dem Profil (Name, Firma, Funktion); ohne Profil greifen die Stammdaten „Sika" / „AWT".
+5. **Untergrund** – zwei Auswahllisten, Bemerkungsfeld erscheint automatisch bei „Sonstiges", dazu die Messwerte **Restfeuchte, Haftzugfestigkeit und Rauhtiefe**. Nicht gemessene Werte stehen im Bericht als **k.A.** – eine fehlende Zeile lässt den Leser rätseln.
 6. **Klimawerte** – Liste + „+ Messung". Uhrzeit vorbelegt. **Taupunkt und Abstand live berechnet.** Abstand < 3 K → rote Warnung: „Achtung: Abstand zum Taupunkt unter 3 K – Beschichtung nicht freigeben."
-7. **Aufbau** – Liste + Dialog für Bereich, Schicht, Produkt (Auswahl mit Freitext), Verbrauch, Charge, Fläche.
+7. **Aufbau** – Liste + Dialog für Bereich, Schicht, Produkt, Fläche, Verbrauch, Gesamtmenge, Charge.
+   - **Bereich**: Beispiele als Platzhalter; ab der zweiten Zeile eine Schaltfläche **„wie Vorposition"**, damit „Halle 1" nicht jedes Mal neu getippt wird.
+   - **Produkt**: Freitext mit Vorschlägen aus den gemerkten Produkten, gefiltert über die Produktgruppe.
+   - **Verbrauch und Gesamtmenge** (`src/lib/verbrauch.ts`): Eingetragen wird das eine oder das andere, die App rechnet über die Fläche um. Gespeichert wird immer in kg/m². Die Einheit springt automatisch: Eingaben ab 10 sind g/m² gemeint (200 → 0,2 kg/m²), darunter kg/m². Angezeigt wird nach Praxis – unter 1,00 kg in g/m², darüber in kg/m².
 8. **Bericht & Feststellungen** – vier Freitextfelder. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden).
 9. **Offene Fragen** – ein Freitextfeld mit Spracheingabe: was am Besuchstag nicht geklärt wurde. Leer = im Dokument nicht vorhanden.
 10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto, ebenfalls mit Spracheingabe. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
 11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**.
 
-**Einstellungen:** **Profil** (Name, Funktion, Firma, Straße, PLZ/Ort, Telefon, E-Mail) – füllt „Anwesende" vor und liefert die Absenderzeile im Bericht; dazu Standard-Vertriebskontakt, Standard-Empfängeradresse, eigene Produktliste, „Alle Daten sichern (JSON)" und „Daten wiederherstellen".
+**Einstellungen:** nur noch zwei Dinge – das **Profil** (Name, Funktion, Firma, Straße, PLZ/Ort, Telefon, E-Mail), das „Anwesende" vorfüllt und die Absenderzeile im Bericht liefert, und die **Datensicherung** („Alle Daten sichern (JSON)" / „Daten wiederherstellen").
 
 Das Profil wird beim Anlegen in den Bericht kopiert (`bericht.absender`). Ändert sich das Profil später, bleiben alte Berichte so, wie sie verschickt wurden.
 

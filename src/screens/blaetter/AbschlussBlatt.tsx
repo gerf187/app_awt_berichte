@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Knopf } from '../../components/Knopf'
 import { Unterschrift } from '../../components/Unterschrift'
 import { absenderzeilen, fehlendePflichtfelder } from '../../lib/bericht'
 import { dateiname } from '../../lib/dateiname'
-import { einstellungenLaden } from '../../lib/db'
 import {
   betreff,
   dateiTeilen,
@@ -31,16 +30,9 @@ async function datei(bericht: Bericht, format: Format): Promise<File> {
 }
 
 export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaften) {
-  const [empfaenger, setEmpfaenger] = useState('')
   const [laeuft, setLaeuft] = useState<'' | Format | 'versand'>('')
   const [meldung, setMeldung] = useState('')
   const [mailAdresse, setMailAdresse] = useState('')
-
-  useEffect(() => {
-    void einstellungenLaden().then((einstellungen) =>
-      setEmpfaenger(einstellungen.standardEmpfaenger),
-    )
-  }, [])
 
   const fehlt = fehlendePflichtfelder(bericht)
   const zeilen = absenderzeilen(bericht.absender)
@@ -75,7 +67,7 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
 
       // Zweiter Weg: herunterladen und eine vorbereitete Mail anbieten.
       herunterladen(fertig, fertig.name)
-      setMailAdresse(mailtoAdresse(bericht, empfaenger))
+      setMailAdresse(mailtoAdresse(bericht))
       setMeldung(
         `${fertig.name} wurde heruntergeladen. Dieses Gerät kann Dateien nicht direkt teilen – bitte die Datei von Hand an die Mail anhängen.`,
       )

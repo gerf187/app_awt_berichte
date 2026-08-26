@@ -61,6 +61,7 @@ export type Untergrund = {
   bemerkung: string
   restfeuchteCM: string
   haftzugfestigkeit: string
+  rauhtiefe: string
 }
 
 export type Klimawert = {
@@ -80,7 +81,10 @@ export type Aufbauzeile = {
   bereich: string
   schicht: string
   produkt: string
+  /** Verbrauch je Quadratmeter, immer in kg/m² – die Anzeige rechnet in g/m² um. */
   verbrauch: string
+  /** Gesamtmenge in kg. Wird aus Verbrauch und Fläche berechnet oder umgekehrt. */
+  gesamtmenge: string
   charge: string
   flaeche: string
 }
@@ -143,10 +147,12 @@ export type Bericht = {
 export type Einstellungen = {
   /** Das eigene Profil: füllt Anwesende und die Absenderzeile im Bericht. */
   profil: Absender
-  standardVertrieb: string
-  standardEmpfaenger: string
-  /** Vom Nutzer gepflegte Produktliste; überschreibt die Stammdaten, wenn gefüllt. */
-  produkte: string[]
+  /**
+   * Produkte, die im Bericht schon einmal eingetragen wurden. Die App merkt sie
+   * sich von selbst und bietet sie beim nächsten Mal an – gepflegt wird hier
+   * nichts von Hand.
+   */
+  gemerkteProdukte: string[]
 }
 
 /** Struktur der Sicherungsdatei (Einstellungen → „Alle Daten sichern"). */

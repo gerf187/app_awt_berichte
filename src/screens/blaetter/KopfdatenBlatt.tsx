@@ -1,19 +1,8 @@
-import { useEffect, useState } from 'react'
-import { Knopf } from '../../components/Knopf'
 import { Textfeld } from '../../components/Felder'
-import { alsAnzeigedatum, kopfUebernehmen } from '../../lib/bericht'
-import { letzterBericht } from '../../lib/db'
-import type { Bericht, Kopf } from '../../lib/typen'
+import type { Kopf } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
 export function KopfdatenBlatt({ bericht, aendern }: BlattEigenschaften) {
-  const [vorlage, setVorlage] = useState<Bericht | null>(null)
-  const [uebernommen, setUebernommen] = useState(false)
-
-  useEffect(() => {
-    void letzterBericht(bericht.id).then((gefunden) => setVorlage(gefunden ?? null))
-  }, [bericht.id])
-
   function setze(feld: keyof Kopf) {
     return (wert: string) =>
       aendern((vorher) => ({ ...vorher, kopf: { ...vorher.kopf, [feld]: wert } }))
@@ -21,30 +10,6 @@ export function KopfdatenBlatt({ bericht, aendern }: BlattEigenschaften) {
 
   return (
     <>
-      {vorlage && (
-        <div className="border-sika-schwarz/10 flex flex-col gap-2 rounded-xl border-2 bg-white p-4">
-          <p className="text-sika-grau text-sm">
-            Letzter Bericht: {vorlage.kopf.projekt || 'Ohne Bezeichnung'} vom{' '}
-            {alsAnzeigedatum(vorlage.kopf.datum)}
-          </p>
-          <Knopf
-            art="zweit"
-            breit
-            onClick={() => {
-              aendern((vorher) => kopfUebernehmen(vorher, vorlage))
-              setUebernommen(true)
-            }}
-          >
-            Aus letztem Bericht übernehmen
-          </Knopf>
-          {uebernommen && (
-            <p role="status" className="text-sika-gruen text-sm font-semibold">
-              Daten übernommen. Bitte prüfen.
-            </p>
-          )}
-        </div>
-      )}
-
       <Textfeld
         beschriftung="Datum"
         type="date"
@@ -68,7 +33,7 @@ export function KopfdatenBlatt({ bericht, aendern }: BlattEigenschaften) {
         onChange={(e) => setze('objektOrt')(e.target.value)}
       />
       <Textfeld
-        beschriftung="Auftraggeber / Kunde"
+        beschriftung="Kunde"
         value={bericht.kopf.kunde}
         onChange={(e) => setze('kunde')(e.target.value)}
       />

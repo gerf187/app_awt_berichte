@@ -12,6 +12,7 @@ import {
   einstellungenAuffuellen,
   naechsteBerichtsnummer,
   neuerBericht,
+  produktMerken,
 } from './bericht'
 import type { Bericht, Einstellungen, Sicherung } from './typen'
 
@@ -77,12 +78,6 @@ export async function berichtLoeschen(id: string): Promise<void> {
   await (await db()).delete(BERICHTE, id)
 }
 
-/** Der zuletzt bearbeitete Bericht – Vorlage für „Aus letztem Bericht übernehmen". */
-export async function letzterBericht(ausserId?: string): Promise<Bericht | undefined> {
-  const berichte = await alleBerichte()
-  return berichte.find((bericht) => bericht.id !== ausserId)
-}
-
 /**
  * Legt einen neuen Bericht an, vergibt die Tagesnummer und speichert ihn
  * sofort – so taucht er auch dann in „Meine Berichte" auf, wenn der Kollege
@@ -104,6 +99,18 @@ export async function einstellungenLaden(): Promise<Einstellungen> {
 
 export async function einstellungenSpeichern(einstellungen: Einstellungen): Promise<void> {
   await (await db()).put(EINSTELLUNGEN, einstellungen, EINSTELLUNGEN_SCHLUESSEL)
+}
+
+/**
+ * Merkt sich ein im Bericht eingetragenes Produkt für die nächste Auswahl.
+ * Sika führt 33.000 Produkte – eine mitgelieferte Liste hilft nicht, die
+ * Handvoll, die dieser Kollege wirklich benutzt, schon.
+ */
+export async function produktSpeichern(produkt: string): Promise<void> {
+  const einstellungen = await einstellungenLaden()
+  const gemerkt = produktMerken(einstellungen.gemerkteProdukte, produkt)
+  if (gemerkt === einstellungen.gemerkteProdukte) return
+  await einstellungenSpeichern({ ...einstellungen, gemerkteProdukte: gemerkt })
 }
 
 /** Kompletter Datenbestand für die Sicherungsdatei. */

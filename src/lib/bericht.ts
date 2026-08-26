@@ -4,7 +4,15 @@
  */
 
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
-import type { Absender, Bericht, BlattId, Berichtstext, Einstellungen } from './typen'
+import type {
+  Absender,
+  Aufbauzeile,
+  Bericht,
+  Berichtstext,
+  BlattId,
+  Einstellungen,
+  Untergrund,
+} from './typen'
 
 export const LEERES_PROFIL: Absender = {
   name: '',
@@ -26,9 +34,26 @@ export const LEERER_TEXT: Berichtstext = {
 
 export const LEERE_EINSTELLUNGEN: Einstellungen = {
   profil: LEERES_PROFIL,
-  standardVertrieb: '',
-  standardEmpfaenger: '',
-  produkte: [],
+  gemerkteProdukte: [],
+}
+
+export const LEERER_UNTERGRUND: Untergrund = {
+  art: '',
+  vorbereitung: '',
+  bemerkung: '',
+  restfeuchteCM: '',
+  haftzugfestigkeit: '',
+  rauhtiefe: '',
+}
+
+export const LEERE_AUFBAUZEILE: Aufbauzeile = {
+  bereich: '',
+  schicht: '',
+  produkt: '',
+  verbrauch: '',
+  gesamtmenge: '',
+  charge: '',
+  flaeche: '',
 }
 
 /** Datum als `JJJJ-MM-TT` in Ortszeit – nicht über toISOString(), das rechnet auf UTC um. */
@@ -103,7 +128,7 @@ export function neuerBericht(
       ansprechpartner: '',
       telefon: '',
       awt: einstellungen.profil.name,
-      vertrieb: einstellungen.standardVertrieb,
+      vertrieb: '',
       zweck: '',
     },
     anwesende: [
@@ -113,13 +138,7 @@ export function neuerBericht(
         funktion: einstellungen.profil.funktion || EIGENE_FUNKTION,
       },
     ],
-    untergrund: {
-      art: '',
-      vorbereitung: '',
-      bemerkung: '',
-      restfeuchteCM: '',
-      haftzugfestigkeit: '',
-    },
+    untergrund: { ...LEERER_UNTERGRUND },
     klima: [],
     aufbau: [],
     text: { ...LEERER_TEXT },
@@ -140,6 +159,8 @@ export function berichtAuffuellen(bericht: Bericht): Bericht {
     ...bericht,
     text: { ...LEERER_TEXT, ...bericht.text },
     absender: { ...LEERES_PROFIL, ...bericht.absender },
+    untergrund: { ...LEERER_UNTERGRUND, ...bericht.untergrund },
+    aufbau: bericht.aufbau.map((zeile) => ({ ...LEERE_AUFBAUZEILE, ...zeile })),
   }
 }
 
@@ -148,6 +169,7 @@ export function einstellungenAuffuellen(gespeichert: unknown): Einstellungen {
   const alt = (gespeichert ?? {}) as Partial<Einstellungen> & {
     eigenerName?: string
     eigeneEmail?: string
+    produkte?: string[]
   }
 
   return {
@@ -157,9 +179,12 @@ export function einstellungenAuffuellen(gespeichert: unknown): Einstellungen {
       email: alt.eigeneEmail ?? '',
       ...alt.profil,
     },
-    standardVertrieb: alt.standardVertrieb ?? '',
-    standardEmpfaenger: alt.standardEmpfaenger ?? '',
-    produkte: Array.isArray(alt.produkte) ? alt.produkte : [],
+    // Aus der früheren, von Hand gepflegten Produktliste werden gemerkte Produkte.
+    gemerkteProdukte: Array.isArray(alt.gemerkteProdukte)
+      ? alt.gemerkteProdukte
+      : Array.isArray(alt.produkte)
+        ? alt.produkte
+        : [],
   }
 }
 
@@ -180,23 +205,6 @@ export function absenderzeilen(absender: Absender): string[] {
     verbinde([absender.strasse, absender.ort], ', '),
     verbinde([absender.telefon, absender.email], ' · '),
   ].filter(Boolean)
-}
-
-/**
- * Übernimmt die wiederkehrenden Kopfdaten aus einem älteren Bericht.
- * Berichtsnummer und Datum bleiben beim neuen Bericht – alles andere
- * spart dem Kollegen das Abtippen beim zweiten Besuch derselben Baustelle.
- */
-export function kopfUebernehmen(ziel: Bericht, vorlage: Bericht): Bericht {
-  return {
-    ...ziel,
-    kopf: {
-      ...vorlage.kopf,
-      berichtsnummer: ziel.kopf.berichtsnummer,
-      datum: ziel.kopf.datum,
-      zweck: ziel.kopf.zweck,
-    },
-  }
 }
 
 export type FehlendesPflichtfeld = {
@@ -236,4 +244,16 @@ export function fehlendePflichtfelder(bericht: Bericht): FehlendesPflichtfeld[] 
 /** Eindeutige Id. `crypto.randomUUID` gibt es in allen Zielbrowsern. */
 export function neueId(): string {
   return crypto.randomUUID()
+}
+
+/**
+ * Nimmt ein im Bericht eingetragenes Produkt in die gemerkte Liste auf.
+ * Groß- und Kleinschreibung zählt nicht – „sikafloor-264" und „Sikafloor-264"
+ * sind dasselbe Produkt, und zweimal in der Vorschlagsliste hilft niemandem.
+ */
+export function produktMerken(gemerkt: string[], produkt: string): string[] {
+  const sauber = produkt.trim()
+  if (!sauber) return gemerkt
+  if (gemerkt.some((eintrag) => eintrag.toLowerCase() === sauber.toLowerCase())) return gemerkt
+  return [...gemerkt, sauber].sort((a, b) => a.localeCompare(b, 'de'))
 }

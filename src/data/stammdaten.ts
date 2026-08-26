@@ -29,31 +29,21 @@ export const UNTERGRUND_VORBEREITUNGEN = [
 ] as const
 
 /**
- * Platzhalter-Produktliste. Der Nutzer kann sie in den Einstellungen
- * überschreiben; dann gilt seine Liste.
+ * Produktgruppen statt Produktliste.
+ *
+ * Sika führt rund 33.000 Produkte – eine mitgelieferte Liste wäre in dem
+ * Moment veraltet, in dem sie gebaut wird. Das Produkt wird deshalb im Bericht
+ * getippt; die Gruppe hilft nur beim Filtern der schon einmal benutzten Namen.
  */
-export const PRODUKTE: string[] = [
-  'Sikafloor-150',
-  'Sikafloor-151',
-  'Sikafloor-156',
-  'Sikafloor-161',
-  'Sikafloor-263 SL',
-  'Sikafloor-264',
-  'Sikafloor-266 CR',
-  'Sikafloor-269 CR',
-  'Sikafloor-315',
-  'Sikafloor-316',
-  'Sikafloor-325',
-  'Sikafloor-330',
-  'Sikafloor-390',
-  'Sikafloor-2530 W',
-  'Sikafloor-2540 W',
-  'Sikagard-720 EpoCem',
-  'Sika Level-30',
-  'SikaCor-277',
-  'Sikaflex-11 FC+',
-  'Sikadur-31 CF',
-]
+export const PRODUKTGRUPPEN = [
+  'Sikafloor',
+  'Sikagard',
+  'Sikalastic',
+  'SikaEpoCem',
+  'Sikaflex',
+  'Sikabond',
+  SONSTIGES,
+] as const
 
 /** Übliche Schichtbezeichnungen im Bodenaufbau – als Vorschlag, nicht als Zwang. */
 export const SCHICHTEN = [
@@ -64,6 +54,7 @@ export const SCHICHTEN = [
   'Deckversiegelung',
   'Einstreuung',
   'Hohlkehle',
+  'Fugendichtstoff',
   SONSTIGES,
 ] as const
 

@@ -54,6 +54,16 @@ export function UntergrundBlatt({ bericht, aendern }: BlattEigenschaften) {
         value={bericht.untergrund.haftzugfestigkeit}
         onChange={(e) => setze('haftzugfestigkeit', e.target.value)}
       />
+
+      <Textfeld
+        beschriftung="Rauhtiefe (mm)"
+        inputMode="decimal"
+        placeholder="z. B. 0,5"
+        value={bericht.untergrund.rauhtiefe}
+        onChange={(e) => setze('rauhtiefe', e.target.value)}
+      />
+
+      <p className="text-sika-grau text-sm">Nicht gemessene Werte stehen im Bericht als „k.A.".</p>
     </>
   )
 }

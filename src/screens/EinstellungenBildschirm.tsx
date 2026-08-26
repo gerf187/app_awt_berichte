@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Ansicht } from '../App'
 import { Knopf } from '../components/Knopf'
 import { Kopfzeile } from '../components/Kopfzeile'
-import { Textbereich, Textfeld } from '../components/Felder'
-import { EIGENE_FIRMA, EIGENE_FUNKTION, PRODUKTE } from '../data/stammdaten'
+import { Textfeld } from '../components/Felder'
+import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
 import { LEERE_EINSTELLUNGEN, alsDatumstext } from '../lib/bericht'
 import {
   alleDatenSichern,
@@ -26,14 +26,6 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
       setGeladen(true)
     })
   }, [])
-
-  function aendern(teil: Partial<Einstellungen>) {
-    setWerte((vorher) => {
-      const nachher = { ...vorher, ...teil }
-      void einstellungenSpeichern(nachher)
-      return nachher
-    })
-  }
 
   /** Einzelne Profilangabe ändern – der Rest des Profils bleibt stehen. */
   function aendernProfil(teil: Partial<Absender>) {
@@ -141,37 +133,6 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
             autoComplete="email"
           />
         </section>
-
-        <Textfeld
-          beschriftung="Standard-Vertriebskontakt"
-          value={werte.standardVertrieb}
-          onChange={(e) => aendern({ standardVertrieb: e.target.value })}
-        />
-        <Textfeld
-          beschriftung="Standard-Empfänger für den Versand"
-          type="email"
-          inputMode="email"
-          value={werte.standardEmpfaenger}
-          onChange={(e) => aendern({ standardEmpfaenger: e.target.value })}
-        />
-
-        <Textbereich
-          beschriftung="Eigene Produktliste"
-          hinweis="Ein Produkt pro Zeile. Leer lassen, um die mitgelieferte Liste zu verwenden."
-          rows={6}
-          value={werte.produkte.join('\n')}
-          onChange={(e) =>
-            aendern({
-              produkte: e.target.value
-                .split('\n')
-                .map((zeile) => zeile.trim())
-                .filter(Boolean),
-            })
-          }
-        />
-        <p className="text-sika-grau -mt-3 text-sm">
-          Mitgeliefert sind {PRODUKTE.length} Produkte.
-        </p>
 
         <section className="border-sika-schwarz/10 mt-2 flex flex-col gap-3 rounded-xl border-2 bg-white p-4">
           <h2 className="text-lg font-bold">Datensicherung</h2>

@@ -1,29 +1,75 @@
 import { useId, useState } from 'react'
-import { Knopf } from '../../components/Knopf'
 import { Auswahlfeld, Textfeld } from '../../components/Felder'
-import { SCHICHTEN } from '../../data/stammdaten'
-import { useProdukte } from '../../lib/useProdukte'
+import { Knopf } from '../../components/Knopf'
+import { PRODUKTGRUPPEN, SCHICHTEN, SONSTIGES } from '../../data/stammdaten'
+import { LEERE_AUFBAUZEILE } from '../../lib/bericht'
+import { useGemerkteProdukte } from '../../lib/useGemerkteProdukte'
+import {
+  gesamtmengeRechnen,
+  mengeAnzeigen,
+  verbrauchAnzeigen,
+  verbrauchLesen,
+  verbrauchRechnen,
+  verbrauchszeile,
+  zahlLesen,
+  zahlSchreiben,
+} from '../../lib/verbrauch'
 import type { Aufbauzeile } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
-const LEERE_ZEILE: Aufbauzeile = {
-  bereich: '',
-  schicht: '',
-  produkt: '',
-  verbrauch: '',
-  charge: '',
-  flaeche: '',
+/**
+ * Was gerade im Dialog steht.
+ *
+ * Verbrauch, Gesamtmenge und Fläche werden als getippter Text geführt, nicht
+ * als Zahl: Wer „1," eingetippt hat, ist mitten im Wort – da darf ihm nichts
+ * dazwischenrechnen. Erst beim Übernehmen wird umgerechnet und abgelegt.
+ */
+type Entwurf = {
+  index: number
+  zeile: Aufbauzeile
+  verbrauch: string
+  gesamtmenge: string
+  flaeche: string
+}
+
+function entwurfAus(index: number, zeile: Aufbauzeile): Entwurf {
+  return {
+    index,
+    zeile,
+    verbrauch: zeile.verbrauch,
+    gesamtmenge: zeile.gesamtmenge,
+    flaeche: zeile.flaeche,
+  }
 }
 
 export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
-  const produkte = useProdukte()
+  const { produkte, merken } = useGemerkteProdukte()
   const produktListeId = useId()
-  // Welche Zeile gerade im Dialog bearbeitet wird; -1 heißt „neue Zeile".
-  const [bearbeitet, setBearbeitet] = useState<{ index: number; zeile: Aufbauzeile } | null>(null)
+  // Nur ein Filter für die Vorschlagsliste – gespeichert wird die Gruppe nicht.
+  const [gruppe, setGruppe] = useState('')
+  // Welche Zeile gerade bearbeitet wird; -1 heißt „neue Zeile".
+  const [bearbeitet, setBearbeitet] = useState<Entwurf | null>(null)
+
+  /** Der Bereich der Zeile davor – auf einer Baustelle meist derselbe. */
+  const vorposition =
+    bearbeitet &&
+    (bearbeitet.index < 0
+      ? bericht.aufbau[bericht.aufbau.length - 1]?.bereich
+      : bericht.aufbau[bearbeitet.index - 1]?.bereich)
+
+  const kgProM2 = bearbeitet ? verbrauchLesen(bearbeitet.verbrauch) : null
+  const gesamtKg = bearbeitet ? zahlLesen(bearbeitet.gesamtmenge) : null
 
   function speichern() {
     if (!bearbeitet) return
-    const { index, zeile } = bearbeitet
+    const { index } = bearbeitet
+    const zeile: Aufbauzeile = {
+      ...bearbeitet.zeile,
+      flaeche: bearbeitet.flaeche.trim(),
+      verbrauch: kgProM2 !== null ? zahlSchreiben(kgProM2, 3) : '',
+      gesamtmenge: gesamtKg !== null ? zahlSchreiben(gesamtKg) : '',
+    }
+
     aendern((vorher) => ({
       ...vorher,
       aufbau:
@@ -31,6 +77,7 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
           ? [...vorher.aufbau, zeile]
           : vorher.aufbau.map((alt, stelle) => (stelle === index ? zeile : alt)),
     }))
+    merken(zeile.produkt)
     setBearbeitet(null)
   }
 
@@ -47,6 +94,65 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
     )
   }
 
+  /** Verbrauch getippt: die Gesamtmenge zieht nach, sobald die Fläche steht. */
+  function setzeVerbrauch(text: string) {
+    setBearbeitet((vorher) => {
+      if (!vorher) return vorher
+      const kg = verbrauchLesen(text)
+      const flaeche = zahlLesen(vorher.flaeche)
+      return {
+        ...vorher,
+        verbrauch: text,
+        gesamtmenge:
+          kg !== null && flaeche
+            ? zahlSchreiben(gesamtmengeRechnen(kg, flaeche))
+            : vorher.gesamtmenge,
+      }
+    })
+  }
+
+  /** Gesamtmenge getippt: der Verbrauch je m² wird daraus errechnet. */
+  function setzeGesamtmenge(text: string) {
+    setBearbeitet((vorher) => {
+      if (!vorher) return vorher
+      const gesamt = zahlLesen(text)
+      const flaeche = zahlLesen(vorher.flaeche)
+      const kg = gesamt !== null && flaeche ? verbrauchRechnen(gesamt, flaeche) : null
+      return {
+        ...vorher,
+        gesamtmenge: text,
+        verbrauch: kg !== null ? zahlSchreiben(kg, 3) : vorher.verbrauch,
+      }
+    })
+  }
+
+  /** Fläche geändert: der Verbrauch bleibt, die Gesamtmenge wird neu gerechnet. */
+  function setzeFlaeche(text: string) {
+    setBearbeitet((vorher) => {
+      if (!vorher) return vorher
+      const kg = verbrauchLesen(vorher.verbrauch)
+      const flaeche = zahlLesen(text)
+      return {
+        ...vorher,
+        flaeche: text,
+        gesamtmenge:
+          kg !== null && flaeche
+            ? zahlSchreiben(gesamtmengeRechnen(kg, flaeche))
+            : vorher.gesamtmenge,
+      }
+    })
+  }
+
+  const vorschlaege = produkte.filter((produkt) => {
+    if (!gruppe) return true
+    if (gruppe === SONSTIGES) {
+      return !PRODUKTGRUPPEN.some(
+        (name) => name !== SONSTIGES && produkt.toLowerCase().startsWith(name.toLowerCase()),
+      )
+    }
+    return produkt.toLowerCase().startsWith(gruppe.toLowerCase())
+  })
+
   return (
     <>
       {bericht.aufbau.length === 0 && (
@@ -61,7 +167,7 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
           >
             <button
               type="button"
-              onClick={() => setBearbeitet({ index, zeile })}
+              onClick={() => setBearbeitet(entwurfAus(index, zeile))}
               className="active:bg-sika-hell flex-1 p-4 text-left"
             >
               <span className="block text-lg font-semibold">{zeile.produkt || 'Ohne Produkt'}</span>
@@ -69,11 +175,7 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
                 {[zeile.bereich, zeile.schicht].filter(Boolean).join(' · ') || 'Ohne Bereich'}
               </span>
               <span className="text-sika-grau mt-1 block text-sm">
-                {[
-                  zeile.verbrauch && `${zeile.verbrauch} kg/m²`,
-                  zeile.flaeche && `${zeile.flaeche} m²`,
-                  zeile.charge && `Charge ${zeile.charge}`,
-                ]
+                {[verbrauchszeile(zeile), zeile.charge && `Charge ${zeile.charge}`]
                   .filter(Boolean)
                   .join(' · ')}
               </span>
@@ -90,7 +192,11 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
         ))}
       </ul>
 
-      <Knopf art="zweit" breit onClick={() => setBearbeitet({ index: -1, zeile: LEERE_ZEILE })}>
+      <Knopf
+        art="zweit"
+        breit
+        onClick={() => setBearbeitet(entwurfAus(-1, { ...LEERE_AUFBAUZEILE }))}
+      >
         + Aufbauzeile
       </Knopf>
 
@@ -106,49 +212,96 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
               {bearbeitet.index < 0 ? 'Neue Aufbauzeile' : 'Aufbauzeile ändern'}
             </h2>
 
-            <Textfeld
-              beschriftung="Bereich"
-              placeholder="z. B. Halle 1, Nassbereich"
-              value={bearbeitet.zeile.bereich}
-              onChange={(e) => feld('bereich', e.target.value)}
-            />
+            <div>
+              <Textfeld
+                beschriftung="Bereich"
+                placeholder="z. B. Halle 1, gesamtes Bauvorhaben"
+                value={bearbeitet.zeile.bereich}
+                onChange={(e) => feld('bereich', e.target.value)}
+              />
+              {vorposition && vorposition !== bearbeitet.zeile.bereich && (
+                <button
+                  type="button"
+                  onClick={() => feld('bereich', vorposition)}
+                  className="border-sika-schwarz/15 active:bg-sika-hell mt-2 rounded-xl border-2 px-3 py-2 text-sm font-semibold"
+                >
+                  wie Vorposition: {vorposition}
+                </button>
+              )}
+            </div>
+
             <Auswahlfeld
               beschriftung="Schicht"
               optionen={SCHICHTEN}
               value={bearbeitet.zeile.schicht}
               onChange={(e) => feld('schicht', e.target.value)}
             />
+
+            <Auswahlfeld
+              beschriftung="Produktgruppe"
+              hinweis="Grenzt nur die Vorschläge ein."
+              optionen={PRODUKTGRUPPEN}
+              platzhalter="Alle"
+              value={gruppe}
+              onChange={(e) => setGruppe(e.target.value)}
+            />
             <Textfeld
               beschriftung="Produkt"
-              hinweis="Aus der Liste wählen oder frei eintragen."
+              hinweis={
+                vorschlaege.length > 0
+                  ? 'Eintragen oder aus den zuletzt benutzten wählen.'
+                  : 'Eintragen – beim nächsten Mal steht das Produkt zur Auswahl.'
+              }
               list={produktListeId}
               value={bearbeitet.zeile.produkt}
               onChange={(e) => feld('produkt', e.target.value)}
             />
             <datalist id={produktListeId}>
-              {produkte.map((produkt) => (
+              {vorschlaege.map((produkt) => (
                 <option key={produkt} value={produkt} />
               ))}
             </datalist>
 
+            <Textfeld
+              beschriftung="Fläche (m²)"
+              inputMode="decimal"
+              value={bearbeitet.flaeche}
+              onChange={(e) => setzeFlaeche(e.target.value)}
+            />
+
             <div className="flex gap-3">
               <div className="flex-1">
                 <Textfeld
-                  beschriftung="Verbrauch (kg/m²)"
+                  beschriftung="Verbrauch"
+                  hinweis="kg/m² oder g/m²"
                   inputMode="decimal"
-                  value={bearbeitet.zeile.verbrauch}
-                  onChange={(e) => feld('verbrauch', e.target.value)}
+                  value={bearbeitet.verbrauch}
+                  onChange={(e) => setzeVerbrauch(e.target.value)}
                 />
               </div>
               <div className="flex-1">
                 <Textfeld
-                  beschriftung="Fläche (m²)"
+                  beschriftung="Gesamtmenge"
+                  hinweis="kg"
                   inputMode="decimal"
-                  value={bearbeitet.zeile.flaeche}
-                  onChange={(e) => feld('flaeche', e.target.value)}
+                  value={bearbeitet.gesamtmenge}
+                  onChange={(e) => setzeGesamtmenge(e.target.value)}
                 />
               </div>
             </div>
+
+            {/* Zeigt, wie die Eingabe verstanden wurde – die Einheit springt selbst um. */}
+            {(kgProM2 !== null || gesamtKg !== null) && (
+              <p className="text-sika-grau -mt-2 text-sm font-semibold">
+                Im Bericht:{' '}
+                {[
+                  kgProM2 !== null ? verbrauchAnzeigen(kgProM2) : '',
+                  gesamtKg !== null ? `gesamt ${mengeAnzeigen(gesamtKg)}` : '',
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            )}
 
             <Textfeld
               beschriftung="Charge"

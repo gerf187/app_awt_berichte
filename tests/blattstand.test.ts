@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { LEERE_EINSTELLUNGEN, fehlendePflichtfelder, neuerBericht } from '../src/lib/bericht'
+import {
+  LEERE_AUFBAUZEILE,
+  LEERE_EINSTELLUNGEN,
+  fehlendePflichtfelder,
+  neuerBericht,
+} from '../src/lib/bericht'
 import { blattStand } from '../src/lib/blattstand'
 import { klimaBerechnen } from '../src/lib/taupunkt'
 import type { Bericht, BlattId } from '../src/lib/typen'
@@ -63,16 +68,7 @@ describe('blattStand', () => {
     expect(stand(bericht, 'fragen')).toEqual({ art: 'neutral', text: 'nichts offen' })
 
     bericht.text.offeneFragen = 'Wer stellt die Bauheizung?'
-    bericht.aufbau = [
-      {
-        bereich: 'EG',
-        schicht: 'Grundierung',
-        produkt: '',
-        verbrauch: '',
-        charge: '',
-        flaeche: '',
-      },
-    ]
+    bericht.aufbau = [{ ...LEERE_AUFBAUZEILE, bereich: 'EG', schicht: 'Grundierung' }]
 
     expect(stand(bericht, 'fragen')).toEqual({ art: 'neutral', text: 'notiert' })
     expect(stand(bericht, 'aufbau')).toEqual({ art: 'neutral', text: '1 Zeile' })

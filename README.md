@@ -13,6 +13,9 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 - Fotos direkt aus der Kamera, automatisch verkleinert
 - Freitexte und Bildbeschreibungen können diktiert werden (wenn das Handy es
   unterstützt)
+- **Verbrauch rechnet mit.** Verbrauch je m² oder Gesamtmenge eintragen – das
+  andere ergibt sich aus der Fläche. Die Einheit springt selbst um: 1,2 kg/m²,
+  200 g/m².
 - Unterschrift mit dem Finger
 - Ausgabe als PDF und als Word-Datei, Versand über die Teilen-Funktion des Handys
 - **Alles bleibt auf Ihrem Gerät.** Die App schickt keine Daten irgendwohin.
@@ -47,6 +50,8 @@ Blätter, auf denen nichts Pflicht ist, tragen kein Zeichen.
 - Über **Einstellungen → Mein Profil** tragen Sie einmal Ihre Daten ein. Sie
   stehen danach in jedem neuen Bericht unter „Anwesende" und in der
   Adresszeile.
+- Produkte werden im Bericht von Hand eingetragen. Was Sie einmal eingetragen
+  haben, merkt sich die App und bietet es beim nächsten Mal zur Auswahl an.
 
 ## Daten sichern
 
