@@ -79,6 +79,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
+    // Tests liegen in `tests/`; nur `src/utils/` bringt seine eigenen mit –
+    // dort steht reine Logik direkt neben ihrer Prüfung.
+    include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
   },
 })

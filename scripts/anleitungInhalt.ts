@@ -231,7 +231,7 @@ export const KAPITEL: Kapitel[] = [
         'Alles, was Sie gemessen haben. Mit „+ Prüfung" kommt eine Karte dazu: oben wählen Sie die Prüfung aus der Liste, darunter tragen Sie die Einzelwerte ein.',
       ),
       punkte(
-        'Zur Auswahl stehen Haftzugfestigkeit, Rauhtiefe, Restfeuchte (CM), LP-Gehalt, Ausbreitmaß (Hägermanntisch) und Schichtdicke. „Sonstiges" öffnet ein Feld für alles andere.',
+        'Zur Auswahl stehen Haftzugfestigkeit, Rauhtiefe, Restfeuchte (CM), LP-Gehalt, Ausbreitmaß (Hägemanntisch) und Schichtdicke. „Sonstiges" öffnet ein Feld für alles andere.',
         'Die Einheit ist vorbelegt und lässt sich überschreiben.',
         '„+ Wert" legt eine weitere Messstelle an – beim Haftzug sind drei üblich, bei der Schichtdicke werden es schnell mehr.',
         'Ab zwei Werten zeigt die App den Mittelwert; er steht auch im fertigen Bericht.',
@@ -283,6 +283,18 @@ export const KAPITEL: Kapitel[] = [
       ),
       absatz(
         'Unter „Offene Fragen" steht, was am Besuchstag nicht geklärt wurde: wer liefert, wer entscheidet, worauf gewartet wird. Bleibt ein Feld leer, taucht der Abschnitt im Dokument gar nicht erst auf.',
+      ),
+      zwischentitel('Text glätten'),
+      absatz(
+        'Unter jedem Feld steht „✨ Text glätten". Ein Tipp darauf macht aus dem Diktat lesbaren Text: Aus „Komma" wird ein Komma, aus „neuer Absatz" ein Absatz, aus „3 Komma 5" wird 3,5. Füllwörter wie „ähm" fallen weg, Satzanfänge werden großgeschrieben.',
+      ),
+      punkte(
+        'Messwerte, Einheiten und Produktnamen bleiben unangetastet – „1,8 N/mm²" und „Sikafloor-264" gehen nicht verloren.',
+        'Der Knopf wechselt danach auf „↩ Rückgängig" und stellt Ihren Text wieder her, solange Sie nichts weitergeschrieben haben.',
+        'Von selbst passiert das nie. Sie entscheiden, ob der Text angefasst wird.',
+      ),
+      hinweis(
+        'Das Glätten rechnet im Handy, ohne Internet. Beim Diktieren selbst ist das anders: Die Spracherkennung ist Sache des Browsers und läuft je nach Gerät über dessen Server.',
       ),
       hinweis(
         'Mindestens einer der ersten vier Abschnitte muss ausgefüllt sein, sonst fehlt dem Bericht die Aussage. Eine offene Frage allein genügt dafür nicht.',

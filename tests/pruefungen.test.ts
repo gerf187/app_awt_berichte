@@ -16,7 +16,7 @@ function pruefung(teil: Partial<Pruefung> = {}): Pruefung {
 describe('standardEinheit', () => {
   it('kennt die Einheit der bekannten Prüfungen', () => {
     expect(standardEinheit('Haftzugfestigkeit')).toBe('N/mm²')
-    expect(standardEinheit('Ausbreitmaß (Hägermanntisch)')).toBe('mm')
+    expect(standardEinheit('Ausbreitmaß (Hägemanntisch)')).toBe('mm')
   })
 
   it('lässt Selbstgeschriebenes ohne Einheit', () => {

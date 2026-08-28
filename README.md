@@ -16,6 +16,10 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 - Fotos direkt aus der Kamera, automatisch verkleinert
 - Freitexte und Bildbeschreibungen können diktiert werden (wenn das Handy es
   unterstützt)
+- **„Text glätten"** macht aus dem Diktat lesbaren Text: gesprochene
+  Satzzeichen, Absätze, „3 Komma 5" → 3,5, Füllwörter raus. Nur auf
+  Knopfdruck, mit „Rückgängig", und es rechnet im Handy – ohne Internet.
+  Messwerte und Produktnamen bleiben unangetastet.
 - **Verbrauch rechnet mit.** Verbrauch je m² oder Gesamtmenge eintragen – das
   andere ergibt sich aus der Fläche. Die Einheit springt selbst um: 1,2 kg/m²,
   200 g/m².

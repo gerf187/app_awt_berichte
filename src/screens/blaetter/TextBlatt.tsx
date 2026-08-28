@@ -1,5 +1,6 @@
 import { Textbereich } from '../../components/Felder'
 import { Spracheingabe } from '../../components/Spracheingabe'
+import { TextGlaetten } from '../../components/TextGlaetten'
 import type { Berichtstext } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
@@ -35,22 +36,27 @@ export function TextBlatt({ bericht, aendern }: BlattEigenschaften) {
   return (
     <>
       {FELDER.map((feld) => (
-        <Textbereich
-          key={feld.name}
-          beschriftung={feld.beschriftung}
-          hinweis={feld.hinweis}
-          rows={5}
-          value={bericht.text[feld.name]}
-          onChange={(e) => setze(feld.name, e.target.value)}
-          nebenBeschriftung={
-            <Spracheingabe
-              anhaengen={(gesprochen) => {
-                const bisher = bericht.text[feld.name]
-                setze(feld.name, bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
-              }}
-            />
-          }
-        />
+        <div key={feld.name} className="flex flex-col gap-1">
+          <Textbereich
+            beschriftung={feld.beschriftung}
+            hinweis={feld.hinweis}
+            rows={5}
+            value={bericht.text[feld.name]}
+            onChange={(e) => setze(feld.name, e.target.value)}
+            nebenBeschriftung={
+              <Spracheingabe
+                anhaengen={(gesprochen) => {
+                  const bisher = bericht.text[feld.name]
+                  setze(feld.name, bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
+                }}
+              />
+            }
+          />
+          <TextGlaetten
+            wert={bericht.text[feld.name]}
+            setzen={(text) => setze(feld.name, text)}
+          />
+        </div>
       ))}
     </>
   )

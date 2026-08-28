@@ -40,7 +40,7 @@ export const PRUEFUNGEN = [
   { art: 'Rauhtiefe', einheit: 'mm' },
   { art: 'Restfeuchte (CM)', einheit: 'CM-%' },
   { art: 'LP-Gehalt', einheit: '%' },
-  { art: 'Ausbreitmaß (Hägermanntisch)', einheit: 'mm' },
+  { art: 'Ausbreitmaß (Hägemanntisch)', einheit: 'mm' },
   { art: 'Schichtdicke', einheit: 'mm' },
 ] as const
 

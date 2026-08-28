@@ -1,6 +1,7 @@
 import { Knopf } from '../../components/Knopf'
 import { Textbereich, Textfeld } from '../../components/Felder'
 import { Spracheingabe } from '../../components/Spracheingabe'
+import { TextGlaetten } from '../../components/TextGlaetten'
 import type { BlattEigenschaften } from './liste'
 
 export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
@@ -33,21 +34,24 @@ export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
 
   return (
     <>
-      <Textbereich
-        beschriftung="Zweck des Besuchs"
-        hinweis="Warum waren Sie auf der Baustelle?"
-        rows={4}
-        value={bericht.kopf.zweck}
-        onChange={(e) => setzeZweck(e.target.value)}
-        nebenBeschriftung={
-          <Spracheingabe
-            anhaengen={(gesprochen) => {
-              const bisher = bericht.kopf.zweck
-              setzeZweck(bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
-            }}
-          />
-        }
-      />
+      <div className="flex flex-col gap-1">
+        <Textbereich
+          beschriftung="Zweck des Besuchs"
+          hinweis="Warum waren Sie auf der Baustelle?"
+          rows={4}
+          value={bericht.kopf.zweck}
+          onChange={(e) => setzeZweck(e.target.value)}
+          nebenBeschriftung={
+            <Spracheingabe
+              anhaengen={(gesprochen) => {
+                const bisher = bericht.kopf.zweck
+                setzeZweck(bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
+              }}
+            />
+          }
+        />
+        <TextGlaetten wert={bericht.kopf.zweck} setzen={setzeZweck} />
+      </div>
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-bold">Anwesende</h2>

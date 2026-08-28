@@ -128,7 +128,7 @@ Alle Auswahllisten liegen zentral in **einer** Datei `src/data/stammdaten.ts`.
 
 **Keine Produktliste.** Sika führt rund 33.000 Produkte – jede mitgelieferte Auswahl wäre die falsche. Das Produkt wird im Bericht getippt; die App merkt sich, was schon einmal eingetragen wurde, und bietet es beim nächsten Mal an (`Einstellungen.gemerkteProdukte`).
 
-**Auswahlliste Prüfungen** (mit vorbelegter Einheit): Haftzugfestigkeit (N/mm²), Rauhtiefe (mm), Restfeuchte (CM) (CM-%), LP-Gehalt (%), Ausbreitmaß (Hägermanntisch) (mm), Schichtdicke (mm), Sonstiges.
+**Auswahlliste Prüfungen** (mit vorbelegter Einheit): Haftzugfestigkeit (N/mm²), Rauhtiefe (mm), Restfeuchte (CM) (CM-%), LP-Gehalt (%), Ausbreitmaß (Hägemanntisch) (mm), Schichtdicke (mm), Sonstiges.
 
 ---
 
@@ -152,6 +152,7 @@ Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Pflichtang
    - **Chargen**: eine Nummer je Komponente (`Komp. A`, `Komp. B`, …), „+ Komponente" legt eine weitere an. Zwei- bis vierkomponentige Gebinde sind der Normalfall; im Schadensfall wird nach genau diesen Nummern gefragt.
    - **Verbrauch und Gesamtmenge** (`src/lib/verbrauch.ts`): Eingetragen wird das eine oder das andere, die App rechnet über die Fläche um. Gespeichert wird immer in kg/m². Die Einheit springt automatisch: Eingaben ab 10 sind g/m² gemeint (200 → 0,2 kg/m²), darunter kg/m². Angezeigt wird nach Praxis – unter 1,00 kg in g/m², darüber in kg/m².
 8. **Bericht & Feststellungen** – fünf Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel, Empfehlung und **offene Fragen**. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden). Leere Felder erscheinen im Dokument nicht. Pflicht ist einer der ersten vier Abschnitte – eine offene Frage allein ersetzt keinen Bericht.
+   - **„Text glätten"** unter jedem mehrzeiligen Feld (`src/utils/cleanDictation.ts`, `src/components/TextGlaetten.tsx`): gesprochene Satzzeichen („Komma", „neuer Absatz"), Dezimalzahlen („3 Komma 5" → 3,5), Füllwörter (`FILLER_WORDS`), Abstände und Satzanfänge. **Reine Funktion, kein Netz, keine Bibliothek** – Berichtstexte enthalten Kundendaten. Messwerte, Einheiten, Produktnamen und Großbuchstaben bleiben unverändert; zweimal angewendet ändert sich nichts mehr. Ausgelöst wird nur auf Knopfdruck, danach wird derselbe Knopf zu **„Rückgängig"** (solange der geglättete Text unverändert im Feld steht).
 10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto, ebenfalls mit Spracheingabe. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
 11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**. Eine erfolgreiche Ausgabe setzt den Bericht **selbst auf „Abgeschlossen"** (abgebrochenes Teilen nicht); von Hand umstellen geht weiterhin. Ganz unten führen zwei Schaltflächen zu „Meine Berichte" und zur Startseite.
 
