@@ -3,7 +3,10 @@ import type { Stand } from '../lib/blattstand'
 import type { BlattId } from '../lib/typen'
 import { BlattZeichen } from './BlattZeichen'
 
-export type Reiter = { id: BlattId; kurz: string; stand: Stand }
+/** Der letzte Reiter führt aus den Blättern heraus in die Kachelübersicht. */
+export type ReiterId = BlattId | 'uebersicht'
+
+export type Reiter = { id: ReiterId; kurz: string; stand: Stand }
 
 /**
  * Waagerecht scrollbare Reiterleiste über dem Blatt.
@@ -17,8 +20,8 @@ export function Reiterleiste({
   waehle,
 }: {
   reiter: Reiter[]
-  aktiv: BlattId
-  waehle: (id: BlattId) => void
+  aktiv: ReiterId
+  waehle: (id: ReiterId) => void
 }) {
   const leiste = useRef<HTMLDivElement>(null)
 

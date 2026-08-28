@@ -13,7 +13,13 @@ import {
   einstellungenSpeichern,
   istSicherung,
 } from '../lib/db'
-import { MAX_VORLAGE_BYTES, VorlagenFehler, groesseAnzeigen, vorlageEinlesen } from '../lib/vorlage'
+import {
+  MAX_VORLAGE_BYTES,
+  SIKA_RAENDER,
+  VorlagenFehler,
+  groesseAnzeigen,
+  vorlageEinlesen,
+} from '../lib/vorlage'
 import type { Absender, Briefvorlage, Einstellungen } from '../lib/typen'
 
 export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => void }) {
@@ -284,6 +290,19 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
                 />
               </div>
 
+              {/* Die Maße der Sika-Vorlage sind bekannt – niemand muss sie
+                  erraten. Verstellen lassen sie sich trotzdem. */}
+              <Knopf
+                art="still"
+                breit
+                onClick={() => {
+                  aendernVorlage({ ...SIKA_RAENDER })
+                  setVorlagenMeldung('Maße der Sika-Vorlage übernommen.')
+                }}
+              >
+                Maße der Sika-Vorlage übernehmen
+              </Knopf>
+
               {vorlage.seiten === 1 && (
                 <label className="tippziel flex items-center gap-3">
                   <input
@@ -321,7 +340,7 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
           <input
             ref={vorlagenFeld}
             type="file"
-            accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
+            accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg,.docx,.doc"
             className="hidden"
             onChange={(e) => {
               const datei = e.target.files?.[0]
@@ -332,7 +351,7 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
 
           <p className="text-sika-grau text-sm">
             PDF, PNG oder JPEG, höchstens {groesseAnzeigen(MAX_VORLAGE_BYTES)}, am besten eine
-            A4-Seite.
+            A4-Seite. Eine Word-Vorlage vorher in Word als PDF speichern.
           </p>
 
           {vorlagenMeldung && (
@@ -371,6 +390,18 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
               {meldung}
             </p>
           )}
+        </section>
+
+        {/* --- OneDrive ----------------------------------------------------
+            Die Frage kommt von jedem Kollegen: Der Platz dafür ist hier – und
+            solange der Zugang fehlt, steht wenigstens da, warum. */}
+        <section className="border-sika-schwarz/10 flex flex-col gap-3 rounded-xl border-2 bg-white p-4">
+          <h2 className="text-lg font-bold">OneDrive</h2>
+          <p className="text-sika-grau text-sm">
+            Noch nicht angebunden. Damit die App Berichte in OneDrive ablegen darf, muss sie in der
+            Sika-Umgebung angemeldet werden – das geht nur zusammen mit der Sika-IT und ist in
+            Arbeit. Bis dahin ist die Sicherung oben der Weg, Berichte vom Gerät zu bekommen.
+          </p>
         </section>
 
         {/* --- Anleitung ---------------------------------------------------- */}

@@ -4,6 +4,7 @@
  */
 
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
+import { pruefungAuffuellen } from './pruefungen'
 import { vorlageAuffuellen } from './vorlage'
 import type {
   Absender,
@@ -12,6 +13,7 @@ import type {
   Berichtstext,
   BlattId,
   Einstellungen,
+  Pruefung,
   Untergrund,
 } from './typen'
 
@@ -42,9 +44,6 @@ export const LEERER_UNTERGRUND: Untergrund = {
   art: '',
   vorbereitung: '',
   bemerkung: '',
-  restfeuchteCM: '',
-  haftzugfestigkeit: '',
-  rauhtiefe: '',
 }
 
 export const LEERE_AUFBAUZEILE: Aufbauzeile = {
@@ -53,7 +52,7 @@ export const LEERE_AUFBAUZEILE: Aufbauzeile = {
   produkt: '',
   verbrauch: '',
   gesamtmenge: '',
-  charge: '',
+  chargen: [''],
   flaeche: '',
 }
 
@@ -122,7 +121,6 @@ export function neuerBericht(
       projekt: '',
       objektStrasse: '',
       objektOrt: '',
-      kunde: '',
       verarbeiter: '',
       verarbeiterStrasse: '',
       verarbeiterOrt: '',
@@ -140,6 +138,7 @@ export function neuerBericht(
       },
     ],
     untergrund: { ...LEERER_UNTERGRUND },
+    pruefungen: [],
     klima: [],
     aufbau: [],
     text: { ...LEERER_TEXT },
@@ -148,21 +147,70 @@ export function neuerBericht(
   }
 }
 
+/** Wie der Untergrund aussah, bevor es das Blatt „Prüfungen" gab. */
+type AlterUntergrund = Untergrund & {
+  restfeuchteCM?: string
+  haftzugfestigkeit?: string
+  rauhtiefe?: string
+}
+
+/**
+ * Aus den früheren Messwerten am Untergrund werden Prüfungen.
+ *
+ * Restfeuchte, Haftzug und Rauhtiefe standen einmal als drei einzelne Felder im
+ * Untergrund. Sie sind jetzt Prüfungen wie alle anderen – die schon erfassten
+ * Werte dürfen dabei nicht verloren gehen.
+ */
+function pruefungenAusUntergrund(untergrund: AlterUntergrund): Pruefung[] {
+  const alt: [string | undefined, string, string][] = [
+    [untergrund.haftzugfestigkeit, 'Haftzugfestigkeit', 'N/mm²'],
+    [untergrund.rauhtiefe, 'Rauhtiefe', 'mm'],
+    [untergrund.restfeuchteCM, 'Restfeuchte (CM)', 'CM-%'],
+  ]
+  return alt
+    .filter(([wert]) => wert?.trim())
+    .map(([wert, art, einheit]) => ({ art, einheit, werte: [wert!.trim()], bemerkung: '' }))
+}
+
 /**
  * Ergänzt Felder, die es beim Speichern des Berichts noch nicht gab.
  *
  * Berichte liegen so in der Datenbank, wie sie geschrieben wurden – ein Bericht
- * von vorletzter Woche kennt „Offene Fragen" und die Absenderzeile nicht. Statt
- * die Datenbank umzuschreiben, wird beim Lesen aufgefüllt.
+ * von vorletzter Woche kennt weder Prüfungen noch mehrere Chargen. Statt die
+ * Datenbank umzuschreiben, wird beim Lesen aufgefüllt.
  */
 export function berichtAuffuellen(bericht: Bericht): Bericht {
+  const untergrund = { ...LEERER_UNTERGRUND, ...bericht.untergrund } as AlterUntergrund
+
   return {
     ...bericht,
     text: { ...LEERER_TEXT, ...bericht.text },
     absender: { ...LEERES_PROFIL, ...bericht.absender },
-    untergrund: { ...LEERER_UNTERGRUND, ...bericht.untergrund },
-    aufbau: bericht.aufbau.map((zeile) => ({ ...LEERE_AUFBAUZEILE, ...zeile })),
+    // Die alten Messwertfelder fallen weg, statt als Altlast mitzureisen.
+    untergrund: {
+      art: untergrund.art,
+      vorbereitung: untergrund.vorbereitung,
+      bemerkung: untergrund.bemerkung,
+    },
+    pruefungen: Array.isArray(bericht.pruefungen)
+      ? bericht.pruefungen.map(pruefungAuffuellen)
+      : pruefungenAusUntergrund(untergrund),
+    aufbau: bericht.aufbau.map(aufbauzeileAuffuellen),
   }
+}
+
+/** Eine Aufbauzeile aus der Zeit, als es nur eine Chargennummer gab. */
+type AlteAufbauzeile = Aufbauzeile & { charge?: string }
+
+function aufbauzeileAuffuellen(zeile: AlteAufbauzeile): Aufbauzeile {
+  const gefuellt = { ...LEERE_AUFBAUZEILE, ...zeile }
+  const chargen = Array.isArray(zeile.chargen)
+    ? zeile.chargen
+    : zeile.charge
+      ? [zeile.charge]
+      : ['']
+  const { charge: _alt, ...rest } = { ...gefuellt, chargen }
+  return rest
 }
 
 /** Dasselbe für die Einstellungen: vor dem Profil standen Name und Mail einzeln da. */
@@ -231,8 +279,8 @@ export function fehlendePflichtfelder(bericht: Bericht): FehlendesPflichtfeld[] 
   if (bericht.klima.length === 0)
     fehlt.push({ feld: 'Mindestens eine Klimamessung', blatt: 'klima' })
 
-  // „Offene Fragen" zählt hier bewusst nicht mit: das ist ein eigenes Blatt und
-  // ersetzt keinen Bericht darüber, was auf der Baustelle passiert ist.
+  // „Offene Fragen" zählt hier bewusst nicht mit: eine offene Frage ersetzt
+  // keinen Bericht darüber, was auf der Baustelle passiert ist.
   const hatText = [
     bericht.text.ausgefuehrteArbeiten,
     bericht.text.besprochenes,

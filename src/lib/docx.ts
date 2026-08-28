@@ -18,7 +18,9 @@ import {
   VerticalPositionRelativeFrom,
   WidthType,
 } from 'docx'
+import { chargenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
+import { ausgefuellte, mittelwertText, werteText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { A4, satzspiegel } from './vorlage'
@@ -67,6 +69,7 @@ export async function docxErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pr
     ...kopfdaten(bericht),
     ...anwesende(bericht),
     ...untergrund(bericht),
+    ...pruefungen(bericht),
     ...klima(bericht),
     ...aufbau(bericht),
     ...freitexte(bericht),
@@ -252,7 +255,6 @@ function kopfdaten(bericht: Bericht): (Paragraph | Table)[] {
     ['Datum', alsAnzeigedatum(bericht.kopf.datum)],
     ['Projekt / Bauvorhaben', bericht.kopf.projekt],
     ['Objekt', [bericht.kopf.objektStrasse, bericht.kopf.objektOrt].filter(Boolean).join(', ')],
-    ['Kunde', bericht.kopf.kunde],
     ['Verarbeiter', bericht.kopf.verarbeiter],
     [
       'Verarbeiter-Anschrift',
@@ -315,16 +317,29 @@ function untergrund(bericht: Bericht): (Paragraph | Table)[] {
     ] as [string, string][]
   ).filter(([, wert]) => wert.trim())
 
-  // Nicht gemessen heißt „k.A." – eine fehlende Zeile lässt den Leser rätseln.
-  const messwerte = (
-    [
-      ['Restfeuchte (CM-%)', bericht.untergrund.restfeuchteCM],
-      ['Haftzugfestigkeit (N/mm²)', bericht.untergrund.haftzugfestigkeit],
-      ['Rauhtiefe (mm)', bericht.untergrund.rauhtiefe],
-    ] as [string, string][]
-  ).map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.'])
+  if (beschreibung.length === 0) return []
+  return [ueberschrift('Untergrund'), tabelle(beschreibung, false)]
+}
 
-  return [ueberschrift('Untergrund'), tabelle([...beschreibung, ...messwerte], false)]
+/** Gemessene Werte – ungemessene Prüfungen stehen gar nicht erst im Bericht. */
+function pruefungen(bericht: Bericht): (Paragraph | Table)[] {
+  const gemessen = ausgefuellte(bericht.pruefungen)
+  if (gemessen.length === 0) return []
+  return [
+    ueberschrift('Prüfungen'),
+    tabelle(
+      [
+        ['Prüfung', 'Einzelwerte', 'Mittelwert', 'Bemerkung'],
+        ...gemessen.map((pruefung) => [
+          pruefung.art,
+          werteText(pruefung),
+          mittelwertText(pruefung),
+          pruefung.bemerkung,
+        ]),
+      ],
+      true,
+    ),
+  ]
 }
 
 function klima(bericht: Bericht): (Paragraph | Table)[] {
@@ -372,7 +387,7 @@ function aufbau(bericht: Bericht): (Paragraph | Table)[] {
     ueberschrift('Aufbau'),
     tabelle(
       [
-        ['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Charge'],
+        ['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Chargen'],
         ...bericht.aufbau.map((zeile) => [
           zeile.bereich,
           zeile.schicht,
@@ -380,7 +395,7 @@ function aufbau(bericht: Bericht): (Paragraph | Table)[] {
           verbrauchText(zeile.verbrauch),
           zeile.flaeche ? `${zeile.flaeche} m²` : '',
           mengeText(zeile.gesamtmenge),
-          zeile.charge,
+          chargenText(zeile.chargen),
         ]),
       ],
       true,

@@ -1,6 +1,8 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { chargenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
+import { ausgefuellte, mittelwertText, werteText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { A4, bildformat, bytesAusDataUrl, satzspiegel, vorlagenseiteFuer } from './vorlage'
@@ -127,7 +129,6 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
     ['Datum', alsAnzeigedatum(bericht.kopf.datum)],
     ['Projekt / Bauvorhaben', bericht.kopf.projekt],
     ['Objekt', [bericht.kopf.objektStrasse, bericht.kopf.objektOrt].filter(Boolean).join(', ')],
-    ['Kunde', bericht.kopf.kunde],
     ['Verarbeiter', bericht.kopf.verarbeiter],
     [
       'Verarbeiter-Anschrift',
@@ -186,26 +187,37 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
   }
 
   // --- Untergrund -------------------------------------------------------
-  // Messwerte stehen auch dann im Bericht, wenn nicht gemessen wurde: „k.A." ist
-  // eine Aussage, eine fehlende Zeile lässt den Leser rätseln.
   const untergrundPaare: [string, string][] = [
     ['Art', bericht.untergrund.art],
     ['Vorbereitung', bericht.untergrund.vorbereitung],
     ['Bemerkung', bericht.untergrund.bemerkung],
   ].filter(([, wert]) => wert.trim()) as [string, string][]
 
-  const messwerte: [string, string][] = [
-    ['Restfeuchte (CM-%)', bericht.untergrund.restfeuchteCM],
-    ['Haftzugfestigkeit (N/mm²)', bericht.untergrund.haftzugfestigkeit],
-    ['Rauhtiefe (mm)', bericht.untergrund.rauhtiefe],
-  ].map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.']) as [string, string][]
+  if (untergrundPaare.length > 0) {
+    ueberschrift('Untergrund')
+    tabelle({
+      body: untergrundPaare,
+      theme: 'grid',
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
+    })
+  }
 
-  ueberschrift('Untergrund')
-  tabelle({
-    body: [...untergrundPaare, ...messwerte],
-    theme: 'grid',
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
-  })
+  // --- Prüfungen --------------------------------------------------------
+  // Nur, was wirklich gemessen wurde. Eine Zeile „k.A." hilft niemandem; dass
+  // etwas nicht geprüft wurde, sagt das Fehlen der Zeile deutlich genug.
+  const pruefungen = ausgefuellte(bericht.pruefungen)
+  if (pruefungen.length > 0) {
+    ueberschrift('Prüfungen')
+    tabelle({
+      head: [['Prüfung', 'Einzelwerte', 'Mittelwert', 'Bemerkung']],
+      body: pruefungen.map((pruefung) => [
+        pruefung.art,
+        werteText(pruefung),
+        mittelwertText(pruefung),
+        pruefung.bemerkung,
+      ]),
+    })
+  }
 
   // --- Klimawerte -------------------------------------------------------
   if (bericht.klima.length > 0) {
@@ -250,7 +262,7 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
   if (bericht.aufbau.length > 0) {
     ueberschrift('Aufbau')
     tabelle({
-      head: [['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Charge']],
+      head: [['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Chargen']],
       body: bericht.aufbau.map((zeile) => [
         zeile.bereich,
         zeile.schicht,
@@ -258,7 +270,7 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
         verbrauchText(zeile.verbrauch),
         zeile.flaeche && `${zeile.flaeche} m²`,
         mengeText(zeile.gesamtmenge),
-        zeile.charge,
+        chargenText(zeile.chargen),
       ]),
     })
   }

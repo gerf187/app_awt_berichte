@@ -33,7 +33,12 @@ async function datei(bericht: Bericht, format: Format): Promise<File> {
   return new File([blob], dateiname(bericht, format), { type: blob.type })
 }
 
-export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaften) {
+export function AbschlussBlatt({
+  bericht,
+  aendern,
+  zeigeBlatt,
+  zeigeAnsicht,
+}: BlattEigenschaften) {
   const [laeuft, setLaeuft] = useState<'' | Format | 'versand'>('')
   const [meldung, setMeldung] = useState('')
   const [mailAdresse, setMailAdresse] = useState('')
@@ -47,13 +52,34 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
   const fehlt = fehlendePflichtfelder(bericht)
   const zeilen = absenderzeilen(bericht.absender)
 
+  /**
+   * Ein ausgegebener Bericht ist fertig.
+   *
+   * Wer eine PDF erzeugt oder den Bericht verschickt, hat ihn abgegeben – dass
+   * er danach noch von Hand auf „abgeschlossen" gestellt werden muss, hat auf
+   * der Baustelle noch nie jemand gemacht. Rückgängig geht es unten trotzdem.
+   */
+  function abschliessen() {
+    aendern((vorher) =>
+      vorher.status === 'Abgeschlossen' ? vorher : { ...vorher, status: 'Abgeschlossen' },
+    )
+  }
+
+  /** „… wurde erzeugt." plus der Hinweis, dass der Bericht damit steht. */
+  function mitStatus(text: string): string {
+    return bericht.status === 'Abgeschlossen'
+      ? text
+      : `${text} Der Bericht gilt damit als abgeschlossen.`
+  }
+
   async function erzeugen(format: Format) {
     setLaeuft(format)
     setMeldung('')
     try {
       const fertig = await datei(bericht, format)
       herunterladen(fertig, fertig.name)
-      setMeldung(`${fertig.name} wurde erzeugt.`)
+      setMeldung(mitStatus(`${fertig.name} wurde erzeugt.`))
+      abschliessen()
     } catch {
       setMeldung('Die Datei konnte nicht erzeugt werden.')
     } finally {
@@ -71,7 +97,9 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
       // Erster Weg: das Handy teilt die Datei direkt.
       if (kannDateiTeilen(fertig)) {
         const geteilt = await dateiTeilen(fertig, betreff(bericht), mailtext(bericht, false))
-        setMeldung(geteilt ? 'Bericht wurde geteilt.' : 'Teilen wurde abgebrochen.')
+        // Abgebrochen heißt: nichts ist rausgegangen – dann bleibt es ein Entwurf.
+        setMeldung(geteilt ? mitStatus('Bericht wurde geteilt.') : 'Teilen wurde abgebrochen.')
+        if (geteilt) abschliessen()
         return
       }
 
@@ -79,8 +107,11 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
       herunterladen(fertig, fertig.name)
       setMailAdresse(mailtoAdresse(bericht))
       setMeldung(
-        `${fertig.name} wurde heruntergeladen. Dieses Gerät kann Dateien nicht direkt teilen – bitte die Datei von Hand an die Mail anhängen.`,
+        mitStatus(
+          `${fertig.name} wurde heruntergeladen. Dieses Gerät kann Dateien nicht direkt teilen – bitte die Datei von Hand an die Mail anhängen.`,
+        ),
       )
+      abschliessen()
     } catch {
       setMeldung('Der Versand hat nicht geklappt.')
     } finally {
@@ -197,8 +228,8 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
       <section className="flex flex-col gap-3 pt-2">
         <h2 className="text-lg font-bold">Status</h2>
         <p className="text-sika-grau text-sm">
-          Ein abgeschlossener Bericht erscheint in der Liste mit grünem Punkt. Ändern lässt er sich
-          weiterhin.
+          Sobald der Bericht erzeugt oder versendet wurde, gilt er als abgeschlossen und erscheint
+          in der Liste mit grünem Punkt. Ändern lässt er sich weiterhin.
         </p>
         <Knopf
           art={bericht.status === 'Abgeschlossen' ? 'zweit' : 'haupt'}
@@ -211,6 +242,16 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
           }
         >
           {bericht.status === 'Abgeschlossen' ? 'Wieder als Entwurf führen' : 'Bericht abschließen'}
+        </Knopf>
+      </section>
+
+      {/* --- Raus aus dem Bericht ---------------------------------------- */}
+      <section className="flex flex-col gap-3 pt-2">
+        <Knopf art="zweit" breit onClick={() => zeigeAnsicht({ name: 'liste' })}>
+          Zu „Meine Berichte"
+        </Knopf>
+        <Knopf art="still" breit onClick={() => zeigeAnsicht({ name: 'start' })}>
+          Zur Startseite
         </Knopf>
       </section>
     </>

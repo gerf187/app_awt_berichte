@@ -61,7 +61,6 @@ type Bericht = {
     projekt: string;          // Bauvorhaben / Objektbezeichnung
     objektStrasse: string;
     objektOrt: string;
-    kunde: string;            // Kunde
     verarbeiter: string;      // ausführende Firma
     verarbeiterStrasse: string;
     verarbeiterOrt: string;
@@ -73,6 +72,13 @@ type Bericht = {
   };
 
   anwesende: { name: string; firma: string; funktion: string }[];
+
+  pruefungen: {
+    art: string;              // aus der Liste oder selbst geschrieben
+    einheit: string;          // vorbelegt aus der Liste, überschreibbar
+    werte: string[];          // Einzelwerte, beliebig viele
+    bemerkung: string;        // Messstelle o. Ä.
+  }[];
 
   untergrund: {
     art: string;
@@ -120,30 +126,34 @@ type Bericht = {
 
 Alle Auswahllisten liegen zentral in **einer** Datei `src/data/stammdaten.ts`.
 
-**Keine Produktliste.** Sika führt rund 33.000 Produkte – jede mitgelieferte Auswahl wäre die falsche. Das Produkt wird im Bericht getippt; die App merkt sich, was schon einmal eingetragen wurde, und bietet es beim nächsten Mal an (`Einstellungen.gemerkteProdukte`). Zum Filtern dieser Vorschläge gibt es die Produktgruppen Sikafloor, Sikagard, Sikalastic, SikaEpoCem, Sikaflex, Sikabond.
+**Keine Produktliste.** Sika führt rund 33.000 Produkte – jede mitgelieferte Auswahl wäre die falsche. Das Produkt wird im Bericht getippt; die App merkt sich, was schon einmal eingetragen wurde, und bietet es beim nächsten Mal an (`Einstellungen.gemerkteProdukte`).
+
+**Auswahlliste Prüfungen** (mit vorbelegter Einheit): Haftzugfestigkeit (N/mm²), Rauhtiefe (mm), Restfeuchte (CM) (CM-%), LP-Gehalt (%), Ausbreitmaß (Hägermanntisch) (mm), Schichtdicke (mm), Sonstiges.
 
 ---
 
 ## 6. Bildschirme und Ablauf
 
-Blätter statt Schritte: Ein Bericht öffnet mit einer **Kachelübersicht** aller Blätter, jede Kachel mit Zeichen und Kurztext (siehe unten). Im Blatt steht oben eine waagerecht scrollbare **Reiterleiste**, unten bleiben **Zurück / Weiter**. Auf der Baustelle wird über den Tag zu einzelnen Punkten nachgetragen – ein Tipp führt ins Blatt, ohne Zurückblättern. **Kein Speichern-Knopf** – nach jeder Eingabe wird automatisch gespeichert (debounced).
+Blätter statt Schritte: Ein **neuer** Bericht öffnet direkt in den Kopfdaten – dort ist ohnehin nichts ausgefüllt. Aus der Liste geöffnet, beginnt ein Bericht mit der **Kachelübersicht** aller Blätter, jede Kachel mit Zeichen und Kurztext (siehe unten). Im Blatt steht oben eine waagerecht scrollbare **Reiterleiste**, deren letzter Reiter **„Übersicht"** in die Kacheln zurückführt; unten bleiben **Zurück / Weiter**. Auf der Baustelle wird über den Tag zu einzelnen Punkten nachgetragen – ein Tipp führt ins Blatt, ohne Zurückblättern. **Kein Speichern-Knopf** – nach jeder Eingabe wird automatisch gespeichert (debounced).
 
 Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Pflichtangaben vollständig · **● gelb** Pflichtangabe fehlt noch (hält nicht auf) · **⚠ rot** Warnung, heute nur der unterschrittene Taupunkt. Blätter ohne Pflichtangaben bekommen kein Zeichen.
 
 1. **Start** – Sika-Logo, zwei große Schaltflächen: „Neuer Bericht", „Meine Berichte". Unten klein: „Einstellungen".
 2. **Meine Berichte** – Liste aller Berichte: Objekt, Datum, Status-Punkt (grau = Entwurf, grün = abgeschlossen). Suchfeld. Papierkorb-Symbol zum Löschen (mit Rückfrage). Tippen öffnet den Bericht.
-3. **Kopfdaten** – Felder aus `kopf`. Telefonfeld mit `inputMode="tel"`. Kunde und Verarbeiter sind zwei Angaben, nicht drei – „Auftraggeber" gibt es nicht mehr.
+3. **Kopfdaten** – Felder aus `kopf`. Telefonfeld mit `inputMode="tel"`. Nur der **Verarbeiter** steht hier, mit eigener Anschrift; ein Feld „Kunde" gibt es nicht – im Bodenbau ist der Verarbeiter der Ansprechpartner.
 4. **Thematik & Anwesende** – Zweck-Feld (mit Spracheingabe) + beliebig viele Anwesende. Erste Zeile aus dem Profil (Name, Firma, Funktion); ohne Profil greifen die Stammdaten „Sika" / „AWT".
-5. **Untergrund** – zwei Auswahllisten, Bemerkungsfeld erscheint automatisch bei „Sonstiges", dazu die Messwerte **Restfeuchte, Haftzugfestigkeit und Rauhtiefe**. Nicht gemessene Werte stehen im Bericht als **k.A.** – eine fehlende Zeile lässt den Leser rätseln.
+5. **Untergrund** – zwei Auswahllisten, Bemerkungsfeld erscheint automatisch bei „Sonstiges". Gemessen wird auf dem nächsten Blatt.
+5a. **Prüfungen** – Liste von Karten wie bei „Anwesende": Prüfung aus der Auswahlliste (oder selbst geschrieben), vorbelegte Einheit, **beliebig viele Einzelwerte** je Prüfung, Bemerkung. Ab zwei Werten zeigt die App den **Mittelwert**; er steht auch im Bericht. Nicht Gemessenes taucht im Dokument gar nicht erst auf – ein „k.A." bei einer Prüfung, die niemand vorhatte, sagt nichts.
 6. **Klimawerte** – Liste + „+ Messung". Uhrzeit vorbelegt. **Taupunkt und Abstand live berechnet.** Abstand < 3 K → rote Warnung: „Achtung: Abstand zum Taupunkt unter 3 K – Beschichtung nicht freigeben."
-7. **Aufbau** – Liste + Dialog für Bereich, Schicht, Produkt, Fläche, Verbrauch, Gesamtmenge, Charge.
+7. **Aufbau** – Liste + Dialog für Bereich, Schicht, Produkt, Fläche, Verbrauch, Gesamtmenge, Chargen.
    - **Bereich**: Beispiele als Platzhalter; ab der zweiten Zeile eine Schaltfläche **„wie Vorposition"**, damit „Halle 1" nicht jedes Mal neu getippt wird.
-   - **Produkt**: Freitext mit Vorschlägen aus den gemerkten Produkten, gefiltert über die Produktgruppe.
+   - **Bereich und Fläche feststellen**: ein Haken im Dialog. Danach beginnt jede neue Zeile mit demselben Bereich und derselben Fläche (`Bericht.aufbauFest`); oben auf dem Blatt steht, was festgestellt ist, und lässt sich aufheben. Grundierung, Kratzspachtelung und Beschichtung liegen auf derselben Fläche.
+   - **Produkt**: Freitext mit Vorschlägen aus den gemerkten Produkten.
+   - **Chargen**: eine Nummer je Komponente (`Komp. A`, `Komp. B`, …), „+ Komponente" legt eine weitere an. Zwei- bis vierkomponentige Gebinde sind der Normalfall; im Schadensfall wird nach genau diesen Nummern gefragt.
    - **Verbrauch und Gesamtmenge** (`src/lib/verbrauch.ts`): Eingetragen wird das eine oder das andere, die App rechnet über die Fläche um. Gespeichert wird immer in kg/m². Die Einheit springt automatisch: Eingaben ab 10 sind g/m² gemeint (200 → 0,2 kg/m²), darunter kg/m². Angezeigt wird nach Praxis – unter 1,00 kg in g/m², darüber in kg/m².
-8. **Bericht & Feststellungen** – vier Freitextfelder. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden).
-9. **Offene Fragen** – ein Freitextfeld mit Spracheingabe: was am Besuchstag nicht geklärt wurde. Leer = im Dokument nicht vorhanden.
+8. **Bericht & Feststellungen** – fünf Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel, Empfehlung und **offene Fragen**. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden). Leere Felder erscheinen im Dokument nicht. Pflicht ist einer der ersten vier Abschnitte – eine offene Frage allein ersetzt keinen Bericht.
 10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto, ebenfalls mit Spracheingabe. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
-11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**.
+11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**. Eine erfolgreiche Ausgabe setzt den Bericht **selbst auf „Abgeschlossen"** (abgebrochenes Teilen nicht); von Hand umstellen geht weiterhin. Ganz unten führen zwei Schaltflächen zu „Meine Berichte" und zur Startseite.
 
 **Einstellungen:** vier Abschnitte.
 

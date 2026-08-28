@@ -6,8 +6,11 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 
 ## Was die App kann
 
-- Bericht anlegen: Kopfdaten, Anwesende, Untergrund, Klimawerte, Aufbau, Text,
-  offene Fragen, Fotos
+- Bericht anlegen: Kopfdaten, Anwesende, Untergrund, Prüfungen, Klimawerte,
+  Aufbau, Text, Fotos
+- **Prüfungen mit mehreren Messwerten.** Haftzug, Rauhtiefe, Restfeuchte,
+  LP-Gehalt, Ausbreitmaß, Schichtdicke – beliebig viele Einzelwerte je Prüfung,
+  ab zwei Werten mit Mittelwert.
 - **Taupunkt wird mitgerechnet.** Liegt der Untergrund weniger als 3 K über dem
   Taupunkt, erscheint eine rote Warnung.
 - Fotos direkt aus der Kamera, automatisch verkleinert
@@ -31,10 +34,10 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 
 ## Bedienung
 
-Ein Bericht besteht aus **Blättern**. Beim Öffnen sehen Sie alle Blätter als
-Kacheln; im Blatt selbst können Sie oben über die Reiter direkt zu jedem anderen
-springen. So lässt sich über den Tag zu jedem Punkt nachtragen, ohne
-zurückzublättern.
+Ein Bericht besteht aus **Blättern**. Ein neuer Bericht beginnt gleich in den
+Kopfdaten; oben führen die Reiter direkt zu jedem anderen Blatt, der letzte
+Reiter „Übersicht" zeigt alle Blätter als Kacheln. So lässt sich über den Tag zu
+jedem Punkt nachtragen, ohne zurückzublättern.
 
 Das Zeichen an Reiter und Kachel sagt, wie es um das Blatt steht:
 

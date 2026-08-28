@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  LEERE_AUFBAUZEILE,
   absenderzeilen,
   alsDatumstext,
   alsUhrzeit,
@@ -221,14 +222,52 @@ describe('berichtAuffuellen', () => {
     // So liegt ein Bericht aus der Zeit vor „Offene Fragen" in der Datenbank.
     delete (alt.text as Partial<Bericht['text']>).offeneFragen
     delete (alt as Partial<Bericht>).absender
-    delete (alt.untergrund as Partial<Bericht['untergrund']>).rauhtiefe
+    delete (alt as Partial<Bericht>).pruefungen
 
     const aufgefuellt = berichtAuffuellen(alt)
     expect(aufgefuellt.text.offeneFragen).toBe('')
     expect(aufgefuellt.absender.name).toBe('')
-    expect(aufgefuellt.untergrund.rauhtiefe).toBe('')
+    expect(aufgefuellt.pruefungen).toEqual([])
     // Vorhandenes bleibt unangetastet.
     expect(aufgefuellt.kopf.berichtsnummer).toBe('2026-08-25-01')
+  })
+
+  it('macht aus den früheren Messwerten am Untergrund Prüfungen', () => {
+    // So sah ein Bericht aus, bevor es das Blatt „Prüfungen" gab.
+    const alt = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    delete (alt as Partial<Bericht>).pruefungen
+    Object.assign(alt.untergrund, {
+      art: 'Zementestrich',
+      restfeuchteCM: '1,8',
+      haftzugfestigkeit: '1,5',
+      rauhtiefe: '',
+    })
+
+    const aufgefuellt = berichtAuffuellen(alt)
+    expect(aufgefuellt.pruefungen).toEqual([
+      { art: 'Haftzugfestigkeit', einheit: 'N/mm²', werte: ['1,5'], bemerkung: '' },
+      { art: 'Restfeuchte (CM)', einheit: 'CM-%', werte: ['1,8'], bemerkung: '' },
+    ])
+    // Die alten Felder reisen nicht als Altlast mit.
+    expect(aufgefuellt.untergrund).toEqual({
+      art: 'Zementestrich',
+      vorbereitung: '',
+      bemerkung: '',
+    })
+  })
+
+  it('macht aus der einen Chargennummer eine Liste', () => {
+    const alt = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)
+    alt.aufbau = [
+      { ...LEERE_AUFBAUZEILE, produkt: 'Sikafloor-161', charge: 'A12345' },
+    ] as unknown as Bericht['aufbau']
+    delete (alt.aufbau[0] as Partial<Bericht['aufbau'][number]>).chargen
+
+    expect(berichtAuffuellen(alt).aufbau[0]).toEqual({
+      ...LEERE_AUFBAUZEILE,
+      produkt: 'Sikafloor-161',
+      chargen: ['A12345'],
+    })
   })
 
   it('lässt einen vollständigen Bericht inhaltlich unverändert', () => {

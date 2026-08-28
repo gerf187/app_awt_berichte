@@ -1,9 +1,9 @@
-import { Auswahlfeld, Textbereich, Textfeld } from '../../components/Felder'
+import { Auswahlfeld, Textbereich } from '../../components/Felder'
 import { SONSTIGES, UNTERGRUND_ARTEN, UNTERGRUND_VORBEREITUNGEN } from '../../data/stammdaten'
 import type { Untergrund } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
-export function UntergrundBlatt({ bericht, aendern }: BlattEigenschaften) {
+export function UntergrundBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaften) {
   function setze(feld: keyof Untergrund, wert: string) {
     aendern((vorher) => ({ ...vorher, untergrund: { ...vorher.untergrund, [feld]: wert } }))
   }
@@ -39,31 +39,13 @@ export function UntergrundBlatt({ bericht, aendern }: BlattEigenschaften) {
         />
       )}
 
-      <Textfeld
-        beschriftung="Restfeuchte (CM-%)"
-        inputMode="decimal"
-        placeholder="z. B. 1,8"
-        value={bericht.untergrund.restfeuchteCM}
-        onChange={(e) => setze('restfeuchteCM', e.target.value)}
-      />
-
-      <Textfeld
-        beschriftung="Haftzugfestigkeit (N/mm²)"
-        inputMode="decimal"
-        placeholder="z. B. 1,5"
-        value={bericht.untergrund.haftzugfestigkeit}
-        onChange={(e) => setze('haftzugfestigkeit', e.target.value)}
-      />
-
-      <Textfeld
-        beschriftung="Rauhtiefe (mm)"
-        inputMode="decimal"
-        placeholder="z. B. 0,5"
-        value={bericht.untergrund.rauhtiefe}
-        onChange={(e) => setze('rauhtiefe', e.target.value)}
-      />
-
-      <p className="text-sika-grau text-sm">Nicht gemessene Werte stehen im Bericht als „k.A.".</p>
+      <button
+        type="button"
+        onClick={() => zeigeBlatt('pruefungen')}
+        className="text-sika-grau tippziel text-left text-sm underline"
+      >
+        Gemessene Werte – Haftzug, Rauhtiefe, Restfeuchte – stehen im Blatt „Prüfungen" →
+      </button>
     </>
   )
 }

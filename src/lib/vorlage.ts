@@ -62,6 +62,21 @@ export const STANDARD_RAENDER = {
   randRechts: 20,
 } as const
 
+/**
+ * Satzspiegel der Sika-Briefvorlage, aus der Word-Vorlage ausgemessen.
+ *
+ * Oben beginnt der Bericht unter dem Adress- und Ansprechpartnerblock
+ * (der endet bei 84 mm), unten hört er vor der Fußzeile auf (die beginnt bei
+ * 253,8 mm). Auf den Folgeseiten reicht der Seitenrand von 49 mm.
+ */
+export const SIKA_RAENDER = {
+  randOben: 88,
+  randObenFolgeseiten: 49,
+  randUnten: 49,
+  randLinks: 24.5,
+  randRechts: 20,
+} as const
+
 export type Satzspiegel = {
   links: number
   rechts: number
@@ -108,6 +123,13 @@ export class VorlagenFehler extends Error {}
 export function vorlageArtPruefen(typ: string, name: string): VorlagenArt {
   const endung = name.toLowerCase().slice(name.lastIndexOf('.'))
   if (typ === 'application/pdf' || endung === '.pdf') return 'pdf'
+  // Word-Vorlagen sind der Normalfall im Unternehmen – deshalb keine pauschale
+  // Absage, sondern der Weg dorthin. Ein Browser kann .docx nicht setzen.
+  if (['.docx', '.doc', '.dotx'].includes(endung)) {
+    throw new VorlagenFehler(
+      'Eine Word-Vorlage kann die App nicht lesen. In Word über „Speichern unter" als PDF ablegen und die PDF hier hinterlegen.',
+    )
+  }
   if (typ === 'image/png' || typ === 'image/jpeg' || ['.png', '.jpg', '.jpeg'].includes(endung)) {
     return 'bild'
   }

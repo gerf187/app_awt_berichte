@@ -40,7 +40,6 @@ export async function demoBericht(): Promise<Bericht> {
     projekt: 'Neubau Lagerhalle Ost',
     objektStrasse: 'Musterweg 8',
     objektOrt: '12345 Musterstadt',
-    kunde: 'Muster Immobilien AG',
     verarbeiter: 'Beispiel Bodenbau GmbH',
     verarbeiterStrasse: 'Handwerkerstraße 2',
     verarbeiterOrt: '12345 Musterstadt',
@@ -60,10 +59,18 @@ export async function demoBericht(): Promise<Bericht> {
     art: 'Zementestrich',
     vorbereitung: 'Kugelstrahlen',
     bemerkung: '',
-    restfeuchteCM: '1,8',
-    haftzugfestigkeit: '1,5',
-    rauhtiefe: '0,6',
   }
+
+  bericht.pruefungen = [
+    {
+      art: 'Haftzugfestigkeit',
+      einheit: 'N/mm²',
+      werte: ['1,5', '1,7', '1,4'],
+      bemerkung: 'Halle Nord, drei Messstellen',
+    },
+    { art: 'Rauhtiefe', einheit: 'mm', werte: ['0,6'], bemerkung: '' },
+    { art: 'Restfeuchte (CM)', einheit: 'CM-%', werte: ['1,8', '2,1'], bemerkung: 'Torbereich' },
+  ]
 
   // Die dritte Messung unterschreitet den Mindestabstand – so zeigt die
   // Anleitung die rote Warnung an einem echten Fall.
@@ -82,7 +89,7 @@ export async function demoBericht(): Promise<Bericht> {
       produkt: 'Sikafloor-161',
       verbrauch: '0.4',
       gesamtmenge: '180',
-      charge: 'A12345',
+      chargen: ['A12345', 'B67890'],
       flaeche: '450',
     },
     {
@@ -91,7 +98,7 @@ export async function demoBericht(): Promise<Bericht> {
       produkt: 'Sikafloor-264',
       verbrauch: '2',
       gesamtmenge: '900',
-      charge: 'B98765',
+      chargen: ['C24680'],
       flaeche: '450',
     },
   ]

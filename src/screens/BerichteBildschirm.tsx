@@ -26,7 +26,6 @@ export function BerichteBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => voi
       [
         bericht.kopf.projekt,
         bericht.kopf.objektOrt,
-        bericht.kopf.kunde,
         bericht.kopf.verarbeiter,
         bericht.kopf.berichtsnummer,
       ]

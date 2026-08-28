@@ -20,6 +20,11 @@ const FELDER: { name: keyof Berichtstext; beschriftung: string; hinweis: string 
     hinweis: 'Was ist nicht in Ordnung?',
   },
   { name: 'empfehlung', beschriftung: 'Empfehlung', hinweis: 'Wie geht es weiter?' },
+  {
+    name: 'offeneFragen',
+    beschriftung: 'Offene Fragen',
+    hinweis: 'Was muss noch geklärt werden – und von wem?',
+  },
 ]
 
 export function TextBlatt({ bericht, aendern }: BlattEigenschaften) {

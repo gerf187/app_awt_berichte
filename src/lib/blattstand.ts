@@ -7,6 +7,7 @@
  */
 
 import type { FehlendesPflichtfeld } from './bericht'
+import { ausgefuellte } from './pruefungen'
 import type { Bericht, BlattId, BlattStand } from './typen'
 
 export type Stand = { art: BlattStand; text: string }
@@ -42,6 +43,14 @@ export function blattStand(id: BlattId, bericht: Bericht, fehlt: FehlendesPflich
     case 'untergrund':
       return { art: 'neutral', text: bericht.untergrund.art.trim() || 'noch leer' }
 
+    case 'pruefungen': {
+      const anzahl = ausgefuellte(bericht.pruefungen).length
+      return {
+        art: 'neutral',
+        text: anzahl === 0 ? 'nichts geprüft' : mal(anzahl, 'Prüfung', 'Prüfungen'),
+      }
+    }
+
     case 'klima': {
       // Der Taupunkt sticht alles: hier stimmen die Daten, trotzdem ist Gefahr.
       const kritisch = bericht.klima.find((messung) => messung.warnung)
@@ -63,15 +72,10 @@ export function blattStand(id: BlattId, bericht: Bericht, fehlt: FehlendesPflich
           bericht.text.besprochenes,
           bericht.text.maengel,
           bericht.text.empfehlung,
+          bericht.text.offeneFragen,
         ].filter((absatz) => absatz.trim()).length
         return mal(anzahl, 'Abschnitt', 'Abschnitte')
       })
-
-    case 'fragen':
-      return {
-        art: 'neutral',
-        text: bericht.text.offeneFragen.trim() ? 'notiert' : 'nichts offen',
-      }
 
     case 'fotos':
       return {

@@ -36,6 +36,12 @@ export function BerichtBildschirm({
     zeige({ name: 'bericht', id, blatt: ziel })
   }
 
+  /** Raus aus dem Bericht – vorher schreiben, sonst fehlt der letzte Tastendruck. */
+  function verlasse(ansicht: Ansicht) {
+    jetztSchreiben()
+    zeige(ansicht)
+  }
+
   if (!geladen) {
     return (
       <div className="flex flex-1 flex-col">
@@ -118,17 +124,27 @@ export function BerichtBildschirm({
       />
 
       <Reiterleiste
-        reiter={BLAETTER.map((eintrag) => ({
-          id: eintrag.id,
-          kurz: eintrag.kurz,
-          stand: blattStand(eintrag.id, bericht, fehlt),
-        }))}
+        reiter={[
+          ...BLAETTER.map((eintrag) => ({
+            id: eintrag.id,
+            kurz: eintrag.kurz,
+            stand: blattStand(eintrag.id, bericht, fehlt),
+          })),
+          // Letzter Reiter: zurück in die Kacheln. Ohne ihn führt aus der
+          // Reiterleiste nur der Pfeil oben links heraus.
+          { id: 'uebersicht' as const, kurz: 'Übersicht', stand: { art: 'neutral' as const, text: '' } },
+        ]}
         aktiv={aktuell.id}
-        waehle={(ziel) => wechsle(ziel)}
+        waehle={(ziel) => wechsle(ziel === 'uebersicht' ? undefined : ziel)}
       />
 
       <main className="flex flex-1 flex-col gap-5 p-4 pb-28">
-        {aktuell.inhalt({ bericht, aendern, zeigeBlatt: (ziel) => wechsle(ziel) })}
+        {aktuell.inhalt({
+          bericht,
+          aendern,
+          zeigeBlatt: (ziel) => wechsle(ziel),
+          zeigeAnsicht: verlasse,
+        })}
       </main>
 
       {/* Fußleiste klebt unten – erreichbar mit dem Daumen, auch einhändig. */}
@@ -136,8 +152,8 @@ export function BerichtBildschirm({
         <Knopf art="zweit" breit onClick={() => wechsle(vorheriges?.id)}>
           {vorheriges ? 'Zurück' : 'Übersicht'}
         </Knopf>
-        <Knopf art="haupt" breit disabled={!naechstes} onClick={() => wechsle(naechstes?.id)}>
-          Weiter
+        <Knopf art="haupt" breit onClick={() => wechsle(naechstes?.id)}>
+          {naechstes ? 'Weiter' : 'Übersicht'}
         </Knopf>
       </nav>
     </div>

@@ -65,12 +65,16 @@ describe('blattStand', () => {
   it('führt Blätter ohne Pflichtangaben grau, egal ob voll oder leer', () => {
     const bericht = frisch()
     expect(stand(bericht, 'fotos')).toEqual({ art: 'neutral', text: 'kein Foto' })
-    expect(stand(bericht, 'fragen')).toEqual({ art: 'neutral', text: 'nichts offen' })
+    expect(stand(bericht, 'pruefungen')).toEqual({ art: 'neutral', text: 'nichts geprüft' })
 
-    bericht.text.offeneFragen = 'Wer stellt die Bauheizung?'
     bericht.aufbau = [{ ...LEERE_AUFBAUZEILE, bereich: 'EG', schicht: 'Grundierung' }]
+    bericht.pruefungen = [
+      { art: 'Rauhtiefe', einheit: 'mm', werte: ['0,6'], bemerkung: '' },
+      // Ohne Messwert ist es keine Prüfung, sondern eine angefangene Zeile.
+      { art: 'Haftzugfestigkeit', einheit: 'N/mm²', werte: [''], bemerkung: '' },
+    ]
 
-    expect(stand(bericht, 'fragen')).toEqual({ art: 'neutral', text: 'notiert' })
+    expect(stand(bericht, 'pruefungen')).toEqual({ art: 'neutral', text: '1 Prüfung' })
     expect(stand(bericht, 'aufbau')).toEqual({ art: 'neutral', text: '1 Zeile' })
   })
 

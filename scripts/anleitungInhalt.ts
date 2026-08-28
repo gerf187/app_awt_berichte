@@ -58,7 +58,7 @@ export const KAPITEL: Kapitel[] = [
       ),
       zwischentitel('Was die App kann'),
       punkte(
-        'Bericht erfassen: Kopfdaten, Anwesende, Untergrund, Klimawerte, Aufbau, Freitexte, offene Fragen, Fotos',
+        'Bericht erfassen: Kopfdaten, Anwesende, Untergrund, Prüfungen, Klimawerte, Aufbau, Freitexte, Fotos',
         'Taupunkt wird mitgerechnet und warnt, bevor Sie eine Beschichtung freigeben',
         'Verbrauch und Gesamtmenge rechnen über die Fläche ineinander um',
         'Fotos direkt aus der Kamera, automatisch verkleinert',
@@ -165,7 +165,7 @@ export const KAPITEL: Kapitel[] = [
     titel: 'Ein Bericht besteht aus Blättern',
     bloecke: [
       absatz(
-        'Tippen Sie auf dem Startbildschirm auf „Neuer Bericht". Sie landen auf der Übersicht: jedes Blatt eine Kachel. Tippen Sie eine Kachel an, sind Sie im Blatt; oben führt eine Reiterleiste ohne Umweg zu jedem anderen.',
+        'Tippen Sie auf dem Startbildschirm auf „Neuer Bericht". Sie landen sofort in den Kopfdaten. Oben führt eine Reiterleiste ohne Umweg zu jedem anderen Blatt; der letzte Reiter „Übersicht" zeigt alle Blätter als Kacheln.',
       ),
       absatz(
         'Das ist Absicht: Auf der Baustelle wird über den Tag zu einzelnen Punkten nachgetragen. Sie sollen dafür nicht durch acht Bildschirme zurückblättern müssen.',
@@ -195,7 +195,7 @@ export const KAPITEL: Kapitel[] = [
       ),
       punkte(
         'Projekt / Bauvorhaben und Objektanschrift beschreiben die Baustelle.',
-        'Kunde ist der Auftraggeber, Verarbeiter die ausführende Firma – zwei verschiedene Angaben.',
+        'Verarbeiter ist die ausführende Firma, mit eigener Anschrift.',
         'Ansprechpartner und Telefon gehören zum Verarbeiter.',
         'Anwendungstechniker ist aus Ihrem Profil vorbelegt.',
       ),
@@ -219,12 +219,28 @@ export const KAPITEL: Kapitel[] = [
     titel: 'Blatt „Untergrund"',
     bloecke: [
       absatz(
-        'Art und Vorbereitung wählen Sie aus den Listen. Steht dort „Sonstiges", klappt ein Bemerkungsfeld auf.',
+        'Art und Vorbereitung wählen Sie aus den Listen. Steht dort „Sonstiges", klappt ein Bemerkungsfeld auf. Gemessene Werte gehören nicht hierher, sondern auf das nächste Blatt.',
       ),
+      bild('11-blatt-untergrund.png', 'Untergrund: Art, Vorbereitung, Bemerkung.'),
+    ],
+  },
+  {
+    titel: 'Blatt „Prüfungen"',
+    bloecke: [
       absatz(
-        'Restfeuchte, Haftzugfestigkeit und Rauhtiefe tragen Sie ein, soweit Sie gemessen haben. Was Sie leer lassen, erscheint im Bericht als „k.A." – das ist eine Aussage. Eine fehlende Zeile lässt den Leser dagegen rätseln.',
+        'Alles, was Sie gemessen haben. Mit „+ Prüfung" kommt eine Karte dazu: oben wählen Sie die Prüfung aus der Liste, darunter tragen Sie die Einzelwerte ein.',
       ),
-      bild('11-blatt-untergrund.png', 'Untergrund mit den drei Messwerten.'),
+      punkte(
+        'Zur Auswahl stehen Haftzugfestigkeit, Rauhtiefe, Restfeuchte (CM), LP-Gehalt, Ausbreitmaß (Hägermanntisch) und Schichtdicke. „Sonstiges" öffnet ein Feld für alles andere.',
+        'Die Einheit ist vorbelegt und lässt sich überschreiben.',
+        '„+ Wert" legt eine weitere Messstelle an – beim Haftzug sind drei üblich, bei der Schichtdicke werden es schnell mehr.',
+        'Ab zwei Werten zeigt die App den Mittelwert; er steht auch im fertigen Bericht.',
+        'Die Bemerkung sagt, wo gemessen wurde.',
+      ),
+      bild('12-blatt-pruefungen.png', 'Eine Prüfung mit mehreren Messwerten.'),
+      hinweis(
+        'Nicht Gemessenes taucht im Bericht gar nicht erst auf. Eine angefangene Karte ohne Wert wird übergangen.',
+      ),
     ],
   },
   {
@@ -236,7 +252,7 @@ export const KAPITEL: Kapitel[] = [
       warnung(
         'Liegt der Untergrund weniger als 3 K über dem Taupunkt, wird die Messung rot und die App warnt: „Beschichtung nicht freigeben." Diese Warnung steht auch im fertigen Bericht und im Reiter.',
       ),
-      bild('12-blatt-klima.png', 'Jede Messung rechnet den Taupunkt selbst mit.'),
+      bild('13-blatt-klima.png', 'Jede Messung rechnet den Taupunkt selbst mit.'),
       hinweis('Mindestens eine Messung gehört in jeden Bericht.'),
     ],
   },
@@ -246,13 +262,15 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'Hier steht, was auf den Boden kam. Jede Zeile ist eine Schicht in einem Bereich. Tippen Sie eine vorhandene Zeile an, um sie zu ändern, oder legen Sie mit „+ Zeile" eine neue an.',
       ),
-      bild('13-blatt-aufbau.png', 'Der Aufbau als Liste.'),
+      bild('14-blatt-aufbau.png', 'Der Aufbau als Liste.'),
       zwischentitel('Die Eingabemaske'),
       punkte(
         'Bereich: ab der zweiten Zeile gibt es „wie Vorposition" – so tippen Sie „Halle Nord" nicht dreimal.',
-        'Produkt: einfach tippen. Was Sie einmal eingetragen haben, schlägt die App beim nächsten Mal vor. Die Produktgruppe grenzt die Vorschläge ein.',
+        '„Bereich und Fläche feststellen": Setzen Sie den Haken, fängt jede weitere Zeile mit demselben Bereich und derselben Fläche an. Grundierung, Kratzspachtelung, Beschichtung – dieselbe Fläche, einmal getippt. Oben auf dem Blatt steht, was festgestellt ist; dort heben Sie es auch wieder auf.',
+        'Produkt: einfach tippen. Was Sie einmal eingetragen haben, schlägt die App beim nächsten Mal vor.',
         'Verbrauch und Gesamtmenge: Sie tragen das eine ein, die App rechnet über die Fläche das andere aus.',
         'Die Einheit springt von selbst um: Eingaben ab 10 versteht die App als g/m² (200 wird zu 0,2 kg/m²), darunter als kg/m².',
+        'Charge: „+ Komponente" legt eine weitere Nummer an. Ein zweikomponentiges Harz hat zwei Chargen, ein Estrichmörtel mit Zusatz auch mal vier – im Schadensfall wird nach genau diesen gefragt.',
       ),
       bild('17-aufbau-eingabe.png', 'Die Eingabemaske einer Aufbauzeile.'),
     ],
@@ -261,21 +279,15 @@ export const KAPITEL: Kapitel[] = [
     titel: 'Blatt „Bericht & Feststellungen"',
     bloecke: [
       absatz(
-        'Vier Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel und Empfehlung. Jedes hat eine Taste zum Diktieren – wenn Ihr Handy das unterstützt, erscheint sie neben der Beschriftung.',
+        'Fünf Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel, Empfehlung und offene Fragen. Jedes hat eine Taste zum Diktieren – wenn Ihr Handy das unterstützt, erscheint sie neben der Beschriftung.',
+      ),
+      absatz(
+        'Unter „Offene Fragen" steht, was am Besuchstag nicht geklärt wurde: wer liefert, wer entscheidet, worauf gewartet wird. Bleibt ein Feld leer, taucht der Abschnitt im Dokument gar nicht erst auf.',
       ),
       hinweis(
-        'Mindestens einer der vier Abschnitte muss ausgefüllt sein, sonst fehlt dem Bericht die Aussage.',
+        'Mindestens einer der ersten vier Abschnitte muss ausgefüllt sein, sonst fehlt dem Bericht die Aussage. Eine offene Frage allein genügt dafür nicht.',
       ),
-      bild('14-blatt-text.png', 'Die vier Textfelder, jeweils mit Spracheingabe.'),
-    ],
-  },
-  {
-    titel: 'Blatt „Offene Fragen"',
-    bloecke: [
-      absatz(
-        'Was am Besuchstag nicht geklärt wurde, gehört hierher – wer liefert, wer entscheidet, worauf gewartet wird. Bleibt das Feld leer, taucht der Abschnitt im Dokument gar nicht erst auf.',
-      ),
-      bild('15-blatt-offene-fragen.png', 'Offene Fragen, ebenfalls mit Spracheingabe.'),
+      bild('15-blatt-text.png', 'Die Textfelder, jeweils mit Spracheingabe.'),
     ],
   },
   {
@@ -313,6 +325,9 @@ export const KAPITEL: Kapitel[] = [
       ),
       absatz(
         'Unter den Knöpfen steht, welche Briefvorlage die App gerade benutzt. Steht dort nichts, ist keine hinterlegt.',
+      ),
+      absatz(
+        'Sobald Sie den Bericht erzeugt oder versendet haben, gilt er als abgeschlossen und bekommt in „Meine Berichte" den grünen Punkt. Sie müssen dafür nichts extra antippen – und können ihn unten jederzeit wieder als Entwurf führen. Ganz unten führen zwei Knöpfe zurück zu „Meine Berichte" oder zur Startseite.',
       ),
       bild('19-abschluss-ausgabe.png', 'Ausgabe und Versand.'),
       warnung(

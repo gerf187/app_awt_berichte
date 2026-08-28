@@ -29,21 +29,23 @@ export const UNTERGRUND_VORBEREITUNGEN = [
 ] as const
 
 /**
- * Produktgruppen statt Produktliste.
+ * Prüfungen mit ihrer üblichen Einheit.
  *
- * Sika führt rund 33.000 Produkte – eine mitgelieferte Liste wäre in dem
- * Moment veraltet, in dem sie gebaut wird. Das Produkt wird deshalb im Bericht
- * getippt; die Gruppe hilft nur beim Filtern der schon einmal benutzten Namen.
+ * Ein Vorschlag, keine Vorschrift: Wer etwas misst, das hier fehlt, wählt
+ * „Sonstiges" und schreibt Bezeichnung und Einheit selbst. Die Liste steht in
+ * der Reihenfolge, in der auf der Baustelle geprüft wird.
  */
-export const PRODUKTGRUPPEN = [
-  'Sikafloor',
-  'Sikagard',
-  'Sikalastic',
-  'SikaEpoCem',
-  'Sikaflex',
-  'Sikabond',
-  SONSTIGES,
+export const PRUEFUNGEN = [
+  { art: 'Haftzugfestigkeit', einheit: 'N/mm²' },
+  { art: 'Rauhtiefe', einheit: 'mm' },
+  { art: 'Restfeuchte (CM)', einheit: 'CM-%' },
+  { art: 'LP-Gehalt', einheit: '%' },
+  { art: 'Ausbreitmaß (Hägermanntisch)', einheit: 'mm' },
+  { art: 'Schichtdicke', einheit: 'mm' },
 ] as const
+
+/** Dieselben Prüfungen als reine Auswahlliste, mit „Sonstiges" am Ende. */
+export const PRUEFUNGSARTEN = [...PRUEFUNGEN.map((eintrag) => eintrag.art), SONSTIGES] as const
 
 /** Übliche Schichtbezeichnungen im Bodenaufbau – als Vorschlag, nicht als Zwang. */
 export const SCHICHTEN = [

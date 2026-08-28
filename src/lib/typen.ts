@@ -18,10 +18,10 @@ export type BlattId =
   | 'kopf'
   | 'thematik'
   | 'untergrund'
+  | 'pruefungen'
   | 'klima'
   | 'aufbau'
   | 'text'
-  | 'fragen'
   | 'fotos'
   | 'abschluss'
 
@@ -38,7 +38,6 @@ export type Kopf = {
   projekt: string
   objektStrasse: string
   objektOrt: string
-  kunde: string
   verarbeiter: string
   verarbeiterStrasse: string
   verarbeiterOrt: string
@@ -59,9 +58,24 @@ export type Untergrund = {
   art: string
   vorbereitung: string
   bemerkung: string
-  restfeuchteCM: string
-  haftzugfestigkeit: string
-  rauhtiefe: string
+}
+
+/**
+ * Eine Prüfung auf der Baustelle: Haftzug, Rauhtiefe, Restfeuchte, LP-Gehalt,
+ * Ausbreitmaß, Schichtdicke – oder etwas, das in keiner Liste steht.
+ *
+ * Gemessen wird selten nur einmal: beim Haftzug sind drei Werte die Regel, bei
+ * der Schichtdicke gern ein Dutzend. Deshalb steht hier eine Liste von Werten
+ * und keine einzelne Zahl. Bezeichnung und Einheit sind freier Text, damit
+ * niemand auf eine mitgelieferte Liste warten muss.
+ */
+export type Pruefung = {
+  art: string
+  einheit: string
+  /** Die Einzelwerte, so getippt wie abgelesen. */
+  werte: string[]
+  /** Wo gemessen wurde, oder was sonst dazugehört. */
+  bemerkung: string
 }
 
 export type Klimawert = {
@@ -85,7 +99,11 @@ export type Aufbauzeile = {
   verbrauch: string
   /** Gesamtmenge in kg. Wird aus Verbrauch und Fläche berechnet oder umgekehrt. */
   gesamtmenge: string
-  charge: string
+  /**
+   * Chargennummern, eine je Komponente. Reaktionsharze kommen in zwei bis vier
+   * Komponenten auf die Baustelle – eine einzige Nummer je Zeile wäre gelogen.
+   */
+  chargen: string[]
   flaeche: string
 }
 
@@ -171,8 +189,15 @@ export type Bericht = {
   kopf: Kopf
   anwesende: Anwesender[]
   untergrund: Untergrund
+  pruefungen: Pruefung[]
   klima: Klimawert[]
   aufbau: Aufbauzeile[]
+  /**
+   * Festgestellter Bereich samt Fläche: neue Aufbauzeilen fangen damit an.
+   * Grundierung, Kratzspachtelung und Beschichtung liegen auf derselben Fläche
+   * – die tippt niemand dreimal ab.
+   */
+  aufbauFest?: { bereich: string; flaeche: string }
   text: Berichtstext
   fotos: Foto[]
   /** Absenderzeile des Berichts, aus dem Profil übernommen. */

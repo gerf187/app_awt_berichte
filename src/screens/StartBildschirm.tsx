@@ -10,7 +10,9 @@ export function StartBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => void }
     setLaeuft(true)
     try {
       const bericht = await berichtAnlegen()
-      zeige({ name: 'bericht', id: bericht.id })
+      // Direkt ins erste Blatt: bei einem frischen Bericht ist die Kachelübersicht
+      // nur ein Zwischenschritt – ausgefüllt ist noch nichts.
+      zeige({ name: 'bericht', id: bericht.id, blatt: 'kopf' })
     } finally {
       setLaeuft(false)
     }

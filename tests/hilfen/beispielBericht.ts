@@ -32,7 +32,6 @@ export async function beispielBericht(): Promise<Bericht> {
     projekt: 'Neubau Produktionshalle Süd',
     objektStrasse: 'Industriestraße 12',
     objektOrt: '76185 Karlsruhe',
-    kunde: 'Muster Bau AG',
     verarbeiter: 'Bodentechnik Meier GmbH',
     verarbeiterStrasse: 'Handwerkerweg 3',
     verarbeiterOrt: '76133 Karlsruhe',
@@ -52,10 +51,18 @@ export async function beispielBericht(): Promise<Bericht> {
     art: 'Zementestrich',
     vorbereitung: 'Kugelstrahlen',
     bemerkung: '',
-    restfeuchteCM: '1,8',
-    haftzugfestigkeit: '1,5',
-    rauhtiefe: '0,6',
   }
+
+  bericht.pruefungen = [
+    {
+      art: 'Haftzugfestigkeit',
+      einheit: 'N/mm²',
+      werte: ['1,5', '1,7', '1,4'],
+      bemerkung: 'Halle Nord, Achse C',
+    },
+    { art: 'Rauhtiefe', einheit: 'mm', werte: ['0,6'], bemerkung: '' },
+    { art: 'Restfeuchte (CM)', einheit: 'CM-%', werte: ['1,8', '2,1'], bemerkung: 'Torbereich' },
+  ]
 
   bericht.klima = [
     { luft: 20, boden: 18, feuchte: 55 },
@@ -75,7 +82,7 @@ export async function beispielBericht(): Promise<Bericht> {
       produkt: 'Sikafloor-161',
       verbrauch: '0,4',
       gesamtmenge: '180',
-      charge: 'A12345',
+      chargen: ['A12345', 'B67890'],
       flaeche: '450',
     },
     {
@@ -84,7 +91,7 @@ export async function beispielBericht(): Promise<Bericht> {
       produkt: 'Sikafloor-161 + Quarzsand',
       verbrauch: '1,2',
       gesamtmenge: '540',
-      charge: 'A12345',
+      chargen: ['A12345', 'B67890'],
       flaeche: '450',
     },
     {
@@ -93,7 +100,7 @@ export async function beispielBericht(): Promise<Bericht> {
       produkt: 'Sikafloor-264',
       verbrauch: '2,0',
       gesamtmenge: '900',
-      charge: 'B98765',
+      chargen: ['B98765'],
       flaeche: '450',
     },
     {
@@ -102,7 +109,7 @@ export async function beispielBericht(): Promise<Bericht> {
       produkt: 'Sikadur-31 CF',
       verbrauch: '0,8',
       gesamtmenge: '28',
-      charge: 'C55512',
+      chargen: ['C55512'],
       flaeche: '35',
     },
   ]

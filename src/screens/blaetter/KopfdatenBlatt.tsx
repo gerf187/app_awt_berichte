@@ -33,11 +33,6 @@ export function KopfdatenBlatt({ bericht, aendern }: BlattEigenschaften) {
         onChange={(e) => setze('objektOrt')(e.target.value)}
       />
       <Textfeld
-        beschriftung="Kunde"
-        value={bericht.kopf.kunde}
-        onChange={(e) => setze('kunde')(e.target.value)}
-      />
-      <Textfeld
         beschriftung="Verarbeiter (ausführende Firma)"
         value={bericht.kopf.verarbeiter}
         onChange={(e) => setze('verarbeiter')(e.target.value)}

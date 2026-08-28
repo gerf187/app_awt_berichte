@@ -156,7 +156,12 @@ try {
   await seite.getByText('Briefvorlage', { exact: true }).scrollIntoViewIfNeeded()
   await bild(seite, 'einstellungen-briefvorlage')
 
-  await seite.getByText('Wo darf der Bericht stehen?').scrollIntoViewIfNeeded()
+  // `scrollIntoView`, nicht `scrollIntoViewIfNeeded`: der Abschnitt ist auf dem
+  // Handy oft schon halb sichtbar – dann scrollt die Seite nicht, und das Bild
+  // wäre eine Kopie des vorigen.
+  await seite
+    .getByText('Wo darf der Bericht stehen?')
+    .evaluate((element) => element.scrollIntoView({ block: 'start' }))
   await bild(seite, 'einstellungen-satzspiegel')
 
   await seite.getByText('Datensicherung').scrollIntoViewIfNeeded()
@@ -188,10 +193,10 @@ try {
   for (const [kurz, name] of [
     ['Thematik', 'blatt-thematik'],
     ['Untergrund', 'blatt-untergrund'],
+    ['Prüfungen', 'blatt-pruefungen'],
     ['Klima', 'blatt-klima'],
     ['Aufbau', 'blatt-aufbau'],
     ['Bericht', 'blatt-text'],
-    ['Offene Fragen', 'blatt-offene-fragen'],
     ['Fotos', 'blatt-fotos'],
   ] as const) {
     await reiter(seite, kurz)
