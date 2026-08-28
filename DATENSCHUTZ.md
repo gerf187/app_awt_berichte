@@ -25,9 +25,15 @@ Text dort stammt aus `src/data/datenschutz.ts` – eine Quelle, zwei Ausgaben.
 
 Die App ist eine reine Browser-Anwendung ohne Server, ohne Konto und ohne
 Netzwerkverkehr. **Alle Daten bleiben auf dem Gerät des Anwendungstechnikers.**
-Es gibt keinen Auftragsverarbeiter, keine Übermittlung in ein Drittland und
-keine Profilbildung. Der einzige Weg, auf dem Daten das Gerät verlassen, ist
-der bewusste Versand des fertigen Berichts durch den Anwender.
+Die App selbst hat keinen Auftragsverarbeiter und bildet keine Profile. Daten
+verlassen das Gerät auf genau zwei Wegen:
+
+1. **Der bewusste Versand des fertigen Berichts** durch den Anwender.
+2. **Die Diktierfunktion** – dabei überträgt nicht die App, sondern der Browser
+   die Sprachaufnahme an seinen Hersteller. Das ist eine Übermittlung an einen
+   Dritten, mutmaßlich in ein Drittland, und in Abschnitt 5 gesondert
+   beschrieben. Sie ist freiwillig: ohne Tastendruck passiert nichts, und jede
+   Eingabe lässt sich auch tippen.
 
 ---
 
@@ -42,10 +48,10 @@ der bewusste Versand des fertigen Berichts durch den Anwender.
 | **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragsdurchführung/-anbahnung) für Kunden- und Verarbeiterdaten; Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer belastbaren Dokumentation) für Feststellungen, Fotos und Unterschrift; für Beschäftigtendaten `<§ 26 BDSG bzw. Betriebsvereinbarung>` |
 | **Betroffene Personen** | Ansprechpartner beim Kunden und beim Verarbeiter, weitere Anwesende, eigene Beschäftigte (Anwendungstechniker, Vertrieb) |
 | **Datenkategorien** | Name, Firma, Funktion, dienstliche Anschrift, dienstliche Telefonnummer, E-Mail-Adresse, Unterschrift, Lichtbilder der Baustelle, Freitexte zum Besuch |
-| **Empfänger** | Nur die vom Anwender gewählten Empfänger des fertigen Berichts (Kunde, Verarbeiter, interne Stellen). Kein Dienstleister, kein Cloud-Anbieter. |
-| **Drittlandübermittlung** | Keine |
+| **Empfänger** | Die vom Anwender gewählten Empfänger des fertigen Berichts (Kunde, Verarbeiter, interne Stellen). Kein Dienstleister und kein Cloud-Anbieter für die gespeicherten Daten. Bei Nutzung der **Diktierfunktion** zusätzlich der Browser-Hersteller (Apple bzw. Google) als Empfänger der Sprachaufnahme – siehe Abschnitt 5. |
+| **Drittlandübermittlung** | Durch die App keine. Bei Nutzung der Diktierfunktion ist eine Übermittlung in die USA anzunehmen; Rechtsgrundlage, Angemessenheitsbeschluss und etwaige Auftragsverarbeitung sind vom Verantwortlichen zu klären `<offen>`. |
 | **Löschfristen** | Auf dem Gerät: sofort nach Versand und Ablage, spätestens `<Frist>`. Im führenden Ablagesystem: `<handels-/steuerrechtliche Aufbewahrung>` |
-| **Technisch-organisatorische Maßnahmen** | Siehe Abschnitt 5 |
+| **Technisch-organisatorische Maßnahmen** | Siehe Abschnitt 6 |
 
 ---
 
@@ -59,6 +65,7 @@ der bewusste Versand des fertigen Berichts durch den Anwender.
 | **Briefvorlage** (Briefbogen als PDF/PNG/JPEG) | dieselbe Datenbank, Objektspeicher `einstellungen` | nein |
 | Fertige PDF/Word-Datei | vom Anwender ausgelöster Download bzw. Teilen-Dialog | **ja, bewusst** |
 | Sicherungsdatei (JSON) | vom Anwender ausgelöster Download | **ja, bewusst** |
+| Sprachaufnahme beim Diktieren | Mikrofon → Spracherkennung des Browsers | **ja, an den Browser-Hersteller** (Abschnitt 5) |
 
 Die ausgelieferte Webseite selbst enthält **keine** dieser Daten. Wer die App
 hostet, sieht nur, dass jemand die Seite geladen hat – nie einen Inhalt.
@@ -91,7 +98,39 @@ Umgesetzt ist das so:
 
 ---
 
-## 5. Technische und organisatorische Maßnahmen (Art. 32 DSGVO)
+## 5. Diktieren: die Spracherkennung des Browsers
+
+Die Freitextfelder und die Bildbeschreibungen haben eine Taste „Diktieren".
+Dahinter steht die **Web Speech API des Browsers**, nicht eigener Code
+(`src/components/Spracheingabe.tsx`). Die Erkennung selbst findet je nach Gerät
+und Browser **nicht auf dem Gerät statt**: Safari übermittelt die Aufnahme an
+Apple, Chrome an Google. Das ist eine Übermittlung personenbezogener Daten an
+einen Dritten, sobald etwas Personenbezogenes gesprochen wird – Serverstandort
+und Verarbeitungsbedingungen bestimmt der Browser-Hersteller, nicht diese App.
+
+Was daraus folgt:
+
+| Punkt | Stand |
+|---|---|
+| Auslösung | **ausschließlich auf Tastendruck**; keine Daueraufnahme, kein Hintergrundbetrieb, kein Signalwort |
+| Vermeidbarkeit | vollständig – jede Eingabe lässt sich tippen; die Taste erscheint gar nicht, wenn der Browser die Schnittstelle nicht anbietet |
+| Umfang | nur das Gesprochene, keine Berichtsdaten, keine Fotos, keine Vorlage |
+| Rechtsgrundlage der Übermittlung | `<vom Verantwortlichen zu bestimmen>` – bis dahin gilt die Anwenderregel unten |
+| Auftragsverarbeitung / Drittland | `<zu prüfen: Verhältnis zu Apple bzw. Google, ggf. über die bestehende Geräte- und Browsernutzung im Unternehmen geregelt>` |
+
+**Anwenderregel, solange das offen ist:** Namen, Telefonnummern und Anschriften
+werden **getippt**, nicht diktiert. Diktiert werden Feststellungen, Messungen
+und Beschreibungen – Sachverhalte also, keine Personendaten. Dieser Hinweis
+steht so auch in der App (Einstellungen → Datenschutz) und in der Anleitung.
+
+Nicht zu verwechseln damit ist **„Text glätten"** (`src/utils/cleanDictation.ts`):
+Das bereinigt den bereits erfassten Text – gesprochene Satzzeichen, Füllwörter,
+Satzanfänge – als reine Funktion **auf dem Gerät, ohne jeden Netzaufruf**, und
+funktioniert auch offline.
+
+---
+
+## 6. Technische und organisatorische Maßnahmen (Art. 32 DSGVO)
 
 **In der App umgesetzt**
 
@@ -106,6 +145,8 @@ Umgesetzt ist das so:
 | Vorlage und Profil werden mit gelöscht | `allesLoeschen` leert beide Objektspeicher |
 | Warnhinweis, dass die Sicherungsdatei unverschlüsselt ist | Einstellungen → Datensicherung |
 | Auslieferung nur über HTTPS (Voraussetzung für die Installation als PWA) | Betrieb |
+| Die Spracherkennung läuft nur auf Tastendruck und wird beim Verlassen des Bildschirms beendet; ohne Unterstützung im Browser erscheint die Taste gar nicht | `src/components/Spracheingabe.tsx`, Abschnitt 5 |
+| Das Nachbearbeiten diktierter Texte („Text glätten") rechnet ohne Netz auf dem Gerät | `src/utils/cleanDictation.ts` |
 
 **Organisatorisch zu regeln (nicht durch Software lösbar)**
 
@@ -119,10 +160,14 @@ Umgesetzt ist das so:
   Datenschutzbeauftragten, nicht über den einzelnen Anwendungstechniker.
 - Hinweis an die Anwender, Personen möglichst nicht abzulichten; wo es sich
   nicht vermeiden lässt, ist die Rechtsgrundlage vorher zu klären.
+- **Diktierfunktion:** Entscheidung des Verantwortlichen, ob sie benutzt werden
+  darf; bis dahin gilt die Regel aus Abschnitt 5 (keine Personendaten
+  diktieren). Ein Verbot ließe sich technisch durchsetzen, indem die Taste
+  entfernt wird – heute ist sie eine freiwillige Hilfe.
 
 ---
 
-## 6. Restrisiken
+## 7. Restrisiken
 
 | Risiko | Bewertung | Gegenmaßnahme |
 |---|---|---|
@@ -131,10 +176,11 @@ Umgesetzt ist das so:
 | Versand an den falschen Empfänger | menschlicher Fehler beim Teilen | Schulung, Vier-Augen-Prinzip bei heiklen Berichten |
 | Browserdaten werden gelöscht | Datenverlust, kein Datenschutzvorfall | regelmäßige Sicherung |
 | Nutzung auf einem privaten Gerät | unkontrollierter Datenbestand | Nutzungsregel, siehe oben |
+| Diktat mit Personenbezug | Übermittlung an Apple bzw. Google, Drittlandbezug ungeklärt | Anwenderregel „keine Personendaten diktieren", Entscheidung des Verantwortlichen, notfalls Entfernen der Taste |
 
 ---
 
-## 7. Geplante Erweiterungen mit Datenschutzbezug
+## 8. Geplante Erweiterungen mit Datenschutzbezug
 
 Diese Punkte sind **noch nicht umgesetzt** und brauchen vor der Umsetzung eine
 eigene Bewertung:

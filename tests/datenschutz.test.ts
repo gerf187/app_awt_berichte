@@ -76,10 +76,29 @@ describe('Datenschutz-Hinweise', () => {
   })
 
   it('sagen ausdrücklich, dass die Briefvorlage auf dem Gerät bleibt', () => {
-    const alles = DATENSCHUTZ.flatMap((abschnitt) =>
-      abschnitt.bloecke.flatMap((block) => (block.art === 'text' ? [block.inhalt] : block.punkte)),
-    ).join(' ')
-    expect(alles).toContain('Briefvorlage')
-    expect(alles).toMatch(/nicht hochgeladen|verlässt das Gerät nicht/)
+    expect(hinweistext()).toContain('Briefvorlage')
+    expect(hinweistext()).toMatch(/nicht hochgeladen|verlässt das Gerät nicht/)
+  })
+
+  /**
+   * Die eine Stelle, an der die App nicht schweigt: Beim Diktieren erkennt der
+   * Browser die Sprache und schickt die Aufnahme dafür an seinen Hersteller.
+   * Solange es die Taste gibt, muss das im Datenschutz-Text stehen – sonst
+   * verspricht die App mehr, als sie hält.
+   */
+  it('erklären, dass beim Diktieren der Browser die Aufnahme übermittelt', () => {
+    const taste = readFileSync(join(QUELLEN, 'components', 'Spracheingabe.tsx'), 'utf8')
+    if (!taste.includes('Diktieren')) return
+
+    const alles = hinweistext()
+    expect(alles).toMatch(/[Dd]iktier/)
+    expect(alles).toMatch(/Apple|Google|Hersteller des Browsers/)
   })
 })
+
+/** Alle Sätze der Hinweise als ein Text. */
+function hinweistext(): string {
+  return DATENSCHUTZ.flatMap((abschnitt) =>
+    abschnitt.bloecke.flatMap((block) => (block.art === 'text' ? [block.inhalt] : block.punkte)),
+  ).join(' ')
+}

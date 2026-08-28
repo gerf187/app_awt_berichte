@@ -60,6 +60,23 @@ export const DATENSCHUTZ: Abschnitt[] = [
         'Sie zählt niemanden mit: kein Tracking, keine Statistik, keine Fehlerberichte.',
         'Sie lädt zur Laufzeit nichts nach – keine Schriften, keine Bibliotheken von fremden Adressen.',
         'Sie fragt den Standort nicht ab. Beim Verkleinern der Fotos werden die Zusatzdaten der Kamera – auch GPS-Koordinaten – entfernt.',
+        'Eine Ausnahme gibt es: die Diktiertaste. Was dabei passiert, steht im nächsten Abschnitt.',
+      ),
+    ],
+  },
+  {
+    titel: 'Diktieren: hier hört jemand anderes zu',
+    bloecke: [
+      text(
+        'Die Taste „🎤 Diktieren" gehört nicht zur App, sondern zum Browser. Wenn Sie sie antippen, nimmt Ihr Gerät Sprache auf und schickt die Aufnahme in aller Regel an den Hersteller des Browsers – bei Safari an Apple, bei Chrome an Google. Dort wird sie in Text verwandelt und zurückgeschickt. Das ist der einzige Weg, auf dem Daten die App verlassen, ohne dass Sie einen Bericht versenden.',
+      ),
+      liste(
+        'Es passiert nur, solange Sie diktieren. Die App nimmt nichts im Hintergrund auf, und ohne Tastendruck geschieht gar nichts.',
+        'Diktieren Sie keine Namen, Telefonnummern und Anschriften – tippen Sie diese Angaben. Für Feststellungen, Messungen und Beschreibungen ist Diktieren unbedenklich.',
+        'Wer es gar nicht möchte, benutzt die Taste einfach nicht. Alles lässt sich auch tippen.',
+      ),
+      text(
+        '„✨ Text glätten" ist etwas anderes: Das rechnet die App selbst auf dem Gerät und funktioniert auch ohne Internet. Dabei verlässt kein Wort das Handy.',
       ),
     ],
   },
