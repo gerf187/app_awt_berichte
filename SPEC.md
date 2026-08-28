@@ -13,7 +13,8 @@ Eine Web-App, die ein Sika-Anwendungstechniker auf dem Handy als Symbol auf dem 
 | **Kein Microsoft.** Kein Power Apps, Power Automate, SharePoint, OneDrive, Graph API, kein M365-Login. | Bewusster Bruch mit der alten Architektur. |
 | **Kein Backend, kein Server, keine Datenbank.** Reine statische Web-App. | Läuft auf GitHub Pages, keine IT-Freigabe nötig. |
 | **Keine Runtime-CDNs.** Alle Bibliotheken werden zur Buildzeit gebündelt. | Muss offline funktionieren. |
-| **Alle Daten bleiben auf dem Gerät.** Kein Netzwerk-Request mit Nutzerdaten. Keine Analytics, kein Tracking, kein Sentry. | Datenschutz / Kundendaten. |
+| **Alle Daten bleiben auf dem Gerät.** Kein Netzwerk-Request mit Nutzerdaten. Keine Analytics, kein Tracking, kein Sentry. | Datenschutz / Kundendaten. Geprüft in `tests/datenschutz.test.ts`. |
+| **Die Briefvorlage wird in der App hinterlegt, nicht mitgeliefert.** Kein Firmenmaterial im (öffentlichen) Repository, kein Upload zu einem Dienst. | Auf dem Briefbogen stehen Kontaktdaten von Mitarbeitern; außerdem soll eine geänderte Firmierung ohne neuen Deploy wirken. |
 | **Vollständig offline lauffähig** nach dem ersten Laden. | Baustellen haben keinen Empfang. |
 | **UI komplett auf Deutsch.** | Nutzer sind Kollegen im Außendienst. |
 | **Bedienbar mit Handschuhen und einer Hand.** Touch-Ziele ≥ 48 px, große Schrift, ein Thema pro Bildschirm. | Nutzer sind keine Technik-Profis. |
@@ -144,7 +145,26 @@ Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Pflichtang
 10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto, ebenfalls mit Spracheingabe. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
 11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**.
 
-**Einstellungen:** nur noch zwei Dinge – das **Profil** (Name, Funktion, Firma, Straße, PLZ/Ort, Telefon, E-Mail), das „Anwesende" vorfüllt und die Absenderzeile im Bericht liefert, und die **Datensicherung** („Alle Daten sichern (JSON)" / „Daten wiederherstellen").
+**Einstellungen:** vier Abschnitte.
+
+1. **Profil** (Name, Funktion, Firma, Straße, PLZ/Ort, Telefon, E-Mail), füllt „Anwesende" vor und liefert die Absenderzeile im Bericht.
+2. **Briefvorlage** – siehe Abschnitt 6a.
+3. **Datensicherung** („Alle Daten sichern (JSON)" / „Daten wiederherstellen"), mit dem Hinweis, dass die Datei unverschlüsselt ist.
+4. **Anleitung** (Verweis auf die mitgelieferte PDF) und **Datenschutz** (eigener Bildschirm, dazu „Alle Daten auf diesem Gerät löschen").
+
+---
+
+## 6a. Briefvorlage (Briefbogen)
+
+Der Bericht steht auf dem Briefbogen des Hauses. Der Bogen wird **in der App hochgeladen** (`Einstellungen → Briefvorlage`) und liegt danach ausschließlich in der lokalen Datenbank dieses Geräts.
+
+- **Formate:** PDF, PNG, JPEG, höchstens 5 MB. Andere Dateien werden mit einer verständlichen Meldung abgewiesen (`src/lib/vorlage.ts`).
+- **Bilder** werden beim Hinterlegen auf A4-Maß (längste Kante 2000 px) verkleinert, auf Weiß gelegt und als JPEG gespeichert. Sonst landet ein PNG mit Alphakanal unkomprimiert in jeder Berichts-PDF; nebenbei fallen die Zusatzdaten der Datei weg.
+- **Satzspiegel** in Millimetern, einstellbar: oben Seite 1, oben ab Seite 2, unten, links, rechts. Vorschlagswerte 60/60/35/25/20; bei zweiseitigen Vorlagen 60/40/35/25/20.
+- **Seitenwahl:** Zweiseitige PDF-Vorlagen liefern Seite 1 für das erste Blatt und Seite 2 für alle weiteren. Einseitige Vorlagen wiederholen sich nur, wenn „Briefbogen auch auf den Folgeseiten drucken" angehakt ist.
+- **PDF-Ausgabe:** Bild-Vorlagen werden als Untergrund auf jede Seite gezeichnet (einmal eingebettet, per Alias), PDF-Vorlagen am Ende mit `pdf-lib` untergelegt. Mit Vorlage entfällt die eigene gelbe Kopfzeile; stattdessen steht „Baustellenbericht" als Überschrift über den Kopfdaten.
+- **Word-Ausgabe:** Bild-Vorlagen wandern als frei stehende Grafik hinter den Text in die Kopfzeile (`titlePage` trennt Seite 1 von den Folgeseiten). Eine PDF-Vorlage kann Word nicht einbetten – dann bleibt es bei der eigenen Kopfzeile. Das steht so in der Oberfläche und in der Anleitung.
+- **Ohne Vorlage** bleibt alles wie bisher: eigene Kopfzeile, schmale Ränder.
 
 Das Profil wird beim Anlegen in den Bericht kopiert (`bericht.absender`). Ändert sich das Profil später, bleiben alte Berichte so, wie sie verschickt wurden.
 
@@ -194,9 +214,29 @@ Zur Laufzeit `navigator.canShare({files})` prüfen. Keine toten Knöpfe.
 
 ---
 
+## 8a. Datenschutz
+
+In Berichten, Briefvorlage und Anforderungsformular stehen Kunden- und Mitarbeiterdaten. Verbindlich:
+
+- Kein Netzwerkaufruf zur Laufzeit – `tests/datenschutz.test.ts` prüft den Quelltext auf `fetch`, `XMLHttpRequest`, `sendBeacon`, `WebSocket`, `EventSource`, `importScripts`, `navigator.geolocation` und fremde Adressen.
+- Fotos werden über ein Canvas neu erzeugt; die Zusatzdaten der Kamera (auch GPS) fallen dabei weg.
+- **Löschen in einem Schritt:** `Einstellungen → Datenschutz → „Alle Daten auf diesem Gerät löschen"` leert Berichte *und* Einstellungen inklusive Briefvorlage.
+- **Datenschutz-Bildschirm** in einfacher Sprache. Der Text steht in `src/data/datenschutz.ts` und wird von der App **und** der Anleitung benutzt – eine Quelle, zwei Ausgaben.
+- Die förmliche Fassung (Verarbeitungsverzeichnis nach Art. 30, technische und organisatorische Maßnahmen nach Art. 32, Restrisiken) steht in `DATENSCHUTZ.md`.
+
+## 8b. Anleitung
+
+Eine vollständige Anleitung mit Bildern zu jedem Schritt, die **als PDF bereitsteht**:
+
+- `npm run anleitung:bilder` baut die App, startet sie örtlich, legt erfundene Musterdaten in die Browser-Datenbank und fotografiert mit Playwright jeden Bildschirm nach `dokumentation/bilder/`. Dazu zwei Seiten des erzeugten Berichts über `pdftoppm`.
+- `npm run anleitung` setzt daraus `dokumentation/Anleitung_Baustellenbericht.pdf` und legt dieselbe Datei als `public/Anleitung.pdf` ab – damit wird sie mit der App ausgeliefert und ist unter `Einstellungen → Anleitung` auch offline zu öffnen.
+- Text in `scripts/anleitungInhalt.ts`, Satz in `scripts/anleitung.ts`: Titelseite, Inhaltsverzeichnis mit Seitenzahlen, ein Kapitel je Blatt, Hinweis- und Warnkästen, Bildunterschriften.
+- **Keine echten Daten in der Anleitung.** Alle Bilder zeigen „Musterfirma GmbH" / „Max Muster"; der Beispiel-Briefbogen entsteht aus `scripts/beispielBriefbogen.mjs`.
+
 ## 9. PWA-Anforderungen
 
 - `manifest.webmanifest`: Name „Baustellenbericht", Kurzname „Bericht", `display: standalone`, `orientation: portrait`, Sika-Farben.
+- Precache schließt `*.pdf` ein, damit die Anleitung ohne Empfang aufgeht.
 - Icons: 192, 512 und maskable 512 (Sika-gelbes Quadrat mit Klemmbrett-Symbol, Platzhalter).
 - Apple-spezifisch: `apple-touch-icon`, `apple-mobile-web-app-capable`, Splash-Meta-Tags.
 - Service Worker: App-Shell komplett precachen, `registerType: 'autoUpdate'`. Bei neuer Version dezenter Hinweis „Neue Version verfügbar – neu laden".
@@ -258,3 +298,9 @@ Zur Laufzeit `navigator.canShare({files})` prüfen. Keine toten Knöpfe.
 - [ ] Backup-JSON exportier- und einspielbar
 - [ ] Keine Netzwerkanfrage mit Nutzerdaten
 - [ ] README auf Deutsch ohne Fachjargon
+- [ ] Briefvorlage lässt sich als PDF, PNG und JPEG hinterlegen, entfernen und austauschen
+- [ ] Bericht steht auf der Vorlage, ohne in Kopf oder Fußzeile zu laufen – PDF geprüft
+- [ ] Vorlage taucht in keinem Commit auf; im Repository liegt nur der Beispiel-Briefbogen „Musterfirma"
+- [ ] „Alle Daten auf diesem Gerät löschen" entfernt Berichte, Profil und Vorlage
+- [ ] `DATENSCHUTZ.md` und der Datenschutz-Bildschirm sagen dasselbe
+- [ ] Anleitung als PDF vorhanden, jeder Schritt mit Bild, in der App offline zu öffnen

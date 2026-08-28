@@ -113,6 +113,24 @@ export async function produktSpeichern(produkt: string): Promise<void> {
   await einstellungenSpeichern({ ...einstellungen, gemerkteProdukte: gemerkt })
 }
 
+/**
+ * Alles löschen, was die App auf diesem Gerät gespeichert hat: Berichte,
+ * Fotos, Unterschriften, Profil und Briefvorlage.
+ *
+ * Gehört zum Datenschutz (siehe DATENSCHUTZ.md): Wer das Gerät abgibt,
+ * tauscht oder den Bericht nicht mehr braucht, muss die Daten in einem
+ * Schritt loswerden können – ohne den Browserspeicher zu durchsuchen.
+ */
+export async function allesLoeschen(): Promise<void> {
+  const datenbank = await db()
+  const transaktion = datenbank.transaction([BERICHTE, EINSTELLUNGEN], 'readwrite')
+  await Promise.all([
+    transaktion.objectStore(BERICHTE).clear(),
+    transaktion.objectStore(EINSTELLUNGEN).clear(),
+  ])
+  await transaktion.done
+}
+
 /** Kompletter Datenbestand für die Sicherungsdatei. */
 export async function alleDatenSichern(): Promise<Sicherung> {
   const [berichte, einstellungen] = await Promise.all([alleBerichte(), einstellungenLaden()])

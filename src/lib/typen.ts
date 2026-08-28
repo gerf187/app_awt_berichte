@@ -113,6 +113,48 @@ export type Absender = {
   email: string
 }
 
+/**
+ * Art der hinterlegten Briefvorlage.
+ * `bild` ist ein eingescannter oder exportierter Briefbogen (PNG/JPEG),
+ * `pdf` der Briefbogen als PDF – dann können erste Seite und Folgeseiten
+ * unterschiedlich aussehen.
+ */
+export type VorlagenArt = 'bild' | 'pdf'
+
+/**
+ * Der Briefbogen, auf dem der Bericht steht.
+ *
+ * Er wird **in der App hochgeladen** und liegt danach nur in der Datenbank
+ * dieses Geräts – nicht im Repository, nicht auf einem Server. Grund: der
+ * Briefbogen ist Firmenmaterial und trägt Namen, Telefonnummer und Anschrift
+ * von Mitarbeitern; beides gehört weder auf eine öffentliche Seite noch zu
+ * einem fremden Dienst. Siehe DATENSCHUTZ.md.
+ */
+export type Briefvorlage = {
+  /** Name der hochgeladenen Datei – nur zur Wiedererkennung in den Einstellungen. */
+  dateiname: string
+  art: VorlagenArt
+  /** Die Datei selbst als Data-URL. */
+  daten: string
+  /** Größe der Originaldatei in Bytes. */
+  groesse: number
+  /** Seitenzahl bei PDF-Vorlagen; Bilder haben immer eine. */
+  seiten: number
+  hinzugefuegtAm: string
+  /** Satzspiegel: wo der Bericht auf dem Briefbogen stehen darf, in Millimetern. */
+  randOben: number
+  /** Oberer Rand ab Seite 2 – dort ist der Briefkopf meist kleiner. */
+  randObenFolgeseiten: number
+  randUnten: number
+  randLinks: number
+  randRechts: number
+  /**
+   * Einseitige Vorlagen auch auf den Folgeseiten wiederholen.
+   * Aus für Briefbögen, deren Kopf nur auf Seite 1 gehört.
+   */
+  ersteSeiteWiederholen: boolean
+}
+
 export type Foto = {
   id: string
   /** Verkleinertes JPEG als Data-URL. */
@@ -153,6 +195,11 @@ export type Einstellungen = {
    * nichts von Hand.
    */
   gemerkteProdukte: string[]
+  /**
+   * Der eigene Briefbogen. Fehlt er, druckt die App ihre schlichte eigene
+   * Kopfzeile – der Bericht ist also nie blockiert.
+   */
+  briefvorlage?: Briefvorlage
 }
 
 /** Struktur der Sicherungsdatei (Einstellungen → „Alle Daten sichern"). */

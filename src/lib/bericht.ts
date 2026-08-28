@@ -4,6 +4,7 @@
  */
 
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
+import { vorlageAuffuellen } from './vorlage'
 import type {
   Absender,
   Aufbauzeile,
@@ -185,6 +186,8 @@ export function einstellungenAuffuellen(gespeichert: unknown): Einstellungen {
       : Array.isArray(alt.produkte)
         ? alt.produkte
         : [],
+    // Eine Vorlage aus einer fremden Sicherungsdatei wird geradegezogen, nicht geglaubt.
+    briefvorlage: vorlageAuffuellen(alt.briefvorlage),
   }
 }
 

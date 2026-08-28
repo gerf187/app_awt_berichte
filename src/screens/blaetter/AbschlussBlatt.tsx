@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Knopf } from '../../components/Knopf'
 import { Unterschrift } from '../../components/Unterschrift'
 import { absenderzeilen, fehlendePflichtfelder } from '../../lib/bericht'
 import { dateiname } from '../../lib/dateiname'
+import { einstellungenLaden } from '../../lib/db'
 import {
   betreff,
   dateiTeilen,
@@ -11,7 +12,7 @@ import {
   mailtoAdresse,
   mailtext,
 } from '../../lib/teilen'
-import type { Bericht } from '../../lib/typen'
+import type { Bericht, Briefvorlage } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
 type Format = 'pdf' | 'docx'
@@ -22,10 +23,13 @@ type Format = 'pdf' | 'docx'
  * Teile beim ersten Besuch mit in den Cache – offline funktionieren sie also.
  */
 async function datei(bericht: Bericht, format: Format): Promise<File> {
+  // Der Briefbogen kommt frisch aus den Einstellungen: Wer ihn während der
+  // Erfassung austauscht, soll ihn ohne Neustart im Dokument sehen.
+  const { briefvorlage } = await einstellungenLaden()
   const blob =
     format === 'pdf'
-      ? await (await import('../../lib/pdf')).pdfErzeugen(bericht)
-      : await (await import('../../lib/docx')).docxErzeugen(bericht)
+      ? await (await import('../../lib/pdf')).pdfErzeugen(bericht, briefvorlage)
+      : await (await import('../../lib/docx')).docxErzeugen(bericht, briefvorlage)
   return new File([blob], dateiname(bericht, format), { type: blob.type })
 }
 
@@ -33,6 +37,12 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
   const [laeuft, setLaeuft] = useState<'' | Format | 'versand'>('')
   const [meldung, setMeldung] = useState('')
   const [mailAdresse, setMailAdresse] = useState('')
+  const [vorlage, setVorlage] = useState<Briefvorlage | undefined>(undefined)
+
+  // Nur für den Hinweis unten: welcher Briefbogen steht hinter dem Bericht?
+  useEffect(() => {
+    void einstellungenLaden().then((einstellungen) => setVorlage(einstellungen.briefvorlage))
+  }, [])
 
   const fehlt = fehlendePflichtfelder(bericht)
   const zeilen = absenderzeilen(bericht.absender)
@@ -160,6 +170,12 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt }: BlattEigenschaf
         <Knopf art="zweit" breit disabled={laeuft !== ''} onClick={() => void versenden()}>
           {laeuft === 'versand' ? 'Wird vorbereitet …' : 'Bericht versenden'}
         </Knopf>
+
+        <p className="text-sika-grau text-sm">
+          {vorlage
+            ? `Der Bericht steht auf der Briefvorlage „${vorlage.dateiname}".`
+            : 'Ohne hinterlegte Briefvorlage druckt die App ihre eigene Kopfzeile. Vorlage hinterlegen: Einstellungen → Briefvorlage.'}
+        </p>
 
         {meldung && (
           <p role="status" className="font-semibold">

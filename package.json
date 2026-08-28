@@ -11,13 +11,17 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "icons": "node scripts/icons.mjs"
+    "icons": "node scripts/icons.mjs",
+    "briefbogen": "node scripts/beispielBriefbogen.mjs",
+    "anleitung:bilder": "npx vite-node scripts/anleitungBilder.ts",
+    "anleitung": "npx vite-node scripts/anleitung.ts"
   },
   "dependencies": {
     "docx": "^9.7.1",
     "idb": "^8.0.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "pdf-lib": "^1.17.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -32,6 +36,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^17.11.0",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "sharp": "^0.35.3",
     "tailwindcss": "^4.3.3",

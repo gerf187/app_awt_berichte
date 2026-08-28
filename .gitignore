@@ -11,5 +11,9 @@ dist-ssr
 # Lokale Testausgaben (Beispiel-PDF/-DOCX aus scripts/)
 /beispiel/
 
+# Briefvorlagen und Logos: Firmenmaterial gehört nicht in ein öffentliches
+# Repository. Die Vorlage wird in der App selbst hinterlegt, nicht mitgeliefert.
+/vorlage/
+
 # Lokale Claude-Code-Einstellungen (geräteabhängig)
 .claude/settings.local.json

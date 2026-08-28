@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AktualisierungsHinweis } from './components/AktualisierungsHinweis'
 import { BerichtBildschirm } from './screens/BerichtBildschirm'
 import { BerichteBildschirm } from './screens/BerichteBildschirm'
+import { DatenschutzBildschirm } from './screens/DatenschutzBildschirm'
 import { EinstellungenBildschirm } from './screens/EinstellungenBildschirm'
 import { StartBildschirm } from './screens/StartBildschirm'
 import type { BlattId } from './lib/typen'
@@ -15,6 +16,7 @@ export type Ansicht =
   | { name: 'start' }
   | { name: 'liste' }
   | { name: 'einstellungen' }
+  | { name: 'datenschutz' }
   /** Ohne `blatt` steht die Kachelübersicht des Berichts. */
   | { name: 'bericht'; id: string; blatt?: BlattId }
 
@@ -26,6 +28,7 @@ export default function App() {
       {ansicht.name === 'start' && <StartBildschirm zeige={setAnsicht} />}
       {ansicht.name === 'liste' && <BerichteBildschirm zeige={setAnsicht} />}
       {ansicht.name === 'einstellungen' && <EinstellungenBildschirm zeige={setAnsicht} />}
+      {ansicht.name === 'datenschutz' && <DatenschutzBildschirm zeige={setAnsicht} />}
       {ansicht.name === 'bericht' && (
         <BerichtBildschirm id={ansicht.id} blatt={ansicht.blatt} zeige={setAnsicht} />
       )}

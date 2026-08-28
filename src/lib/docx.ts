@@ -5,6 +5,7 @@ import {
   Footer,
   Header,
   HeadingLevel,
+  HorizontalPositionRelativeFrom,
   ImageRun,
   PageNumber,
   Packer,
@@ -13,19 +14,37 @@ import {
   TableCell,
   TableRow,
   TextRun,
+  TextWrappingType,
+  VerticalPositionRelativeFrom,
   WidthType,
 } from 'docx'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
-import type { Bericht, Foto } from './typen'
+import { A4, satzspiegel } from './vorlage'
+import type { Bericht, Briefvorlage, Foto } from './typen'
 
 /**
  * Word-Ausgabe (.docx) mit demselben Inhalt wie die PDF.
  *
  * Word ist der Weg für Kollegen, die den Bericht noch ergänzen wollen –
  * die PDF bleibt das Dokument für den Kunden.
+ *
+ * **Briefbogen:** Ein als Bild hinterlegter Briefbogen wird als hinterlegte
+ * Grafik in die Word-Kopfzeile gelegt. Eine PDF-Vorlage kann Word nicht
+ * einbetten – dann bleibt es bei der schlichten eigenen Kopfzeile, die PDF
+ * steht trotzdem auf dem Briefbogen.
  */
+
+/** Millimeter in Twips (1 mm = 56,6929 twip) – Word rechnet so. */
+function mmInTwips(mm: number): number {
+  return Math.round(mm * 56.6929)
+}
+
+/** Millimeter in EMU (1 mm = 36.000 EMU) – für frei stehende Grafiken. */
+function mmInEmu(mm: number): number {
+  return Math.round(mm * 36000)
+}
 
 const GELB = 'FFC400'
 const ROT = 'D0021B'
@@ -36,8 +55,15 @@ const TEXTBREITE_PX = 600
 /** Höchste Bildhöhe, damit zwei Fotos auf eine Seite passen. */
 const MAX_BILDHOEHE_PX = 420
 
-export async function docxErzeugen(bericht: Bericht): Promise<Blob> {
+export async function docxErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Promise<Blob> {
+  // Nur ein Bild lässt sich in Word hinterlegen; eine PDF-Vorlage nicht.
+  const briefbogen = vorlage?.art === 'bild' ? vorlage : undefined
+  const rand = satzspiegel(briefbogen)
+
   const inhalt: (Paragraph | Table)[] = [
+    ...(briefbogen
+      ? [new Paragraph({ text: 'Baustellenbericht', heading: HeadingLevel.HEADING_1 })]
+      : []),
     ...kopfdaten(bericht),
     ...anwesende(bericht),
     ...untergrund(bericht),
@@ -58,20 +84,46 @@ export async function docxErzeugen(bericht: Bericht): Promise<Blob> {
     },
     sections: [
       {
-        properties: {},
-        headers: {
-          default: new Header({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({ text: 'Sika', bold: true, highlight: 'yellow' }),
-                  new TextRun({ text: '   Baustellenbericht', bold: true, size: 32 }),
-                ],
-                border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GELB } },
-              }),
-            ],
-          }),
+        properties: {
+          page: {
+            margin: {
+              // Word kennt nur einen oberen Rand je Abschnitt. Genommen wird
+              // der größere der beiden – lieber etwas Luft auf Seite 2 als
+              // Text im Briefkopf.
+              top: mmInTwips(rand.obenErste),
+              right: mmInTwips(rand.rechts),
+              bottom: mmInTwips(rand.unten),
+              left: mmInTwips(rand.links),
+            },
+          },
+          // Getrennte Kopfzeile für Seite 1, damit ein einseitiger Briefbogen
+          // nicht auf jeder Folgeseite wieder auftaucht.
+          titlePage: briefbogen !== undefined,
         },
+        headers: briefbogen
+          ? {
+              first: new Header({ children: [briefbogenAbsatz(briefbogen)] }),
+              default: new Header({
+                children: [
+                  briefbogen.ersteSeiteWiederholen
+                    ? briefbogenAbsatz(briefbogen)
+                    : new Paragraph({ text: '' }),
+                ],
+              }),
+            }
+          : {
+              default: new Header({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: 'Sika', bold: true, highlight: 'yellow' }),
+                      new TextRun({ text: '   Baustellenbericht', bold: true, size: 32 }),
+                    ],
+                    border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GELB } },
+                  }),
+                ],
+              }),
+            },
         footers: {
           default: new Footer({
             children: [
@@ -94,6 +146,58 @@ export async function docxErzeugen(bericht: Bericht): Promise<Blob> {
   })
 
   return Packer.toBlob(dokument)
+}
+
+/**
+ * Der Briefbogen als frei stehende Grafik hinter dem Text.
+ *
+ * Er hängt an der Kopfzeile und an der Seite (nicht am Textrahmen), liegt
+ * hinter dem Dokument und umfließt nichts – so verschiebt er keine Zeile.
+ */
+function briefbogenAbsatz(vorlage: Briefvorlage): Paragraph {
+  const daten = ausDataUrl(vorlage.daten)
+  const istPng = vorlage.daten.startsWith('data:image/png')
+  const masse = (istPng ? pngMasse(daten) : jpegMasse(daten)) ?? { breite: 210, hoehe: 297 }
+
+  // Seitenverhältnis erhalten und mittig auf die A4-Seite setzen.
+  const faktor = Math.min(A4.breite / masse.breite, A4.hoehe / masse.hoehe)
+  const breite = masse.breite * faktor
+  const hoehe = masse.hoehe * faktor
+
+  return new Paragraph({
+    children: [
+      new ImageRun({
+        type: istPng ? 'png' : 'jpg',
+        data: daten,
+        // Word rechnet die Anzeigegröße in Bildpunkten zu 96 dpi.
+        transformation: {
+          width: Math.round((breite / 25.4) * 96),
+          height: Math.round((hoehe / 25.4) * 96),
+        },
+        floating: {
+          horizontalPosition: {
+            relative: HorizontalPositionRelativeFrom.PAGE,
+            offset: mmInEmu((A4.breite - breite) / 2),
+          },
+          verticalPosition: {
+            relative: VerticalPositionRelativeFrom.PAGE,
+            offset: mmInEmu((A4.hoehe - hoehe) / 2),
+          },
+          behindDocument: true,
+          allowOverlap: true,
+          wrap: { type: TextWrappingType.NONE },
+        },
+      }),
+    ],
+  })
+}
+
+/** Maße aus dem IHDR-Block einer PNG-Datei. */
+function pngMasse(daten: Uint8Array): { breite: number; hoehe: number } | null {
+  if (daten.length < 24 || daten[0] !== 0x89 || daten[1] !== 0x50) return null
+  const zahl = (start: number) =>
+    (daten[start] << 24) + (daten[start + 1] << 16) + (daten[start + 2] << 8) + daten[start + 3]
+  return { breite: zahl(16), hoehe: zahl(20) }
 }
 
 function ueberschrift(text: string): Paragraph {
