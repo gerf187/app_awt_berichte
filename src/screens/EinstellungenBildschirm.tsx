@@ -14,13 +14,30 @@ import {
   istSicherung,
 } from '../lib/db'
 import {
+  OneDriveFehler,
+  STANDARD_ORDNER,
+  abmelden,
+  anmeldungStarten,
+  rueckkehrErkannt,
+  rueckkehrVerarbeiten,
+  standardKonfig,
+  umleitungsAdresse,
+  verbundenesKonto,
+} from '../lib/onedrive'
+import {
   MAX_VORLAGE_BYTES,
   SIKA_RAENDER,
   VorlagenFehler,
   groesseAnzeigen,
   vorlageEinlesen,
 } from '../lib/vorlage'
-import type { Absender, Briefvorlage, Einstellungen } from '../lib/typen'
+import type { Absender, Briefvorlage, Einstellungen, OneDriveZugang } from '../lib/typen'
+
+/**
+ * Wächter gegen doppeltes Einlösen des Anmeldecodes – bewusst außerhalb der
+ * Komponente, damit ein Neuaufbau im Entwicklungsmodus ihn nicht zurücksetzt.
+ */
+let rueckkehrLaeuft = false
 
 export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => void }) {
   const [werte, setWerte] = useState<Einstellungen>(LEERE_EINSTELLUNGEN)
@@ -28,6 +45,8 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
   const [meldung, setMeldung] = useState('')
   const [vorlagenMeldung, setVorlagenMeldung] = useState('')
   const [loeschenBestaetigen, setLoeschenBestaetigen] = useState(false)
+  const [onedriveMeldung, setOneDriveMeldung] = useState('')
+  const [konto, setKonto] = useState<string | null>(() => verbundenesKonto())
   const dateiFeld = useRef<HTMLInputElement>(null)
   const vorlagenFeld = useRef<HTMLInputElement>(null)
 
@@ -36,6 +55,23 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
       setWerte(gespeichert)
       setGeladen(true)
     })
+  }, [])
+
+  // Rückkehr von der Microsoft-Anmeldung auswerten. Der Code darf nur einmal
+  // eingelöst werden – im Entwicklungsmodus läuft dieser Effekt zweimal.
+  useEffect(() => {
+    if (!rueckkehrErkannt() || rueckkehrLaeuft) return
+    rueckkehrLaeuft = true
+    void rueckkehrVerarbeiten()
+      .then((name) => {
+        setKonto(name)
+        setOneDriveMeldung(`Verbunden als ${name}.`)
+      })
+      .catch((fehler: unknown) => {
+        setOneDriveMeldung(
+          fehler instanceof OneDriveFehler ? fehler.message : 'Die Anmeldung hat nicht geklappt.',
+        )
+      })
   }, [])
 
   /** Einstellungen ändern und sofort speichern – einen Speichern-Knopf gibt es nicht. */
@@ -50,6 +86,34 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
   /** Einzelne Profilangabe ändern – der Rest des Profils bleibt stehen. */
   function aendernProfil(teil: Partial<Absender>) {
     aendern((vorher) => ({ ...vorher, profil: { ...vorher.profil, ...teil } }))
+  }
+
+  /**
+   * OneDrive-Zugang ändern. Steht noch keiner in den Einstellungen, wird er
+   * beim ersten Tastendruck angelegt – ein „Einrichten"-Schritt vorweg wäre
+   * eine Hürde ohne Nutzen.
+   */
+  function aendernOneDrive(teil: Partial<OneDriveZugang>) {
+    aendern((vorher) => ({
+      ...vorher,
+      onedrive: { ...standardKonfig(), ...vorher.onedrive, ...teil },
+    }))
+  }
+
+  /**
+   * Anmeldung starten. Die Seite verlässt die App und kommt danach zurück –
+   * darum vorher speichern, was der Nutzer eingetippt hat. Das erledigt
+   * `aendern` schon bei jedem Tastendruck.
+   */
+  async function verbinden() {
+    setOneDriveMeldung('')
+    try {
+      await anmeldungStarten(werte.onedrive ?? standardKonfig())
+    } catch (fehler) {
+      setOneDriveMeldung(
+        fehler instanceof OneDriveFehler ? fehler.message : 'Die Anmeldung ließ sich nicht öffnen.',
+      )
+    }
   }
 
   function aendernVorlage(teil: Partial<Briefvorlage>) {
@@ -127,6 +191,8 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
   }
 
   const vorlage = werte.briefvorlage
+  const onedrive = werte.onedrive ?? standardKonfig()
+  const umleitung = umleitungsAdresse()
 
   return (
     <div className="flex flex-1 flex-col">
@@ -393,14 +459,94 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
         </section>
 
         {/* --- OneDrive ----------------------------------------------------
-            Die Frage kommt von jedem Kollegen: Der Platz dafür ist hier – und
-            solange der Zugang fehlt, steht wenigstens da, warum. */}
+            Die Anmeldung läuft direkt zwischen Gerät und Microsoft. Die App
+            braucht dafür nur die Anwendungs-ID der App-Registrierung – so kann
+            jeder sein eigenes OneDrive verbinden, und später steht hier ohne
+            Codeänderung die Sika-Registrierung. */}
         <section className="border-sika-schwarz/10 flex flex-col gap-3 rounded-xl border-2 bg-white p-4">
           <h2 className="text-lg font-bold">OneDrive</h2>
+
+          {konto ? (
+            <>
+              <p className="font-semibold">Verbunden als {konto}</p>
+              <p className="text-sika-grau text-sm">
+                Fertige Berichte lassen sich auf dem Abschlussblatt mit „In OneDrive ablegen"
+                hochladen – in den Ordner „{onedrive.ordner || STANDARD_ORDNER}".
+              </p>
+            </>
+          ) : (
+            <p className="text-sika-grau text-sm">
+              Noch nicht verbunden. Mit einer Verbindung legt die App fertige Berichte direkt in
+              OneDrive ab – privates Microsoft-Konto und Firmenkonto gehen beide.
+            </p>
+          )}
+
+          <Textfeld
+            beschriftung="Anwendungs-ID (Client-ID)"
+            hinweis="Aus der App-Registrierung im Microsoft-Entra-Portal. Ohne sie lässt Microsoft die Anmeldung nicht zu."
+            inputMode="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={onedrive.clientId}
+            onChange={(e) => aendernOneDrive({ clientId: e.target.value.trim() })}
+          />
+
+          <Textfeld
+            beschriftung="Ordner in OneDrive"
+            hinweis="Wird beim ersten Hochladen angelegt. Unterordner mit Schrägstrich, z. B. Berichte/2026."
+            value={onedrive.ordner}
+            onChange={(e) => aendernOneDrive({ ordner: e.target.value })}
+          />
+
+          {/* Diese Adresse muss in der Registrierung als Umleitungs-URI stehen –
+              abtippen ist die häufigste Fehlerquelle, darum zum Kopieren. */}
+          <div className="border-sika-schwarz/10 rounded-xl border-2 p-3">
+            <p className="text-sm font-semibold">Umleitungs-URI für die Registrierung</p>
+            <p className="text-sika-grau mt-1 text-sm break-all">{umleitung}</p>
+            <Knopf
+              art="still"
+              className="mt-1 px-0"
+              onClick={() => {
+                void navigator.clipboard
+                  ?.writeText(umleitung)
+                  .then(() => setOneDriveMeldung('Adresse kopiert.'))
+                  .catch(() => setOneDriveMeldung(umleitung))
+              }}
+            >
+              Adresse kopieren
+            </Knopf>
+          </div>
+
+          {konto ? (
+            <Knopf
+              art="zweit"
+              breit
+              onClick={() => {
+                abmelden()
+                setKonto(null)
+                setOneDriveMeldung('Die Verbindung wurde vom Gerät gelöst.')
+              }}
+            >
+              Verbindung trennen
+            </Knopf>
+          ) : (
+            <Knopf art="haupt" breit disabled={!onedrive.clientId} onClick={() => void verbinden()}>
+              Mit OneDrive verbinden
+            </Knopf>
+          )}
+
+          {onedriveMeldung && (
+            <p role="status" className="font-semibold">
+              {onedriveMeldung}
+            </p>
+          )}
+
           <p className="text-sika-grau text-sm">
-            Noch nicht angebunden. Damit die App Berichte in OneDrive ablegen darf, muss sie in der
-            Sika-Umgebung angemeldet werden – das geht nur zusammen mit der Sika-IT und ist in
-            Arbeit. Bis dahin ist die Sicherung oben der Weg, Berichte vom Gerät zu bekommen.
+            So kommt man an die Anwendungs-ID: im Microsoft-Entra-Portal unter „App-Registrierungen"
+            eine neue Registrierung anlegen, als Kontotyp „Konten in einem beliebigen
+            Organisationsverzeichnis und persönliche Microsoft-Konten" wählen, als Plattform
+            „Einzelseitenanwendung (SPA)" mit obiger Umleitungs-URI. Die angezeigte Anwendungs-ID
+            gehört dann in das Feld oben.
           </p>
         </section>
 

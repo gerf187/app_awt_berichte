@@ -27,7 +27,10 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 - **Bericht auf dem eigenen Briefbogen.** Die Briefvorlage wird in der App
   hinterlegt und bleibt auf dem Gerät.
 - Ausgabe als PDF und als Word-Datei, Versand über die Teilen-Funktion des Handys
-- **Alles bleibt auf Ihrem Gerät.** Die App schickt keine Daten irgendwohin.
+- **Ablage in OneDrive**, wenn Sie wollen: einmal verbinden, danach legt ein
+  Tastendruck den fertigen Bericht in Ihren OneDrive-Ordner. Siehe unten.
+- **Alles bleibt auf Ihrem Gerät.** Von allein schickt die App nichts
+  irgendwohin – nur was Sie selbst versenden oder ablegen.
 
 ## Auf das Handy holen
 
@@ -100,6 +103,33 @@ wieder einlesen.
 Die Sicherung enthält Berichte samt Fotos, das Profil und die Briefvorlage –
 **unverschlüsselt**. Sie gehört auf ein dienstliches Laufwerk, nicht in einen
 privaten Cloudordner.
+
+## OneDrive verbinden
+
+Ohne Verbindung funktioniert die App vollständig – die Ablage ist ein Angebot,
+keine Voraussetzung. Wer sie will, braucht einmalig eine App-Registrierung bei
+Microsoft; die App selbst bringt keine mit, damit jeder sein eigenes Konto
+benutzen kann.
+
+1. Im **Microsoft-Entra-Portal** (`entra.microsoft.com`) → **App-Registrierungen**
+   → **Neue Registrierung**.
+2. Name frei wählen. Kontotypen: **„Konten in einem beliebigen
+   Organisationsverzeichnis und persönliche Microsoft-Konten"**.
+3. Plattform **„Einzelseitenanwendung (SPA)"**, Umleitungs-URI:
+   `https://gerf187.github.io/app_awt_berichte/` – dieselbe Adresse steht zum
+   Kopieren in der App.
+4. Die **Anwendungs-ID (Client)** aus der Übersicht in der App unter
+   **Einstellungen → OneDrive** eintragen, Ordner wählen, **„Mit OneDrive
+   verbinden"**.
+
+Danach steht auf dem Abschlussblatt **„PDF in OneDrive ablegen"**. Die Anmeldung
+läuft direkt zwischen Gerät und Microsoft; die Zugangsschlüssel bleiben auf dem
+Gerät und stehen nicht in der Sicherungsdatei. **„Verbindung trennen"** löscht
+sie wieder.
+
+Berichte enthalten Kunden- und Mitarbeiterdaten: Sie gehören in ein
+**dienstliches** OneDrive, nicht in ein privates. Ein privates Konto ist für
+Testberichte ohne echte Daten gedacht.
 
 ## Datenschutz
 

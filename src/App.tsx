@@ -5,6 +5,7 @@ import { BerichteBildschirm } from './screens/BerichteBildschirm'
 import { DatenschutzBildschirm } from './screens/DatenschutzBildschirm'
 import { EinstellungenBildschirm } from './screens/EinstellungenBildschirm'
 import { StartBildschirm } from './screens/StartBildschirm'
+import { rueckkehrErkannt } from './lib/onedrive'
 import type { BlattId } from './lib/typen'
 
 /**
@@ -21,7 +22,12 @@ export type Ansicht =
   | { name: 'bericht'; id: string; blatt?: BlattId }
 
 export default function App() {
-  const [ansicht, setAnsicht] = useState<Ansicht>({ name: 'start' })
+  // Nach der OneDrive-Anmeldung kommt der Browser mit einer Antwort von
+  // Microsoft zurück. Die gehört in die Einstellungen – dort ist die
+  // Verbindung angestoßen worden, dort steht danach das Ergebnis.
+  const [ansicht, setAnsicht] = useState<Ansicht>(() =>
+    rueckkehrErkannt() ? { name: 'einstellungen' } : { name: 'start' },
+  )
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col">

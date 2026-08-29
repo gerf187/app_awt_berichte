@@ -45,7 +45,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
     titel: 'Wo die Daten liegen',
     bloecke: [
       text(
-        'Alles bleibt in der Datenbank des Browsers auf diesem einen Gerät. Es gibt keinen Server, kein Konto und keine Anmeldung. Auch die Briefvorlage wird nicht hochgeladen: „Vorlage hochladen" heißt, dass die Datei in diese lokale Datenbank gelegt wird – sie verlässt das Gerät nicht.',
+        'Alles bleibt in der Datenbank des Browsers auf diesem einen Gerät. Es gibt keinen Server der App, zu dem etwas übertragen würde. Auch die Briefvorlage wird nicht hochgeladen: „Vorlage hochladen" heißt, dass die Datei in diese lokale Datenbank gelegt wird – sie verlässt das Gerät nicht.',
       ),
       text(
         'Die App selbst ist eine reine Webseite ohne Datenbank dahinter. Wer sie ausliefert, sieht deshalb nur, dass die Seite geladen wurde – niemals einen Berichtsinhalt.',
@@ -56,11 +56,11 @@ export const DATENSCHUTZ: Abschnitt[] = [
     titel: 'Was die App nicht tut',
     bloecke: [
       liste(
-        'Sie sendet keine Berichte, keine Fotos und keine Vorlage an einen Server.',
+        'Sie sendet von sich aus nichts weg – kein Bericht, kein Foto und keine Vorlage geht ohne Ihren Tastendruck irgendwohin.',
         'Sie zählt niemanden mit: kein Tracking, keine Statistik, keine Fehlerberichte.',
         'Sie lädt zur Laufzeit nichts nach – keine Schriften, keine Bibliotheken von fremden Adressen.',
         'Sie fragt den Standort nicht ab. Beim Verkleinern der Fotos werden die Zusatzdaten der Kamera – auch GPS-Koordinaten – entfernt.',
-        'Eine Ausnahme gibt es: die Diktiertaste. Was dabei passiert, steht im nächsten Abschnitt.',
+        'Zwei Ausnahmen gibt es, beide nur auf Tastendruck: die Diktiertaste und die Ablage in OneDrive. Beide stehen in den nächsten Abschnitten.',
       ),
     ],
   },
@@ -77,6 +77,23 @@ export const DATENSCHUTZ: Abschnitt[] = [
       ),
       text(
         '„✨ Text glätten" ist etwas anderes: Das rechnet die App selbst auf dem Gerät und funktioniert auch ohne Internet. Dabei verlässt kein Wort das Handy.',
+      ),
+    ],
+  },
+  {
+    titel: 'Ablage in OneDrive',
+    bloecke: [
+      text(
+        'Wer will, kann die App mit seinem OneDrive verbinden (Einstellungen → OneDrive). Dann legt „PDF in OneDrive ablegen" den fertigen Bericht in einen Ordner Ihres OneDrive. Erst damit verlässt ein Bericht das Gerät – vorher nicht, und auch dann nur der eine Bericht, den Sie ablegen.',
+      ),
+      liste(
+        'Die Anmeldung läuft unmittelbar zwischen Ihrem Gerät und Microsoft. Ihr Kennwort sieht die App nie.',
+        'Der Zugangsschlüssel bleibt auf dem Gerät. Er steht nicht in der Sicherungsdatei und geht bei „Verbindung trennen" verloren.',
+        'Die App liest Ihr OneDrive nicht aus. Sie legt Dateien ab, mehr nicht.',
+        'Ohne Verbindung gibt es die Taste nicht. Wer sie nie herstellt, für den bleibt die App so stumm wie zuvor.',
+      ),
+      text(
+        'Ab dem Hochladen gelten die Regeln des Kontos, in das der Bericht wandert: bei einem Firmen-OneDrive die des Unternehmens, bei einem privaten Konto Ihre eigenen. Berichte mit Kunden- und Mitarbeiterdaten gehören in ein dienstliches OneDrive, nicht in ein privates.',
       ),
     ],
   },

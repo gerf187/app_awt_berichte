@@ -39,7 +39,7 @@ const bild = (datei: string, bildunterschrift: string, breite?: number): Block =
 
 export const TITEL = 'Baustellenbericht'
 export const UNTERTITEL = 'Anleitung für die Anwendungstechnik'
-export const STAND = '28.08.2026'
+export const STAND = '29.08.2026'
 
 /** Die Datenschutz-Sätze aus der App, hier als Blöcke der Anleitung. */
 const datenschutzBloecke: Block[] = DATENSCHUTZ.flatMap((abschnitt) => [
@@ -376,6 +376,33 @@ export const KAPITEL: Kapitel[] = [
         'Ein abgeschlossener Bericht lässt sich weiter ändern; er wird nur anders angezeigt.',
       ),
       bild('07-meine-berichte.png', 'Alle Berichte dieses Geräts.'),
+    ],
+  },
+  {
+    titel: 'Bericht in OneDrive ablegen (freiwillig)',
+    bloecke: [
+      absatz(
+        'Die App kann fertige Berichte in Ihr OneDrive legen. Das müssen Sie nicht einrichten – ohne Verbindung funktioniert alles wie bisher. Wer es einmal einrichtet, spart sich danach den Umweg über den Download-Ordner.',
+      ),
+      absatz(
+        'Einmalig braucht Microsoft eine sogenannte App-Registrierung. Das klingt größer, als es ist: Sie legen im Portal einen Eintrag an und tragen die angezeigte Nummer in die App ein.',
+      ),
+      schritte(
+        'Am Rechner entra.microsoft.com öffnen und anmelden. Dann „App-Registrierungen" → „Neue Registrierung".',
+        'Namen vergeben, z. B. „Baustellenbericht". Bei den Kontotypen die Zeile mit „… und persönliche Microsoft-Konten" wählen.',
+        'Als Plattform „Einzelseitenanwendung (SPA)" wählen und die Adresse eintragen, die in der App unter Einstellungen → OneDrive steht (dort gibt es „Adresse kopieren").',
+        'Registrieren. Auf der Übersichtsseite steht die „Anwendungs-ID (Client)" – diese Nummer in der App unter Einstellungen → OneDrive eintragen.',
+        'Ordner eintragen (Vorschlag: Baustellenberichte) und „Mit OneDrive verbinden" antippen. Es erscheint die gewohnte Microsoft-Anmeldung.',
+      ),
+      absatz(
+        'Danach steht auf dem letzten Blatt eines Berichts die Taste „PDF in OneDrive ablegen". Der Bericht landet im gewählten Ordner; „In OneDrive öffnen" führt direkt hin.',
+      ),
+      warnung(
+        'In Berichten stehen Kunden- und Mitarbeiterdaten. Verbinden Sie deshalb ein dienstliches Konto. Ein privates Microsoft-Konto ist nur zum Ausprobieren mit erfundenen Daten gedacht.',
+      ),
+      hinweis(
+        '„Verbindung trennen" löscht den Zugang wieder vom Gerät. Und ohne Internet klappt das Ablegen nicht – der Bericht bleibt dann in der App und lässt sich später hochladen.',
+      ),
     ],
   },
   {

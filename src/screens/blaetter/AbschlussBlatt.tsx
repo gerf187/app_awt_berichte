@@ -4,6 +4,7 @@ import { Unterschrift } from '../../components/Unterschrift'
 import { absenderzeilen, fehlendePflichtfelder } from '../../lib/bericht'
 import { dateiname } from '../../lib/dateiname'
 import { einstellungenLaden } from '../../lib/db'
+import { OneDriveFehler, STANDARD_ORDNER, hochladen, verbundenesKonto } from '../../lib/onedrive'
 import {
   betreff,
   dateiTeilen,
@@ -33,20 +34,22 @@ async function datei(bericht: Bericht, format: Format): Promise<File> {
   return new File([blob], dateiname(bericht, format), { type: blob.type })
 }
 
-export function AbschlussBlatt({
-  bericht,
-  aendern,
-  zeigeBlatt,
-  zeigeAnsicht,
-}: BlattEigenschaften) {
-  const [laeuft, setLaeuft] = useState<'' | Format | 'versand'>('')
+export function AbschlussBlatt({ bericht, aendern, zeigeBlatt, zeigeAnsicht }: BlattEigenschaften) {
+  const [laeuft, setLaeuft] = useState<'' | Format | 'versand' | 'onedrive'>('')
   const [meldung, setMeldung] = useState('')
   const [mailAdresse, setMailAdresse] = useState('')
   const [vorlage, setVorlage] = useState<Briefvorlage | undefined>(undefined)
+  const [ordner, setOrdner] = useState('')
+  const [onedriveAdresse, setOneDriveAdresse] = useState('')
+  // Verbunden ist ein Gerät, kein Bericht – das steht schon beim Aufbau fest.
+  const konto = verbundenesKonto()
 
   // Nur für den Hinweis unten: welcher Briefbogen steht hinter dem Bericht?
   useEffect(() => {
-    void einstellungenLaden().then((einstellungen) => setVorlage(einstellungen.briefvorlage))
+    void einstellungenLaden().then((einstellungen) => {
+      setVorlage(einstellungen.briefvorlage)
+      setOrdner(einstellungen.onedrive?.ordner ?? STANDARD_ORDNER)
+    })
   }, [])
 
   const fehlt = fehlendePflichtfelder(bericht)
@@ -114,6 +117,31 @@ export function AbschlussBlatt({
       abschliessen()
     } catch {
       setMeldung('Der Versand hat nicht geklappt.')
+    } finally {
+      setLaeuft('')
+    }
+  }
+
+  /**
+   * Bericht als PDF in OneDrive ablegen. Ein abgelegter Bericht ist ebenso
+   * abgegeben wie ein versendeter – also gilt er danach als abgeschlossen.
+   */
+  async function inOneDrive() {
+    setLaeuft('onedrive')
+    setMeldung('')
+    setOneDriveAdresse('')
+    try {
+      const fertig = await datei(bericht, 'pdf')
+      const adresse = await hochladen(fertig, ordner)
+      setOneDriveAdresse(adresse)
+      setMeldung(mitStatus(`${fertig.name} liegt in OneDrive unter „${ordner}".`))
+      abschliessen()
+    } catch (fehler) {
+      setMeldung(
+        fehler instanceof OneDriveFehler
+          ? fehler.message
+          : 'Der Bericht konnte nicht hochgeladen werden. Besteht eine Internetverbindung?',
+      )
     } finally {
       setLaeuft('')
     }
@@ -202,6 +230,14 @@ export function AbschlussBlatt({
           {laeuft === 'versand' ? 'Wird vorbereitet …' : 'Bericht versenden'}
         </Knopf>
 
+        {/* OneDrive nur zeigen, wenn dieses Gerät verbunden ist – ein toter
+            Knopf auf der Baustelle hilft niemandem. */}
+        {konto && (
+          <Knopf art="zweit" breit disabled={laeuft !== ''} onClick={() => void inOneDrive()}>
+            {laeuft === 'onedrive' ? 'Wird hochgeladen …' : 'PDF in OneDrive ablegen'}
+          </Knopf>
+        )}
+
         <p className="text-sika-grau text-sm">
           {vorlage
             ? `Der Bericht steht auf der Briefvorlage „${vorlage.dateiname}".`
@@ -212,6 +248,17 @@ export function AbschlussBlatt({
           <p role="status" className="font-semibold">
             {meldung}
           </p>
+        )}
+
+        {onedriveAdresse && (
+          <a
+            href={onedriveAdresse}
+            target="_blank"
+            rel="noopener"
+            className="border-sika-schwarz/15 tippziel flex items-center justify-center rounded-xl border-2 bg-white px-5 py-3 text-lg font-semibold"
+          >
+            In OneDrive öffnen
+          </a>
         )}
 
         {mailAdresse && (

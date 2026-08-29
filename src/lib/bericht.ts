@@ -4,6 +4,7 @@
  */
 
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
+import { STANDARD_ORDNER } from './onedrive'
 import { pruefungAuffuellen } from './pruefungen'
 import { vorlageAuffuellen } from './vorlage'
 import type {
@@ -13,6 +14,7 @@ import type {
   Berichtstext,
   BlattId,
   Einstellungen,
+  OneDriveZugang,
   Pruefung,
   Untergrund,
 } from './typen'
@@ -236,7 +238,22 @@ export function einstellungenAuffuellen(gespeichert: unknown): Einstellungen {
         : [],
     // Eine Vorlage aus einer fremden Sicherungsdatei wird geradegezogen, nicht geglaubt.
     briefvorlage: vorlageAuffuellen(alt.briefvorlage),
+    onedrive: onedriveAuffuellen(alt.onedrive),
   }
+}
+
+/**
+ * OneDrive-Zugang aus gespeicherten Daten. Fehlt er oder steht keine
+ * Anwendungs-ID drin, gilt OneDrive als nicht eingerichtet.
+ */
+function onedriveAuffuellen(gespeichert: unknown): OneDriveZugang | undefined {
+  if (!gespeichert || typeof gespeichert !== 'object') return undefined
+  const alt = gespeichert as Partial<OneDriveZugang>
+  const clientId = typeof alt.clientId === 'string' ? alt.clientId.trim() : ''
+  if (!clientId) return undefined
+  const ordner =
+    typeof alt.ordner === 'string' && alt.ordner.trim() ? alt.ordner.trim() : STANDARD_ORDNER
+  return { clientId, ordner }
 }
 
 /**

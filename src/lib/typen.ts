@@ -225,6 +225,20 @@ export type Einstellungen = {
    * Kopfzeile – der Bericht ist also nie blockiert.
    */
   briefvorlage?: Briefvorlage
+  /**
+   * Zugang zu OneDrive. Hier steht nur, *womit* sich die App anmeldet und
+   * *wohin* sie ablegt – die Anmeldung selbst (Tokens) bleibt außerhalb der
+   * Einstellungen und damit außerhalb der Sicherungsdatei.
+   */
+  onedrive?: OneDriveZugang
+}
+
+/** Siehe src/lib/onedrive.ts – dort steht, wie die Anmeldung abläuft. */
+export type OneDriveZugang = {
+  /** Anwendungs-ID (Client-ID) der App-Registrierung in Azure/Entra. */
+  clientId: string
+  /** Zielordner in OneDrive, z. B. `Baustellenberichte`. */
+  ordner: string
 }
 
 /** Struktur der Sicherungsdatei (Einstellungen → „Alle Daten sichern"). */

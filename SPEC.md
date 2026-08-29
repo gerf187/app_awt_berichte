@@ -10,10 +10,10 @@ Eine Web-App, die ein Sika-Anwendungstechniker auf dem Handy als Symbol auf dem 
 
 | Regel | Grund |
 |---|---|
-| **Kein Microsoft.** Kein Power Apps, Power Automate, SharePoint, OneDrive, Graph API, kein M365-Login. | Bewusster Bruch mit der alten Architektur. |
+| **Kein Microsoft als Unterbau.** Kein Power Apps, Power Automate, SharePoint, kein M365-Login als Voraussetzung. Ausnahme seit August 2026: die **freiwillige OneDrive-Ablage** – abschaltbar, geräteweise, ohne die die App vollständig funktioniert. | Bewusster Bruch mit der alten Architektur. Die App darf Microsoft benutzen, aber nicht von ihm abhängen. |
 | **Kein Backend, kein Server, keine Datenbank.** Reine statische Web-App. | Läuft auf GitHub Pages, keine IT-Freigabe nötig. |
 | **Keine Runtime-CDNs.** Alle Bibliotheken werden zur Buildzeit gebündelt. | Muss offline funktionieren. |
-| **Alle Daten bleiben auf dem Gerät.** Kein Netzwerk-Request mit Nutzerdaten. Keine Analytics, kein Tracking, kein Sentry. | Datenschutz / Kundendaten. Geprüft in `tests/datenschutz.test.ts`. |
+| **Alle Daten bleiben auf dem Gerät.** Kein Netzwerk-Request mit Nutzerdaten außer den beiden vom Anwender ausgelösten (Diktat, OneDrive-Ablage). Keine Analytics, kein Tracking, kein Sentry. | Datenschutz / Kundendaten. Geprüft in `tests/datenschutz.test.ts`: Netzaufrufe sind ausschließlich in `src/lib/onedrive.ts` erlaubt, und auch dort nur zu Microsoft-Adressen. |
 | **Die Briefvorlage wird in der App hinterlegt, nicht mitgeliefert.** Kein Firmenmaterial im (öffentlichen) Repository, kein Upload zu einem Dienst. | Auf dem Briefbogen stehen Kontaktdaten von Mitarbeitern; außerdem soll eine geänderte Firmierung ohne neuen Deploy wirken. |
 | **Vollständig offline lauffähig** nach dem ersten Laden. | Baustellen haben keinen Empfang. |
 | **UI komplett auf Deutsch.** | Nutzer sind Kollegen im Außendienst. |

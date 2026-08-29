@@ -23,10 +23,11 @@ Text dort stammt aus `src/data/datenschutz.ts` – eine Quelle, zwei Ausgaben.
 
 ## 1. Die kurze Antwort
 
-Die App ist eine reine Browser-Anwendung ohne Server, ohne Konto und ohne
-Netzwerkverkehr. **Alle Daten bleiben auf dem Gerät des Anwendungstechnikers.**
-Die App selbst hat keinen Auftragsverarbeiter und bildet keine Profile. Daten
-verlassen das Gerät auf genau zwei Wegen:
+Die App ist eine reine Browser-Anwendung ohne eigenen Server und ohne
+Hintergrundverkehr. **Alle Daten bleiben auf dem Gerät des Anwendungstechnikers**,
+solange der Anwender sie nicht selbst weitergibt. Die App bildet keine Profile.
+Daten verlassen das Gerät auf genau drei Wegen, jeder davon durch einen
+Tastendruck ausgelöst:
 
 1. **Der bewusste Versand des fertigen Berichts** durch den Anwender.
 2. **Die Diktierfunktion** – dabei überträgt nicht die App, sondern der Browser
@@ -34,6 +35,10 @@ verlassen das Gerät auf genau zwei Wegen:
    Dritten, mutmaßlich in ein Drittland, und in Abschnitt 5 gesondert
    beschrieben. Sie ist freiwillig: ohne Tastendruck passiert nichts, und jede
    Eingabe lässt sich auch tippen.
+3. **Die Ablage in OneDrive**, sofern der Anwender die App mit seinem
+   Microsoft-Konto verbunden hat. Sie ist freiwillig, muss auf jedem Gerät
+   einzeln eingerichtet werden und überträgt ausschließlich die eine Datei, die
+   der Anwender ablegt (Abschnitt 4a).
 
 ---
 
@@ -66,6 +71,8 @@ verlassen das Gerät auf genau zwei Wegen:
 | Fertige PDF/Word-Datei | vom Anwender ausgelöster Download bzw. Teilen-Dialog | **ja, bewusst** |
 | Sicherungsdatei (JSON) | vom Anwender ausgelöster Download | **ja, bewusst** |
 | Sprachaufnahme beim Diktieren | Mikrofon → Spracherkennung des Browsers | **ja, an den Browser-Hersteller** (Abschnitt 5) |
+| Fertige PDF-Datei bei „PDF in OneDrive ablegen" | OneDrive des angemeldeten Kontos | **ja, bewusst, an Microsoft** (Abschnitt 4a) |
+| OneDrive-Zugangs- und Erneuerungstoken | `localStorage` des Browsers, Schlüssel `awt-onedrive-sitzung` | nein – und **nicht** Teil der Sicherungsdatei |
 
 Die ausgelieferte Webseite selbst enthält **keine** dieser Daten. Wer die App
 hostet, sieht nur, dass jemand die Seite geladen hat – nie einen Inhalt.
@@ -95,6 +102,42 @@ Umgesetzt ist das so:
   (`src/lib/vorlage.ts`). Dabei fallen die Zusatzdaten der Datei weg.
 - „Vorlage entfernen" löscht sie sofort; „Alle Daten auf diesem Gerät löschen"
   ebenfalls.
+
+---
+
+## 4a. Die OneDrive-Ablage im Besonderen
+
+Die App kann fertige Berichte in das OneDrive des Anwenders legen. Der Weg ist
+bewusst schmal gehalten:
+
+- **Freiwillig und geräteweise.** Ohne eingetragene Anwendungs-ID und ohne
+  Anmeldung erscheint die Taste „PDF in OneDrive ablegen" gar nicht erst. Eine
+  zentrale Aktivierung gibt es nicht.
+- **Anmeldung ohne Umweg.** Die Anmeldung läuft als OAuth 2.0 mit PKCE
+  unmittelbar zwischen Gerät und Microsoft (`login.microsoftonline.com`). Die
+  App sieht das Kennwort nie und besitzt kein Client-Geheimnis; es gibt keinen
+  Zwischenserver.
+- **Sparsamer Berechtigungsumfang.** Erbeten werden `Files.ReadWrite`
+  (Dateien ablegen), `offline_access` (Erneuerungstoken) und `User.Read`
+  (Anzeige, mit welchem Konto das Gerät verbunden ist). Die App liest keine
+  vorhandenen Dateien und durchsucht das Laufwerk nicht.
+- **Tokens bleiben lokal.** Zugriffs- und Erneuerungstoken liegen im
+  `localStorage` des Browsers, nicht in der Datenbank und deshalb auch **nicht**
+  in der Sicherungsdatei. „Verbindung trennen" löscht sie vom Gerät.
+- **Übertragen wird nur der eine Bericht.** Kein Abgleich, keine Synchronisation
+  im Hintergrund, keine Fotos außerhalb des erzeugten PDFs.
+
+Datenschutzrechtlich gilt: Mit dem Hochladen wandert der Bericht in den
+Verantwortungsbereich des jeweiligen Microsoft-Kontos. Bei einem Firmenkonto
+greift der bestehende Auftragsverarbeitungsvertrag des Unternehmens mit
+Microsoft; bei einem privaten Konto besteht keiner. **Berichte mit Kunden- und
+Beschäftigtendaten dürfen deshalb nur in ein dienstliches OneDrive.** Ein
+privates Konto ist allenfalls für Testberichte ohne echte Personendaten
+zulässig.
+
+Die verwendete App-Registrierung (Anwendungs-ID) trägt der Anwender selbst in
+den Einstellungen ein. Wird die App später in der Unternehmensumgebung
+registriert, ändert sich nur diese ID – der beschriebene Ablauf bleibt gleich.
 
 ---
 
@@ -189,8 +232,9 @@ eigene Bewertung:
   Outlook/Microsoft Graph): würde erstmals eine Verbindung zu einem
   Fremdsystem herstellen. Zweckbindung, Rechtsgrundlage und Berechtigungsumfang
   der App-Registrierung sind vorher zu klären.
-- **Ablage der Berichte in OneDrive**: Auftragsverarbeitung und Speicherort
-  wären neu zu bewerten.
+- ~~**Ablage der Berichte in OneDrive**~~: umgesetzt, siehe Abschnitt 4a. Offen
+  bleibt die Registrierung der App in der Unternehmensumgebung; bis dahin ist
+  jede Verbindung eine Einzelentscheidung des Anwenders.
 - **Versand direkt aus der App über das Firmenpostfach**: dito.
 
 Solange diese Punkte offen sind, gilt: Angaben aus dem Anforderungsformular
