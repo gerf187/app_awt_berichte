@@ -243,14 +243,17 @@ export function einstellungenAuffuellen(gespeichert: unknown): Einstellungen {
 }
 
 /**
- * OneDrive-Zugang aus gespeicherten Daten. Fehlt er oder steht keine
- * Anwendungs-ID drin, gilt OneDrive als nicht eingerichtet.
+ * OneDrive-Zugang aus gespeicherten Daten.
+ *
+ * Die Anwendungs-ID darf leer sein – dann gilt die in der App eingebaute
+ * Registrierung. Früher hing an ihr, ob OneDrive überhaupt als eingerichtet
+ * galt; seit die App ihre eigene ID mitbringt, hinge sonst der eingestellte
+ * Ordner in der Luft und wäre beim nächsten Laden weg.
  */
 function onedriveAuffuellen(gespeichert: unknown): OneDriveZugang | undefined {
   if (!gespeichert || typeof gespeichert !== 'object') return undefined
   const alt = gespeichert as Partial<OneDriveZugang>
   const clientId = typeof alt.clientId === 'string' ? alt.clientId.trim() : ''
-  if (!clientId) return undefined
   const ordner =
     typeof alt.ordner === 'string' && alt.ordner.trim() ? alt.ordner.trim() : STANDARD_ORDNER
   return { clientId, ordner }

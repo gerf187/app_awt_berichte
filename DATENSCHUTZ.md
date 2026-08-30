@@ -110,9 +110,9 @@ Umgesetzt ist das so:
 Die App kann fertige Berichte in das OneDrive des Anwenders legen. Der Weg ist
 bewusst schmal gehalten:
 
-- **Freiwillig und geräteweise.** Ohne eingetragene Anwendungs-ID und ohne
-  Anmeldung erscheint die Taste „PDF in OneDrive ablegen" gar nicht erst. Eine
-  zentrale Aktivierung gibt es nicht.
+- **Freiwillig und geräteweise.** Solange sich niemand angemeldet hat,
+  erscheint die Taste „PDF in OneDrive ablegen" gar nicht erst. Jedes Gerät
+  wird einzeln verbunden; eine zentrale Aktivierung gibt es nicht.
 - **Anmeldung ohne Umweg.** Die Anmeldung läuft als OAuth 2.0 mit PKCE
   unmittelbar zwischen Gerät und Microsoft (`login.microsoftonline.com`). Die
   App sieht das Kennwort nie und besitzt kein Client-Geheimnis; es gibt keinen
@@ -135,9 +135,13 @@ Beschäftigtendaten dürfen deshalb nur in ein dienstliches OneDrive.** Ein
 privates Konto ist allenfalls für Testberichte ohne echte Personendaten
 zulässig.
 
-Die verwendete App-Registrierung (Anwendungs-ID) trägt der Anwender selbst in
-den Einstellungen ein. Wird die App später in der Unternehmensumgebung
-registriert, ändert sich nur diese ID – der beschriebene Ablauf bleibt gleich.
+Die App wird mit einer eigenen Microsoft-App-Registrierung ausgeliefert; ihre
+Anwendungs-ID steht offen im Quelltext, was bei einer Browser-Anwendung ohne
+Client-Geheimnis vorgesehen und unbedenklich ist. Sie legt lediglich fest, als
+welche Anwendung sich das Gerät bei Microsoft ausweist – Zugriff erhält immer
+nur das Konto, das sich selbst anmeldet. Wird die App später in der
+Unternehmensumgebung registriert, wird deren Anwendungs-ID in den Einstellungen
+unter „Erweitert" eingetragen; der beschriebene Ablauf bleibt gleich.
 
 ---
 

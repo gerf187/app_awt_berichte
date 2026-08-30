@@ -181,7 +181,7 @@ export const KAPITEL: Kapitel[] = [
           ['kein Zeichen', 'Auf diesem Blatt ist nichts Pflicht.'],
         ],
       },
-      bild('08-kacheln.png', 'Die Übersicht zeigt auf einen Blick, wo noch etwas fehlt.'),
+      bild('09-kacheln.png', 'Die Übersicht zeigt auf einen Blick, wo noch etwas fehlt.'),
       hinweis(
         'Einen Speichern-Knopf gibt es nirgends. Jede Eingabe ist sofort gesichert – auch wenn das Handy abstürzt oder der Akku leer wird.',
       ),
@@ -199,7 +199,10 @@ export const KAPITEL: Kapitel[] = [
         'Ansprechpartner und Telefon gehören zum Verarbeiter.',
         'Anwendungstechniker ist aus Ihrem Profil vorbelegt.',
       ),
-      bild('09-blatt-kopfdaten.png', 'Kopfdaten. Pflicht sind Datum, Projekt, Verarbeiter und AWT.'),
+      bild(
+        '10-blatt-kopfdaten.png',
+        'Kopfdaten. Pflicht sind Datum, Projekt, Verarbeiter und AWT.',
+      ),
     ],
   },
   {
@@ -212,7 +215,7 @@ export const KAPITEL: Kapitel[] = [
         'Mit „+ Person" kommt eine Zeile dazu.',
         'Die Funktion wählen Sie aus der Liste; „Sonstiges" öffnet ein Textfeld.',
       ),
-      bild('10-blatt-thematik.png', 'Zweck des Besuchs und die Anwesenden.'),
+      bild('11-blatt-thematik.png', 'Zweck des Besuchs und die Anwesenden.'),
     ],
   },
   {
@@ -221,7 +224,7 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'Art und Vorbereitung wählen Sie aus den Listen. Steht dort „Sonstiges", klappt ein Bemerkungsfeld auf. Gemessene Werte gehören nicht hierher, sondern auf das nächste Blatt.',
       ),
-      bild('11-blatt-untergrund.png', 'Untergrund: Art, Vorbereitung, Bemerkung.'),
+      bild('12-blatt-untergrund.png', 'Untergrund: Art, Vorbereitung, Bemerkung.'),
     ],
   },
   {
@@ -237,7 +240,7 @@ export const KAPITEL: Kapitel[] = [
         'Ab zwei Werten zeigt die App den Mittelwert; er steht auch im fertigen Bericht.',
         'Die Bemerkung sagt, wo gemessen wurde.',
       ),
-      bild('12-blatt-pruefungen.png', 'Eine Prüfung mit mehreren Messwerten.'),
+      bild('13-blatt-pruefungen.png', 'Eine Prüfung mit mehreren Messwerten.'),
       hinweis(
         'Nicht Gemessenes taucht im Bericht gar nicht erst auf. Eine angefangene Karte ohne Wert wird übergangen.',
       ),
@@ -252,7 +255,7 @@ export const KAPITEL: Kapitel[] = [
       warnung(
         'Liegt der Untergrund weniger als 3 K über dem Taupunkt, wird die Messung rot und die App warnt: „Beschichtung nicht freigeben." Diese Warnung steht auch im fertigen Bericht und im Reiter.',
       ),
-      bild('13-blatt-klima.png', 'Jede Messung rechnet den Taupunkt selbst mit.'),
+      bild('14-blatt-klima.png', 'Jede Messung rechnet den Taupunkt selbst mit.'),
       hinweis('Mindestens eine Messung gehört in jeden Bericht.'),
     ],
   },
@@ -262,7 +265,7 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'Hier steht, was auf den Boden kam. Jede Zeile ist eine Schicht in einem Bereich. Tippen Sie eine vorhandene Zeile an, um sie zu ändern, oder legen Sie mit „+ Zeile" eine neue an.',
       ),
-      bild('14-blatt-aufbau.png', 'Der Aufbau als Liste.'),
+      bild('15-blatt-aufbau.png', 'Der Aufbau als Liste.'),
       zwischentitel('Die Eingabemaske'),
       punkte(
         'Bereich: ab der zweiten Zeile gibt es „wie Vorposition" – so tippen Sie „Halle Nord" nicht dreimal.',
@@ -272,7 +275,7 @@ export const KAPITEL: Kapitel[] = [
         'Die Einheit springt von selbst um: Eingaben ab 10 versteht die App als g/m² (200 wird zu 0,2 kg/m²), darunter als kg/m².',
         'Charge: „+ Komponente" legt eine weitere Nummer an. Ein zweikomponentiges Harz hat zwei Chargen, ein Estrichmörtel mit Zusatz auch mal vier – im Schadensfall wird nach genau diesen gefragt.',
       ),
-      bild('17-aufbau-eingabe.png', 'Die Eingabemaske einer Aufbauzeile.'),
+      bild('18-aufbau-eingabe.png', 'Die Eingabemaske einer Aufbauzeile.'),
     ],
   },
   {
@@ -299,7 +302,7 @@ export const KAPITEL: Kapitel[] = [
       hinweis(
         'Mindestens einer der ersten vier Abschnitte muss ausgefüllt sein, sonst fehlt dem Bericht die Aussage. Eine offene Frage allein genügt dafür nicht.',
       ),
-      bild('15-blatt-text.png', 'Die Textfelder, jeweils mit Spracheingabe.'),
+      bild('16-blatt-text.png', 'Die Textfelder, jeweils mit Spracheingabe.'),
     ],
   },
   {
@@ -315,7 +318,7 @@ export const KAPITEL: Kapitel[] = [
       hinweis(
         'Beim Verkleinern fallen die Zusatzdaten der Kamera weg – auch der Aufnahmeort. Fotografieren Sie trotzdem die Baustelle und nicht die Leute.',
       ),
-      bild('16-blatt-fotos.png', 'Fotos mit Beschreibung und Reihenfolge.'),
+      bild('17-blatt-fotos.png', 'Fotos mit Beschreibung und Reihenfolge.'),
     ],
   },
   {
@@ -324,7 +327,7 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'Das letzte Blatt fasst den Bericht zusammen. Fehlende Pflichtangaben stehen gelb hervorgehoben da – ein Tipp darauf bringt Sie zum richtigen Blatt.',
       ),
-      bild('18-blatt-abschluss.png', 'Zusammenfassung und fehlende Angaben.'),
+      bild('19-blatt-abschluss.png', 'Zusammenfassung und fehlende Angaben.'),
       zwischentitel('Unterschrift'),
       absatz(
         'Im Unterschriftenfeld unterschreibt der Kunde mit dem Finger. „Löschen" setzt das Feld zurück. Ohne Unterschrift fehlt der Abschnitt im Bericht einfach.',
@@ -341,7 +344,7 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'Sobald Sie den Bericht erzeugt oder versendet haben, gilt er als abgeschlossen und bekommt in „Meine Berichte" den grünen Punkt. Sie müssen dafür nichts extra antippen – und können ihn unten jederzeit wieder als Entwurf führen. Ganz unten führen zwei Knöpfe zurück zu „Meine Berichte" oder zur Startseite.',
       ),
-      bild('19-abschluss-ausgabe.png', 'Ausgabe und Versand.'),
+      bild('20-abschluss-ausgabe.png', 'Ausgabe und Versand.'),
       warnung(
         'Prüfen Sie vor dem Senden die Empfängeradresse. Ab dem Moment, in dem Sie teilen, gelten die Regeln Ihres Mailprogramms – nicht mehr die der App.',
       ),
@@ -355,7 +358,7 @@ export const KAPITEL: Kapitel[] = [
       ),
       {
         art: 'bildpaar',
-        dateien: ['20-fertiger-bericht-1.png', '20-fertiger-bericht-2.png'],
+        dateien: ['21-fertiger-bericht-1.png', '21-fertiger-bericht-2.png'],
         bildunterschrift:
           'Seite 1 und 2 des erzeugten Berichts – hier auf dem Beispiel-Briefbogen „Musterfirma GmbH".',
       },
@@ -375,7 +378,7 @@ export const KAPITEL: Kapitel[] = [
         'Das Papierkorb-Symbol löscht einen Bericht – nach einer Rückfrage.',
         'Ein abgeschlossener Bericht lässt sich weiter ändern; er wird nur anders angezeigt.',
       ),
-      bild('07-meine-berichte.png', 'Alle Berichte dieses Geräts.'),
+      bild('08-meine-berichte.png', 'Alle Berichte dieses Geräts.'),
     ],
   },
   {
@@ -384,15 +387,15 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'Die App kann fertige Berichte in Ihr OneDrive legen. Das müssen Sie nicht einrichten – ohne Verbindung funktioniert alles wie bisher. Wer es einmal einrichtet, spart sich danach den Umweg über den Download-Ordner.',
       ),
-      absatz(
-        'Einmalig braucht Microsoft eine sogenannte App-Registrierung. Das klingt größer, als es ist: Sie legen im Portal einen Eintrag an und tragen die angezeigte Nummer in die App ein.',
-      ),
+      bild('06-einstellungen-onedrive.png', 'Einstellungen → OneDrive: ein Knopf, sonst nichts.'),
       schritte(
-        'Am Rechner entra.microsoft.com öffnen und anmelden. Dann „App-Registrierungen" → „Neue Registrierung".',
-        'Namen vergeben, z. B. „Baustellenbericht". Bei den Kontotypen die Zeile mit „… und persönliche Microsoft-Konten" wählen.',
-        'Als Plattform „Einzelseitenanwendung (SPA)" wählen und die Adresse eintragen, die in der App unter Einstellungen → OneDrive steht (dort gibt es „Adresse kopieren").',
-        'Registrieren. Auf der Übersichtsseite steht die „Anwendungs-ID (Client)" – diese Nummer in der App unter Einstellungen → OneDrive eintragen.',
-        'Ordner eintragen (Vorschlag: Baustellenberichte) und „Mit OneDrive verbinden" antippen. Es erscheint die gewohnte Microsoft-Anmeldung.',
+        'In der App unten auf „Einstellungen" tippen und zum Abschnitt „OneDrive" blättern.',
+        'Auf „Mit OneDrive verbinden" tippen. Es erscheint die gewohnte Microsoft-Anmeldung.',
+        'Mit dem dienstlichen Microsoft-Konto anmelden und die Rückfrage bestätigen. Danach steht in den Einstellungen „Verbunden als …".',
+        'Wenn gewünscht, einen anderen Ordner eintragen. Voreingestellt ist „Baustellenberichte"; er wird beim ersten Ablegen von allein angelegt.',
+      ),
+      hinweis(
+        'Den Punkt „Erweitert" brauchen Sie nicht. Er ist für den Fall gedacht, dass die Berichte einmal über eine Registrierung der Firmen-IT laufen sollen.',
       ),
       absatz(
         'Danach steht auf dem letzten Blatt eines Berichts die Taste „PDF in OneDrive ablegen". Der Bericht landet im gewählten Ordner; „In OneDrive öffnen" führt direkt hin.',
@@ -431,7 +434,7 @@ export const KAPITEL: Kapitel[] = [
       absatz(
         'In Ihren Berichten stehen Kunden- und Mitarbeiterdaten. Dieselben Sätze finden Sie jederzeit in der App unter Einstellungen → Datenschutz.',
       ),
-      bild('06-datenschutz.png', 'Die Datenschutz-Hinweise in der App.'),
+      bild('07-datenschutz.png', 'Die Datenschutz-Hinweise in der App.'),
       ...datenschutzBloecke,
     ],
   },

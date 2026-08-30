@@ -107,20 +107,11 @@ privaten Cloudordner.
 ## OneDrive verbinden
 
 Ohne Verbindung funktioniert die App vollständig – die Ablage ist ein Angebot,
-keine Voraussetzung. Wer sie will, braucht einmalig eine App-Registrierung bei
-Microsoft; die App selbst bringt keine mit, damit jeder sein eigenes Konto
-benutzen kann.
+keine Voraussetzung.
 
-1. Im **Microsoft-Entra-Portal** (`entra.microsoft.com`) → **App-Registrierungen**
-   → **Neue Registrierung**.
-2. Name frei wählen. Kontotypen: **„Konten in einem beliebigen
-   Organisationsverzeichnis und persönliche Microsoft-Konten"**.
-3. Plattform **„Einzelseitenanwendung (SPA)"**, Umleitungs-URI:
-   `https://gerf187.github.io/app_awt_berichte/` – dieselbe Adresse steht zum
-   Kopieren in der App.
-4. Die **Anwendungs-ID (Client)** aus der Übersicht in der App unter
-   **Einstellungen → OneDrive** eintragen, Ordner wählen, **„Mit OneDrive
-   verbinden"**.
+**Einstellungen → OneDrive → „Mit OneDrive verbinden"**, mit dem eigenen Konto
+anmelden, fertig. Mehr ist nicht einzurichten: Die App bringt ihre eigene
+App-Registrierung mit, jeder meldet sich damit an seinem eigenen OneDrive an.
 
 Danach steht auf dem Abschlussblatt **„PDF in OneDrive ablegen"**. Die Anmeldung
 läuft direkt zwischen Gerät und Microsoft; die Zugangsschlüssel bleiben auf dem
@@ -130,6 +121,14 @@ sie wieder.
 Berichte enthalten Kunden- und Mitarbeiterdaten: Sie gehören in ein
 **dienstliches** OneDrive, nicht in ein privates. Ein privates Konto ist für
 Testberichte ohne echte Daten gedacht.
+
+**Eine andere Registrierung benutzen** (etwa eine der Firmen-IT): deren
+Anwendungs-ID unter **Einstellungen → OneDrive → „Erweitert"** eintragen, dann
+gilt sie statt der eingebauten. Die Registrierung braucht den Kontotyp „Konten
+in einem beliebigen Organisationsverzeichnis und persönliche Microsoft-Konten",
+die Plattform **„Einzelseitenanwendung (SPA)"** und als Umleitungs-URI die
+Adresse, die dort zum Kopieren steht. Ein Client Secret ist nicht nötig – die
+Anmeldung läuft mit PKCE. Die eingebaute ID steht in `src/lib/onedrive.ts`.
 
 ## Datenschutz
 

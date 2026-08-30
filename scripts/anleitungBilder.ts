@@ -167,6 +167,13 @@ try {
   await seite.getByText('Datensicherung').scrollIntoViewIfNeeded()
   await bild(seite, 'einstellungen-datensicherung')
 
+  // Ein Stück zurückscrollen, sonst steht die Überschrift hinter der Kopfzeile.
+  await seite.getByRole('heading', { name: 'OneDrive', exact: true }).evaluate((element) => {
+    element.scrollIntoView({ block: 'start' })
+    window.scrollBy(0, -90)
+  })
+  await bild(seite, 'einstellungen-onedrive')
+
   await seite.getByRole('button', { name: 'Datenschutz-Hinweise lesen' }).click()
   await seite.getByText('Worum es geht').waitFor()
   await bild(seite, 'datenschutz')
@@ -233,13 +240,13 @@ try {
 
   const gerendert = spawnSync(
     'pdftoppm',
-    ['-r', '110', '-png', '-f', '1', '-l', '2', pdfPfad, join(ZIEL, '20-fertiger-bericht')],
+    ['-r', '110', '-png', '-f', '1', '-l', '2', pdfPfad, join(ZIEL, '21-fertiger-bericht')],
     { stdio: 'ignore' },
   )
   rmSync(pdfPfad, { force: true })
   if (gerendert.status === 0) {
     nummer += 2
-    console.log('  dokumentation/bilder/20-fertiger-bericht-1.png (+ -2)')
+    console.log('  dokumentation/bilder/21-fertiger-bericht-1.png (+ -2)')
   } else {
     console.warn('  pdftoppm fehlt – die Bilder des fertigen Berichts bleiben aus.')
   }

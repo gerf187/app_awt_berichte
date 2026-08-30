@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { einstellungenAuffuellen } from '../src/lib/bericht'
-import { STANDARD_ORDNER, ordnerpfad, standardKonfig } from '../src/lib/onedrive'
+import { STANDARD_ORDNER, clientIdVon, ordnerpfad, standardKonfig } from '../src/lib/onedrive'
 
 describe('Ordnerpfad in OneDrive', () => {
   it('lässt einen normalen Ordner in Ruhe', () => {
@@ -25,11 +25,17 @@ describe('Ordnerpfad in OneDrive', () => {
 })
 
 describe('OneDrive-Zugang in den Einstellungen', () => {
-  it('fehlt, solange keine Anwendungs-ID eingetragen ist', () => {
+  it('fehlt nur, wenn gar nichts gespeichert ist', () => {
     expect(einstellungenAuffuellen({}).onedrive).toBeUndefined()
-    expect(
-      einstellungenAuffuellen({ onedrive: { clientId: '  ', ordner: 'X' } }).onedrive,
-    ).toBeUndefined()
+  })
+
+  // Ohne eigene ID gilt die eingebaute – der Ordner muss trotzdem erhalten
+  // bleiben, sonst stünde er nach dem nächsten Laden wieder auf dem Standard.
+  it('behält den Ordner, auch wenn keine eigene Anwendungs-ID eingetragen ist', () => {
+    const zugang = einstellungenAuffuellen({
+      onedrive: { clientId: '  ', ordner: 'Berichte/2026' },
+    }).onedrive
+    expect(zugang).toEqual({ clientId: '', ordner: 'Berichte/2026' })
   })
 
   it('füllt einen fehlenden Ordner mit dem Standard', () => {
@@ -46,5 +52,16 @@ describe('OneDrive-Zugang in den Einstellungen', () => {
 
   it('startet leer, aber mit Standardordner', () => {
     expect(standardKonfig()).toEqual({ clientId: '', ordner: STANDARD_ORDNER })
+  })
+})
+
+describe('Welche Anwendungs-ID benutzt wird', () => {
+  it('nimmt die eingebaute, solange keine eigene eingetragen ist', () => {
+    // Der Normalfall: der Anwender sieht das Feld nie und drückt nur den Knopf.
+    expect(clientIdVon(standardKonfig())).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('lässt eine eigene ID vorgehen – etwa die der Firmen-IT', () => {
+    expect(clientIdVon({ clientId: ' eigene-id ', ordner: 'X' })).toBe('eigene-id')
   })
 })

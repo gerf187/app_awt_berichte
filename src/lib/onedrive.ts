@@ -31,6 +31,25 @@ const RECHTE = 'Files.ReadWrite offline_access User.Read'
 /** Standardordner in OneDrive. Änderbar in den Einstellungen. */
 export const STANDARD_ORDNER = 'Baustellenberichte'
 
+/**
+ * Die Anwendungs-ID der App-Registrierung, mit der diese App ausgeliefert wird.
+ *
+ * Sie gehört zur *App*, nicht zum Nutzer: jeder meldet sich damit an seinem
+ * eigenen OneDrive an. Sie ist kein Geheimnis – in einer Browser-App steht sie
+ * ohnehin offen im Quelltext, und genau dafür ist PKCE da (kein Client Secret).
+ *
+ * Vorher trug jeder seine eigene ID ein. Das hieß: jeder Kollege legt sich eine
+ * Registrierung im Entra-Portal an – auf der Baustelle undenkbar. Wer eine
+ * andere Registrierung braucht (etwa später die von Sika), trägt sie in den
+ * Einstellungen unter „Erweitert" ein und sticht damit diese hier.
+ */
+const EINGEBAUTE_ID = 'c4e709db-5507-4df8-8d76-89fcfe575c43'
+
+/** Die ID, mit der tatsächlich angemeldet wird: eigene, sonst die eingebaute. */
+export function clientIdVon(konfig: OneDriveKonfig): string {
+  return konfig.clientId.trim() || EINGEBAUTE_ID
+}
+
 /** Ab dieser Größe lädt Graph nicht mehr am Stück, sondern in Abschnitten. */
 const EINZELSTUECK_GRENZE = 4 * 1024 * 1024
 /** Abschnittsgröße beim stückweisen Hochladen – muss ein Vielfaches von 320 KiB sein. */
@@ -130,19 +149,17 @@ async function pruefsumme(text: string): Promise<string> {
  * Fenster auf dem Handy oft blockiert wird.
  */
 export async function anmeldungStarten(konfig: OneDriveKonfig): Promise<void> {
-  if (!konfig.clientId.trim()) {
+  const clientId = clientIdVon(konfig)
+  if (!clientId) {
     throw new OneDriveFehler('Es fehlt die Anwendungs-ID der App-Registrierung.')
   }
 
   const schluessel = zufall(32)
   const zustand = zufall(16)
-  sessionStorage.setItem(
-    LAUF_SCHLUESSEL,
-    JSON.stringify({ schluessel, zustand, clientId: konfig.clientId.trim() }),
-  )
+  sessionStorage.setItem(LAUF_SCHLUESSEL, JSON.stringify({ schluessel, zustand, clientId }))
 
   const felder = new URLSearchParams({
-    client_id: konfig.clientId.trim(),
+    client_id: clientId,
     response_type: 'code',
     redirect_uri: umleitungsAdresse(),
     response_mode: 'query',

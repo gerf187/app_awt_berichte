@@ -459,10 +459,10 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
         </section>
 
         {/* --- OneDrive ----------------------------------------------------
-            Die Anmeldung läuft direkt zwischen Gerät und Microsoft. Die App
-            braucht dafür nur die Anwendungs-ID der App-Registrierung – so kann
-            jeder sein eigenes OneDrive verbinden, und später steht hier ohne
-            Codeänderung die Sika-Registrierung. */}
+            Die Anmeldung läuft direkt zwischen Gerät und Microsoft. Für den
+            Normalfall gibt es hier genau einen Knopf: die Anwendungs-ID steckt
+            in der App (siehe onedrive.ts). Wer eine andere Registrierung
+            braucht – später die von Sika –, findet sie unter „Erweitert". */}
         <section className="border-sika-schwarz/10 flex flex-col gap-3 rounded-xl border-2 bg-white p-4">
           <h2 className="text-lg font-bold">OneDrive</h2>
 
@@ -481,42 +481,6 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
             </p>
           )}
 
-          <Textfeld
-            beschriftung="Anwendungs-ID (Client-ID)"
-            hinweis="Aus der App-Registrierung im Microsoft-Entra-Portal. Ohne sie lässt Microsoft die Anmeldung nicht zu."
-            inputMode="text"
-            autoComplete="off"
-            spellCheck={false}
-            value={onedrive.clientId}
-            onChange={(e) => aendernOneDrive({ clientId: e.target.value.trim() })}
-          />
-
-          <Textfeld
-            beschriftung="Ordner in OneDrive"
-            hinweis="Wird beim ersten Hochladen angelegt. Unterordner mit Schrägstrich, z. B. Berichte/2026."
-            value={onedrive.ordner}
-            onChange={(e) => aendernOneDrive({ ordner: e.target.value })}
-          />
-
-          {/* Diese Adresse muss in der Registrierung als Umleitungs-URI stehen –
-              abtippen ist die häufigste Fehlerquelle, darum zum Kopieren. */}
-          <div className="border-sika-schwarz/10 rounded-xl border-2 p-3">
-            <p className="text-sm font-semibold">Umleitungs-URI für die Registrierung</p>
-            <p className="text-sika-grau mt-1 text-sm break-all">{umleitung}</p>
-            <Knopf
-              art="still"
-              className="mt-1 px-0"
-              onClick={() => {
-                void navigator.clipboard
-                  ?.writeText(umleitung)
-                  .then(() => setOneDriveMeldung('Adresse kopiert.'))
-                  .catch(() => setOneDriveMeldung(umleitung))
-              }}
-            >
-              Adresse kopieren
-            </Knopf>
-          </div>
-
           {konto ? (
             <Knopf
               art="zweit"
@@ -530,7 +494,7 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
               Verbindung trennen
             </Knopf>
           ) : (
-            <Knopf art="haupt" breit disabled={!onedrive.clientId} onClick={() => void verbinden()}>
+            <Knopf art="haupt" breit onClick={() => void verbinden()}>
               Mit OneDrive verbinden
             </Knopf>
           )}
@@ -541,13 +505,62 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
             </p>
           )}
 
-          <p className="text-sika-grau text-sm">
-            So kommt man an die Anwendungs-ID: im Microsoft-Entra-Portal unter „App-Registrierungen"
-            eine neue Registrierung anlegen, als Kontotyp „Konten in einem beliebigen
-            Organisationsverzeichnis und persönliche Microsoft-Konten" wählen, als Plattform
-            „Einzelseitenanwendung (SPA)" mit obiger Umleitungs-URI. Die angezeigte Anwendungs-ID
-            gehört dann in das Feld oben.
-          </p>
+          <Textfeld
+            beschriftung="Ordner in OneDrive"
+            hinweis="Wird beim ersten Hochladen angelegt. Unterordner mit Schrägstrich, z. B. Berichte/2026."
+            value={onedrive.ordner}
+            onChange={(e) => aendernOneDrive({ ordner: e.target.value })}
+          />
+
+          {/* Zugeklappt, weil das im Alltag niemanden angeht: leer lassen heißt
+              „die eingebaute Registrierung nehmen". */}
+          <details className="border-sika-schwarz/10 rounded-xl border-2 p-3">
+            <summary className="tippziel cursor-pointer font-semibold">Erweitert</summary>
+
+            <p className="text-sika-grau mt-2 text-sm">
+              Die App bringt ihre eigene Registrierung mit – hier ist nichts einzutragen. Nur wenn
+              die Berichte über eine andere Registrierung laufen sollen, etwa eine der Firmen-IT,
+              gehört deren Anwendungs-ID in das Feld. Leer heißt: die eingebaute.
+            </p>
+
+            <div className="mt-3">
+              <Textfeld
+                beschriftung="Eigene Anwendungs-ID (Client-ID)"
+                hinweis="Leer lassen, sofern nicht ausdrücklich anders vereinbart."
+                inputMode="text"
+                autoComplete="off"
+                spellCheck={false}
+                value={onedrive.clientId}
+                onChange={(e) => aendernOneDrive({ clientId: e.target.value.trim() })}
+              />
+            </div>
+
+            {/* Diese Adresse muss in der Registrierung als Umleitungs-URI stehen –
+                abtippen ist die häufigste Fehlerquelle, darum zum Kopieren. */}
+            <p className="mt-3 text-sm font-semibold">
+              Umleitungs-URI für eine eigene Registrierung
+            </p>
+            <p className="text-sika-grau mt-1 text-sm break-all">{umleitung}</p>
+            <Knopf
+              art="still"
+              className="mt-1 px-0"
+              onClick={() => {
+                void navigator.clipboard
+                  ?.writeText(umleitung)
+                  .then(() => setOneDriveMeldung('Adresse kopiert.'))
+                  .catch(() => setOneDriveMeldung(umleitung))
+              }}
+            >
+              Adresse kopieren
+            </Knopf>
+
+            <p className="text-sika-grau mt-3 text-sm">
+              Eine eigene Registrierung entsteht im Microsoft-Entra-Portal unter
+              „App-Registrierungen": Kontotyp „Konten in einem beliebigen Organisationsverzeichnis
+              und persönliche Microsoft-Konten", Plattform „Einzelseitenanwendung (SPA)" mit obiger
+              Umleitungs-URI. Ein Client Secret braucht es nicht.
+            </p>
+          </details>
         </section>
 
         {/* --- Anleitung ---------------------------------------------------- */}
