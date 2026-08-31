@@ -21,29 +21,42 @@ import type { Briefvorlage } from '../lib/typen'
 /** A4 hochkant. */
 export const PAGE = { width: 210, height: 297 } as const
 
-export const MARGIN = { left: 24.5, right: 20 } as const
+/**
+ * Satzspiegel. Links am eigenen Textrand des Bogens (dessen Absenderzeile und
+ * Fußblock beginnen bei 25,7 mm Farbe, abzüglich Vorbreite der Glyphe), rechts
+ * an dessen Fußblock, der bei 189,8 mm endet.
+ */
+export const MARGIN = { left: 25.5, right: 20 } as const
 
 /** 210 − 24,5 − 20 */
 export const CONTENT_WIDTH = PAGE.width - MARGIN.left - MARGIN.right
 
-/** Erste Seite: unterhalb Absenderzeile und Gesprächspartner-Block. */
+/** Erste Seite: unterhalb Absenderzeile und Gesprächspartner-Block (bis 74,7). */
 export const CONTENT_TOP_FIRST = 80
 
-/** Folgeseiten: unterhalb des Logos (das endet bei 37,5). */
+/**
+ * Folgeseiten: unterhalb des Logos (das endet bei 31,7). Gilt nur, wenn die
+ * Folgeseite auch wirklich nur das Logo trägt – siehe `zonenFuer`.
+ */
 export const CONTENT_TOP_NEXT = 45
 
-/** Alle Seiten: oberhalb „INTERNAL" (243,4) mit Sicherheitsabstand. */
+/** Alle Seiten: oberhalb „INTERNAL" (243,5) mit Sicherheitsabstand. */
 export const CONTENT_BOTTOM = 240
 
-export const LOGO = { x: 134.1, y: 8.0, width: 65.4, height: 29.5 } as const
+/** Sika-Logo mit „BUILDING TRUST", oben rechts. */
+export const LOGO = { x: 139.9, y: 13.9, width: 53.6, height: 17.8 } as const
 
-export const CONTACT_BLOCK = { x: 139.5, y: 49.7, width: 50.5, bottom: 75.3 } as const
+/** „Ihr Gesprächspartner" – rechte Spalte über dem Textbereich. */
+export const CONTACT_BLOCK = { x: 139.5, y: 49.8, width: 56.1, bottom: 74.7 } as const
 
-/** „Sika Deutschland CH AG & Co KG, …" – die kleine Zeile über dem Anschriftfeld. */
-export const SENDER_LINE = { x: 24.5, y: 49.8 } as const
+/**
+ * „Sika Deutschland CH AG & Co KG, …" – die kleine Zeile über dem Anschriftfeld.
+ * `y` ist die Oberkante der Zeile, nicht die Grundlinie.
+ */
+export const SENDER_LINE = { x: MARGIN.left, y: 49.8 } as const
 
-/** Ab hier gehört die Seite dem Rechtsblock des Bogens. */
-export const FOOTER_TOP = 243.4
+/** Ab hier gehört die Seite dem Bogen: erst „INTERNAL", darunter der Rechtsblock. */
+export const FOOTER_TOP = 243.5
 
 /**
  * Grundlinie der eigenen Fußzeile (Berichtsnummer, „Seite X von Y").
@@ -167,12 +180,23 @@ export function zonenFuer(vorlage?: Briefvorlage): Zonen {
   if (!vorlage) return { ...SIKA_ZONEN }
 
   const unten = Math.min(PAGE.height - vorlage.randUnten, CONTENT_BOTTOM)
+  const obenErste = Math.max(vorlage.randOben, CONTENT_TOP_FIRST)
+  /**
+   * Ein einseitiger Bogen, der auf jeder Seite gedruckt wird, trägt dort auch
+   * Absenderzeile und Gesprächspartner – dann gilt auf den Folgeseiten
+   * derselbe Abstand wie auf der ersten. Nur ein Bogen mit eigener Folgeseite
+   * (oder gar keinem Kopf) gibt den Platz oberhalb frei.
+   */
+  const wiederholtDenKopf = vorlage.seiten === 1 && vorlage.ersteSeiteWiederholen
+
   return {
     links: vorlage.randLinks,
     rechts: vorlage.randRechts,
     breite: PAGE.width - vorlage.randLinks - vorlage.randRechts,
-    obenErste: Math.max(vorlage.randOben, CONTENT_TOP_FIRST),
-    obenFolge: Math.max(vorlage.randObenFolgeseiten, CONTENT_TOP_NEXT),
+    obenErste,
+    obenFolge: wiederholtDenKopf
+      ? obenErste
+      : Math.max(vorlage.randObenFolgeseiten, CONTENT_TOP_NEXT),
     unten,
     // Derselbe Sicherheitsabstand wie beim Sika-Bogen, nur relativ zum
     // Inhaltsende dieses Bogens.
@@ -452,7 +476,9 @@ export function kopfZeichnen(doc: jsPDF, seite: number, angaben: Kopfangaben): v
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(SCHRIFT.kopfzeile)
   doc.setTextColor(...GRAU)
-  if (angaben.absenderzeile) doc.text(angaben.absenderzeile, SENDER_LINE.x, SENDER_LINE.y)
+  if (angaben.absenderzeile) {
+    doc.text(angaben.absenderzeile, SENDER_LINE.x, grundlinie(SENDER_LINE.y, SCHRIFT.kopfzeile))
+  }
 
   if (angaben.gespraechspartner.length === 0) return
 

@@ -3,8 +3,8 @@ import { LEERE_EINSTELLUNGEN, neuerBericht } from '../../lib/bericht'
 import { neuePruefung, neuerMesswert } from '../../lib/pruefungen'
 import { pdfMitProtokoll } from '../../lib/pdf'
 import { beispielVorlage } from '../../../tests/hilfen/beispielVorlage'
-import { CONTENT_BOTTOM, CONTENT_TOP_FIRST, CONTENT_TOP_NEXT } from '../layout'
-import type { Bericht } from '../../lib/typen'
+import { CONTENT_BOTTOM, CONTENT_TOP_FIRST, CONTENT_TOP_NEXT, zonenFuer } from '../layout'
+import type { Bericht, Briefvorlage } from '../../lib/typen'
 
 /**
  * Die Zonen des Briefbogens sind Sperrgebiet: oben Logo und
@@ -66,6 +66,59 @@ function vieleMesswerte(anzahl: number): Bericht {
   ]
   return bericht
 }
+
+/** Eine hinterlegte Vorlage, wie sie in der Datenbank liegt. */
+function briefvorlage(teil: Partial<Briefvorlage> = {}): Briefvorlage {
+  return {
+    dateiname: 'Briefbogen.pdf',
+    art: 'pdf',
+    daten: 'data:application/pdf;base64,',
+    groesse: 0,
+    seiten: 1,
+    hinzugefuegtAm: '2026-08-31T00:00:00.000Z',
+    // Die Vorgabewerte für einen frisch hochgeladenen Bogen – großzügig.
+    randOben: 60,
+    randObenFolgeseiten: 60,
+    randUnten: 35,
+    randLinks: 25,
+    randRechts: 20,
+    ersteSeiteWiederholen: true,
+    ...teil,
+  }
+}
+
+describe('zonenFuer', () => {
+  it('lässt eine Vorlage mehr Platz verlangen, aber keinen freigeben', () => {
+    const zonen = zonenFuer(briefvorlage())
+    expect(zonen.obenErste).toBe(CONTENT_TOP_FIRST)
+    expect(zonen.unten).toBe(CONTENT_BOTTOM)
+
+    // Wer mehr Rand braucht, bekommt ihn.
+    const grosszuegig = zonenFuer(briefvorlage({ randOben: 95, randUnten: 70 }))
+    expect(grosszuegig.obenErste).toBe(95)
+    expect(grosszuegig.unten).toBe(297 - 70)
+  })
+
+  it('hält den großen Abstand auch auf Folgeseiten, wenn der Bogen sich wiederholt', () => {
+    // Ein einseitiger Bogen auf jeder Seite trägt dort auch Absenderzeile und
+    // Gesprächspartner – dort darf nichts hineinlaufen.
+    const zonen = zonenFuer(briefvorlage({ seiten: 1, ersteSeiteWiederholen: true }))
+    expect(zonen.obenFolge).toBe(zonen.obenErste)
+  })
+
+  it('lässt Folgeseiten höher beginnen, wenn sie nur das Logo tragen', () => {
+    const eigeneFolgeseite = zonenFuer(
+      briefvorlage({ seiten: 2, ersteSeiteWiederholen: false, randObenFolgeseiten: 45 }),
+    )
+    expect(eigeneFolgeseite.obenFolge).toBe(CONTENT_TOP_NEXT)
+
+    // Ohne Briefbogen auf den Folgeseiten erst recht.
+    const ohneKopf = zonenFuer(
+      briefvorlage({ seiten: 1, ersteSeiteWiederholen: false, randObenFolgeseiten: 20 }),
+    )
+    expect(ohneKopf.obenFolge).toBe(CONTENT_TOP_NEXT)
+  })
+})
 
 describe('Satzspiegel der PDF-Ausgabe', () => {
   it('setzt einen kurzen Bericht auf genau eine Seite', async () => {
