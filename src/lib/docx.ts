@@ -20,7 +20,7 @@ import {
 } from 'docx'
 import { chargenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
-import { ausgefuellte, messwertText, mittelwertText } from './pruefungen'
+import { ausgefuellte, hatBruchbild, messwertText, mittelwertText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { A4, satzspiegel } from './vorlage'
@@ -360,6 +360,10 @@ function pruefungen(bericht: Bericht): (Paragraph | Table)[] {
   for (const pruefung of gemessen) {
     const werte = pruefung.messwerte.filter((messwert) => messwert.wert !== null)
     const einheit = pruefung.einheit.trim()
+    // Wie in der PDF: die Spalte gibt es nur, wo etwas brechen kann.
+    const mitBruchbild = hatBruchbild(pruefung)
+    const wertKopf = einheit ? `Wert [${einheit}]` : 'Wert'
+    const spalte = (inhalt: string[]) => (mitBruchbild ? inhalt : inhalt.slice(0, 2))
 
     teile.push(
       new Paragraph({
@@ -368,13 +372,11 @@ function pruefungen(bericht: Bericht): (Paragraph | Table)[] {
       }),
       tabelle(
         [
-          ['Nr.', einheit ? `Wert [${einheit}]` : 'Wert', 'Bruchbild / Bemerkung'],
-          ...werte.map((messwert, nummer) => [
-            `${nummer + 1}`,
-            messwertText(messwert.wert),
-            messwert.bemerkung.trim(),
-          ]),
-          ['Mittelwert', mittelwertText(pruefung), ''],
+          spalte(['Nr.', wertKopf, 'Bruchbild / Bemerkung']),
+          ...werte.map((messwert, nummer) =>
+            spalte([`${nummer + 1}`, messwertText(messwert.wert), messwert.bemerkung.trim()]),
+          ),
+          spalte(['Mittelwert', mittelwertText(pruefung), '']),
         ],
         true,
         [],

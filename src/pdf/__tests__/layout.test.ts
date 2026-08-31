@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LEERE_EINSTELLUNGEN, neuerBericht } from '../../lib/bericht'
 import { neuePruefung, neuerMesswert } from '../../lib/pruefungen'
 import { pdfMitProtokoll } from '../../lib/pdf'
+import { beispielVorlage } from '../../../tests/hilfen/beispielVorlage'
 import { CONTENT_BOTTOM, CONTENT_TOP_FIRST, CONTENT_TOP_NEXT } from '../layout'
 import type { Bericht } from '../../lib/typen'
 
@@ -108,6 +109,23 @@ describe('Satzspiegel der PDF-Ausgabe', () => {
     )
     expect(seitenMitWerten.size).toBeGreaterThan(1)
     for (const seite of seitenMitWerten) expect(seitenMitKopf).toContain(seite)
+
+    const raus = protokoll.filter(
+      (eintrag) => eintrag.y < CONTENT_TOP_NEXT || eintrag.y + eintrag.hoehe > CONTENT_BOTTOM,
+    )
+    expect(raus).toEqual([])
+  })
+
+  it('lässt eine großzügig eingestellte Vorlage die Zonen nicht freigeben', async () => {
+    // So liegt eine Vorlage in der Datenbank, die vor der Vermessung des
+    // Briefbogens hinterlegt wurde: viel zu viel Platz nach oben wie nach unten.
+    const vorlage = {
+      ...(await beispielVorlage('pdf')),
+      randOben: 60,
+      randObenFolgeseiten: 40,
+      randUnten: 35,
+    }
+    const { protokoll } = await pdfMitProtokoll(langerBericht(), vorlage)
 
     const raus = protokoll.filter(
       (eintrag) => eintrag.y < CONTENT_TOP_NEXT || eintrag.y + eintrag.hoehe > CONTENT_BOTTOM,

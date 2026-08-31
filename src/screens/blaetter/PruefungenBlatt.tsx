@@ -1,8 +1,8 @@
-import { useId } from 'react'
 import { Auswahlfeld, Textfeld } from '../../components/Felder'
 import { Knopf } from '../../components/Knopf'
-import { BRUCHBILDER, PRUEFUNGSARTEN, SONSTIGES } from '../../data/stammdaten'
+import { PRUEFUNGSARTEN, SONSTIGES } from '../../data/stammdaten'
 import {
+  hatBruchbild,
   messwertEingabe,
   mittelwertText,
   neuePruefung,
@@ -24,9 +24,6 @@ import type { BlattEigenschaften } from './liste'
  * ist ein gutes Ergebnis, derselbe Wert mit Bruch im Prüfkleber ist gar keines.
  */
 export function PruefungenBlatt({ bericht, aendern }: BlattEigenschaften) {
-  // Eine Vorschlagsliste für alle Bemerkungsfelder des Blattes.
-  const bruchbilder = useId()
-
   function aenderePruefung(id: string, teil: Partial<Pruefung>) {
     aendern((vorher) => ({
       ...vorher,
@@ -83,15 +80,10 @@ export function PruefungenBlatt({ bericht, aendern }: BlattEigenschaften) {
         </p>
       )}
 
-      {/* Freie Eingabe bleibt möglich – die Liste nimmt nur das Tippen ab. */}
-      <datalist id={bruchbilder}>
-        {BRUCHBILDER.map((bruchbild) => (
-          <option key={bruchbild} value={bruchbild} />
-        ))}
-      </datalist>
-
       {bericht.pruefungen.map((pruefung, index) => {
         const mittel = mittelwertText(pruefung)
+        // Ein Bruchbild gibt es nur, wo etwas brechen kann.
+        const bruchbild = hatBruchbild(pruefung)
         const eigeneBezeichnung =
           pruefung.bezeichnung === SONSTIGES ||
           (pruefung.bezeichnung !== '' &&
@@ -149,7 +141,7 @@ export function PruefungenBlatt({ bericht, aendern }: BlattEigenschaften) {
                   nummer={stelle + 1}
                   messwert={messwert}
                   einheit={pruefung.einheit}
-                  vorschlaege={bruchbilder}
+                  mitBruchbild={bruchbild}
                   aendere={(teil) => aendereMesswert(pruefung, messwert.id, teil)}
                   entferne={() => messwertEntfernen(pruefung, messwert.id)}
                 />
@@ -197,14 +189,18 @@ type ZeilenEigenschaften = {
   nummer: number
   messwert: Messwert
   einheit: string
-  /** Id der Vorschlagsliste für das Bruchbild. */
-  vorschlaege: string
+  /** Nur beim Haftzug: das Feld für das Bruchbild. */
+  mitBruchbild: boolean
   aendere: (teil: Partial<Messwert>) => void
   entferne: () => void
 }
 
 /**
- * Eine Messwertzeile: Zahl und Bruchbild.
+ * Eine Messwertzeile: Zahl und – beim Haftzug – Bruchbild.
+ *
+ * Nummer und Löschtaste stehen in der Kopfzeile, die Felder darunter über die
+ * volle Breite. So fangen alle Felder an derselben Kante an; eine eingerückte
+ * Zahlenzeile neben einem breiten Textfeld liest sich auf dem Handy schief.
  *
  * Das Zahlenfeld zeigt den Wortlaut der Eingabe und meldet nach oben die
  * gelesene Zahl. Wer „1," getippt hat, soll das auch stehen sehen – und wer
@@ -214,22 +210,14 @@ function Messwertzeile({
   nummer,
   messwert,
   einheit,
-  vorschlaege,
+  mitBruchbild,
   aendere,
   entferne,
 }: ZeilenEigenschaften) {
   return (
     <div className="bg-sika-schwarz/3 flex flex-col gap-2 rounded-xl p-3">
-      <div className="flex items-center gap-2">
-        <span className="text-sika-grau w-6 shrink-0 text-sm font-semibold">{nummer}.</span>
-        <input
-          inputMode="decimal"
-          aria-label={`Wert ${nummer}${einheit ? ` in ${einheit}` : ''}`}
-          placeholder={einheit || 'Wert'}
-          defaultValue={messwertEingabe(messwert.wert)}
-          onChange={(e) => aendere({ wert: zahlAusEingabe(e.target.value) })}
-          className={FELD}
-        />
+      <div className="flex items-center justify-between">
+        <span className="text-sika-grau text-sm font-semibold">Wert {nummer}</span>
         <button
           type="button"
           onClick={entferne}
@@ -240,13 +228,22 @@ function Messwertzeile({
         </button>
       </div>
       <input
-        list={vorschlaege}
-        aria-label={`Bruchbild zu Wert ${nummer}`}
-        placeholder="Bruchbild / Bemerkung"
-        value={messwert.bemerkung}
-        onChange={(e) => aendere({ bemerkung: e.target.value })}
+        inputMode="decimal"
+        aria-label={`Wert ${nummer}${einheit ? ` in ${einheit}` : ''}`}
+        placeholder={einheit || 'Wert'}
+        defaultValue={messwertEingabe(messwert.wert)}
+        onChange={(e) => aendere({ wert: zahlAusEingabe(e.target.value) })}
         className={FELD}
       />
+      {mitBruchbild && (
+        <input
+          aria-label={`Bruchbild zu Wert ${nummer}`}
+          placeholder="Bruchbild / Bemerkung"
+          value={messwert.bemerkung}
+          onChange={(e) => aendere({ bemerkung: e.target.value })}
+          className={FELD}
+        />
+      )}
     </div>
   )
 }

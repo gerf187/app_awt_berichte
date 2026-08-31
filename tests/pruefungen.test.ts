@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ausgefuellte,
   gemesseneWerte,
+  hatBruchbild,
   messwertText,
   mittelwert,
   mittelwertText,
@@ -77,6 +78,21 @@ describe('messwertText', () => {
 
   it('bleibt bei einer leeren Zeile leer', () => {
     expect(messwertText(null)).toBe('')
+  })
+})
+
+describe('hatBruchbild', () => {
+  it('gehört zum Haftzug, nicht zur Rauhtiefe', () => {
+    expect(hatBruchbild(pruefung({ messwerte: werte(1.5) }))).toBe(true)
+    expect(hatBruchbild(pruefung({ bezeichnung: 'Rauhtiefe', messwerte: werte(0.6) }))).toBe(false)
+  })
+
+  it('bleibt, solange in einem Wert etwas steht', () => {
+    const messung = pruefung({
+      bezeichnung: 'Schichtdicke',
+      messwerte: [neuerMesswert({ wert: 2, bemerkung: 'Fehlstelle' })],
+    })
+    expect(hatBruchbild(messung)).toBe(true)
   })
 })
 

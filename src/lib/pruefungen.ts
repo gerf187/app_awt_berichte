@@ -6,7 +6,7 @@
  * beides einzeln prüfen lässt. Das Blatt zeigt nur an, was hier entsteht.
  */
 
-import { PRUEFUNGEN } from '../data/stammdaten'
+import { MIT_BRUCHBILD, PRUEFUNGEN } from '../data/stammdaten'
 import { neueId } from './bericht'
 import type { Messwert, Pruefung } from './typen'
 import { zahlLesen, zahlSchreiben } from './verbrauch'
@@ -35,6 +35,18 @@ export function neuePruefung(teil: Partial<Pruefung> = {}): Pruefung {
 /** Die übliche Einheit einer Prüfung; für Unbekanntes bleibt sie leer. */
 export function standardEinheit(bezeichnung: string): string {
   return PRUEFUNGEN.find((eintrag) => eintrag.art === bezeichnung)?.einheit ?? ''
+}
+
+/**
+ * Gehört zu dieser Prüfung ein Bruchbild je Messwert?
+ *
+ * Steht in einem Wert schon eine Bemerkung, bleibt die Spalte auch dann
+ * bestehen, wenn die Prüfung sie von Haus aus nicht führt: Geschriebenes
+ * verschwindet nicht, weil jemand die Bezeichnung ändert.
+ */
+export function hatBruchbild(pruefung: Pruefung): boolean {
+  if (MIT_BRUCHBILD.includes(pruefung.bezeichnung.trim())) return true
+  return pruefung.messwerte.some((messwert) => messwert.bemerkung.trim())
 }
 
 /**

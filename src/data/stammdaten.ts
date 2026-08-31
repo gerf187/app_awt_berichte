@@ -35,23 +35,6 @@ export const UNTERGRUND_VORBEREITUNGEN = [
  * „Sonstiges" und schreibt Bezeichnung und Einheit selbst. Die Liste steht in
  * der Reihenfolge, in der auf der Baustelle geprüft wird.
  */
-/**
- * Vorschläge für das Bruchbild eines Haftzugwertes.
- *
- * Ein Vorschlag, keine Vorschrift: das Feld bleibt frei beschreibbar. Die Liste
- * nennt die Bruchbilder in der Reihenfolge, in der sie auf der Baustelle
- * vorkommen – vom guten Ergebnis (Bruch im Beton) bis zur ungültigen Messung.
- */
-export const BRUCHBILDER = [
-  'Bruch im Beton',
-  'Bruch in der Kleberschicht',
-  'Bruch im Estrich',
-  'Adhäsionsbruch Grundierung/Beton',
-  'Kohäsionsbruch Beschichtung',
-  'Bruch Sinterschicht/Beton',
-  'Bruch im Prüfkleber (ungültig)',
-] as const
-
 export const PRUEFUNGEN = [
   { art: 'Haftzugfestigkeit', einheit: 'N/mm²' },
   { art: 'Rauhtiefe', einheit: 'mm' },
@@ -60,6 +43,16 @@ export const PRUEFUNGEN = [
   { art: 'Ausbreitmaß (Hägemanntisch)', einheit: 'mm' },
   { art: 'Schichtdicke', einheit: 'mm' },
 ] as const
+
+/**
+ * Prüfungen, bei denen zu jedem einzelnen Wert ein Bruchbild gehört.
+ *
+ * Beim Haftzug ist es die eigentliche Aussage: 1,2 N/mm² mit Bruch im Beton ist
+ * ein gutes Ergebnis, derselbe Wert mit Bruch im Prüfkleber ist gar keines. Bei
+ * Rauhtiefe oder Restfeuchte gibt es nichts zu brechen – dort bleibt das Feld
+ * weg, in der Eingabe wie im Bericht.
+ */
+export const MIT_BRUCHBILD: readonly string[] = ['Haftzugfestigkeit']
 
 /** Dieselben Prüfungen als reine Auswahlliste, mit „Sonstiges" am Ende. */
 export const PRUEFUNGSARTEN = [...PRUEFUNGEN.map((eintrag) => eintrag.art), SONSTIGES] as const

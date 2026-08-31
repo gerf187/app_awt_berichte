@@ -114,8 +114,12 @@ export const TITEL: Stil = { groesse: SCHRIFT.titel, dick: true }
 /** Überschrift innerhalb eines Abschnitts, z. B. je Prüfung. */
 export const ZWISCHENUEBERSCHRIFT: Stil = { groesse: SCHRIFT.text, dick: true }
 
-/** Spaltenbreiten der Messwerttabelle in Millimetern; der Rest bleibt der Bemerkung. */
-export const MESSWERT_SPALTEN = { nummer: 15, wert: 35 } as const
+/**
+ * Spaltenbreiten der Messwerttabelle in Millimetern; der Rest bleibt der
+ * Bemerkung. Ohne Bruchbildspalte trägt die erste Spalte die Beschriftung
+ * „Mittelwert" und braucht dafür etwas mehr als eine laufende Nummer.
+ */
+export const MESSWERT_SPALTEN = { nummer: 15, wert: 35, nummerAllein: 25 } as const
 
 // --- Zonen ----------------------------------------------------------------
 
@@ -147,21 +151,28 @@ export const SIKA_ZONEN: Zonen = {
 }
 
 /**
- * Zonen für einen Lauf. Ohne hinterlegte Vorlage gelten die vermessenen Maße;
- * ein selbst hochgeladener Briefbogen bringt seine eigenen Ränder mit, die in
- * den Einstellungen nachjustierbar sind – die haben Vorrang, sonst ließe sich
- * ein fremder Bogen nie sauber treffen.
+ * Zonen für einen Lauf.
+ *
+ * Ohne hinterlegte Vorlage gelten die vermessenen Maße. Ein hochgeladener
+ * Briefbogen bringt eigene Ränder mit, die in den Einstellungen einstellbar
+ * sind – aber nur in eine Richtung: Er darf **mehr** Platz verlangen, keinen
+ * freigeben. Sonst hängt es an einer Einstellung, ob der Bericht über die
+ * Absenderzeile oder den Rechtsblock läuft, und eine Vorlage aus der Zeit vor
+ * dieser Messung würde beides tun.
+ *
+ * Seitlich gilt das nicht: dort verdeckt ein zu breiter Satz nichts, und ein
+ * fremder Bogen hat sein eigenes Maß.
  */
 export function zonenFuer(vorlage?: Briefvorlage): Zonen {
   if (!vorlage) return { ...SIKA_ZONEN }
 
-  const unten = PAGE.height - vorlage.randUnten
+  const unten = Math.min(PAGE.height - vorlage.randUnten, CONTENT_BOTTOM)
   return {
     links: vorlage.randLinks,
     rechts: vorlage.randRechts,
     breite: PAGE.width - vorlage.randLinks - vorlage.randRechts,
-    obenErste: vorlage.randOben,
-    obenFolge: vorlage.randObenFolgeseiten,
+    obenErste: Math.max(vorlage.randOben, CONTENT_TOP_FIRST),
+    obenFolge: Math.max(vorlage.randObenFolgeseiten, CONTENT_TOP_NEXT),
     unten,
     // Derselbe Sicherheitsabstand wie beim Sika-Bogen, nur relativ zum
     // Inhaltsende dieses Bogens.
@@ -359,10 +370,13 @@ export class PdfLayout {
 
   /**
    * Spaltenbreiten der Messwerttabelle: Nr., Wert, Bruchbild. Die Bemerkung
-   * bekommt, was übrig bleibt – auf dem Sika-Bogen also 115,5 mm.
+   * bekommt, was übrig bleibt – auf dem Sika-Bogen also 115,5 mm. Ohne
+   * Bruchbild bleiben zwei schmale Spalten; die Tabelle wird dann nicht auf
+   * volle Breite gezogen.
    */
-  messwertSpalten(): number[] {
-    const { nummer, wert } = MESSWERT_SPALTEN
+  messwertSpalten(mitBruchbild = true): number[] {
+    const { nummer, wert, nummerAllein } = MESSWERT_SPALTEN
+    if (!mitBruchbild) return [nummerAllein, wert]
     return [nummer, wert, this.zonen.breite - nummer - wert]
   }
 

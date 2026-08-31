@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { chargenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
-import { ausgefuellte, messwertText, mittelwertText } from './pruefungen'
+import { ausgefuellte, hatBruchbild, messwertText, mittelwertText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { bildformat, bytesAusDataUrl, vorlagenseiteFuer } from './vorlage'
@@ -252,18 +252,27 @@ export async function pdfMitProtokoll(
       layout.ueberschriftVorTabelle(pruefung.bezeichnung, ZWISCHENUEBERSCHRIFT)
       const einheit = pruefung.einheit.trim()
       const gemessen = pruefung.messwerte.filter((messwert) => messwert.wert !== null)
+      // Nur wo etwas brechen kann: bei Rauhtiefe oder Restfeuchte stünde sonst
+      // eine leere Spalte „Bruchbild" im Bericht.
+      const mitBruchbild = hatBruchbild(pruefung)
+      const wertKopf = einheit ? `Wert [${einheit}]` : 'Wert'
 
       tabelle({
-        head: [['Nr.', einheit ? `Wert [${einheit}]` : 'Wert', 'Bruchbild / Bemerkung']],
-        body: gemessen.map((messwert, nummer) => [
-          `${nummer + 1}`,
-          messwertText(messwert.wert),
+        head: [mitBruchbild ? ['Nr.', wertKopf, 'Bruchbild / Bemerkung'] : ['Nr.', wertKopf]],
+        body: gemessen.map((messwert, nummer) => {
+          const zeile = [`${nummer + 1}`, messwertText(messwert.wert)]
           // Leere Bemerkung bleibt leer – ein Strich behauptet, hier fehle etwas.
-          messwert.bemerkung.trim(),
-        ]),
+          return mitBruchbild ? [...zeile, messwert.bemerkung.trim()] : zeile
+        }),
         // Der Mittelwert schließt den Block ab; auf Folgeseiten wäre er nur
         // ein Zwischenstand, den es nicht gibt.
-        foot: [[{ content: 'Mittelwert', colSpan: 2 }, mittelwertText(pruefung)]],
+        foot: [
+          mitBruchbild
+            ? [{ content: 'Mittelwert', colSpan: 2 }, mittelwertText(pruefung)]
+            : ['Mittelwert', mittelwertText(pruefung)],
+        ],
+        // Ohne Bruchbild bleibt die Tabelle so schmal wie ihre zwei Spalten.
+        tableWidth: mitBruchbild ? 'auto' : 'wrap',
         showFoot: 'lastPage',
         footStyles: {
           fontStyle: 'bold',
@@ -273,7 +282,7 @@ export async function pdfMitProtokoll(
           // weiterer Messwert.
           lineWidth: { top: 0.3, right: 0, bottom: 0, left: 0 },
         },
-        columnStyles: spaltenbreiten(layout.messwertSpalten()),
+        columnStyles: spaltenbreiten(layout.messwertSpalten(mitBruchbild)),
       })
 
       // Mit Beschriftung, sonst steht unter der Tabelle ein Wort ohne Bezug.

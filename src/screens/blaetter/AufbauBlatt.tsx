@@ -79,8 +79,9 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
   const kgProM2 = bearbeitet ? verbrauchLesen(bearbeitet.verbrauch) : null
   const gesamtKg = bearbeitet ? zahlLesen(bearbeitet.gesamtmenge) : null
 
-  function speichern() {
-    if (!bearbeitet) return
+  /** Den Entwurf in den Bericht schreiben und die abgelegte Zeile zurückgeben. */
+  function uebernehmen(): Aufbauzeile | null {
+    if (!bearbeitet) return null
     const { index } = bearbeitet
     const zeile: Aufbauzeile = {
       ...bearbeitet.zeile,
@@ -99,12 +100,34 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
       // Festgestellt heißt: Bereich und Fläche dieser Zeile stehen auch in der
       // nächsten schon drin. Grundierung, Kratzspachtelung, Beschichtung –
       // dieselbe Fläche, dreimal getippt wäre einmal zu viel.
-      aufbauFest: bearbeitet.fest
-        ? { bereich: zeile.bereich, flaeche: zeile.flaeche }
-        : undefined,
+      aufbauFest: bearbeitet.fest ? { bereich: zeile.bereich, flaeche: zeile.flaeche } : undefined,
     }))
     merken(zeile.produkt)
-    setBearbeitet(null)
+    return zeile
+  }
+
+  function speichern() {
+    if (uebernehmen()) setBearbeitet(null)
+  }
+
+  /**
+   * Weiterschreiben, ohne den Dialog zu verlassen.
+   *
+   * Ein Bodenaufbau wird am Stück diktiert – Grundierung, Kratzspachtelung,
+   * Verlaufsbeschichtung. Wer dafür jedes Mal übernehmen, schließen und neu
+   * öffnen muss, tippt Bereich und Fläche dreimal. Hier bleiben beide stehen
+   * und nur die Schicht fängt von vorn an.
+   */
+  function naechsteSchicht() {
+    const zeile = uebernehmen()
+    if (!zeile) return
+    setBearbeitet(
+      entwurfAus(
+        -1,
+        { ...LEERE_AUFBAUZEILE, bereich: zeile.bereich, flaeche: zeile.flaeche },
+        bearbeitet?.fest ?? false,
+      ),
+    )
   }
 
   function entfernen(index: number) {
@@ -209,9 +232,9 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
       {fest && (
         <div className="border-sika-gelb bg-sika-gelb/10 flex items-center gap-3 rounded-xl border-2 p-3">
           <span className="flex-1 text-sm font-semibold">
-            Festgestellt: {[fest.bereich, fest.flaeche && `${fest.flaeche} m²`]
-              .filter(Boolean)
-              .join(' · ') || 'leer'}
+            Festgestellt:{' '}
+            {[fest.bereich, fest.flaeche && `${fest.flaeche} m²`].filter(Boolean).join(' · ') ||
+              'leer'}
           </span>
           <button
             type="button"
@@ -243,7 +266,10 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
                 {[zeile.bereich, zeile.schicht].filter(Boolean).join(' · ') || 'Ohne Bereich'}
               </span>
               <span className="text-sika-grau mt-1 block text-sm">
-                {[verbrauchszeile(zeile), chargenText(zeile.chargen) && `Charge ${chargenText(zeile.chargen)}`]
+                {[
+                  verbrauchszeile(zeile),
+                  chargenText(zeile.chargen) && `Charge ${chargenText(zeile.chargen)}`,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </span>
@@ -278,6 +304,15 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
             <h2 className="text-xl font-bold">
               {bearbeitet.index < 0 ? 'Neue Aufbauzeile' : 'Aufbauzeile ändern'}
             </h2>
+            {/* Nach „Nächste Schicht" steht der Dialog wieder leer da – ohne
+                diese Zeile wüsste niemand, ob die vorige angekommen ist. */}
+            {bearbeitet.index < 0 && bericht.aufbau.length > 0 && (
+              <p className="text-sika-grau -mt-2 text-sm font-semibold">
+                {bericht.aufbau.length === 1
+                  ? '1 Zeile erfasst'
+                  : `${bericht.aufbau.length} Zeilen erfasst`}
+              </p>
+            )}
 
             <div>
               <Textfeld
@@ -334,7 +369,9 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
                 className="h-6 w-6"
                 checked={bearbeitet.fest}
                 onChange={(e) =>
-                  setBearbeitet((vorher) => (vorher ? { ...vorher, fest: e.target.checked } : vorher))
+                  setBearbeitet((vorher) =>
+                    vorher ? { ...vorher, fest: e.target.checked } : vorher,
+                  )
                 }
               />
               <span className="text-sm font-semibold">
@@ -419,6 +456,10 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
             <div className="flex flex-col gap-3 pt-1">
               <Knopf art="haupt" breit onClick={speichern}>
                 Übernehmen
+              </Knopf>
+              {/* Der zweite Weg: dieselbe Fläche, die nächste Schicht. */}
+              <Knopf art="zweit" breit onClick={naechsteSchicht}>
+                Nächste Schicht
               </Knopf>
               <Knopf art="zweit" breit onClick={() => setBearbeitet(null)}>
                 Abbrechen
