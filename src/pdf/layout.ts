@@ -80,6 +80,7 @@ export const SCHRIFT = {
   klein: 10,
   fusszeile: 8,
   kopfzeile: 8,
+  gespraechspartner: 9,
 } as const
 
 export type Farbe = [number, number, number]
@@ -180,22 +181,21 @@ export function zonenFuer(vorlage?: Briefvorlage): Zonen {
   if (!vorlage) return { ...SIKA_ZONEN }
 
   const unten = Math.min(PAGE.height - vorlage.randUnten, CONTENT_BOTTOM)
-  const obenErste = Math.max(vorlage.randOben, CONTENT_TOP_FIRST)
   /**
-   * Ein einseitiger Bogen, der auf jeder Seite gedruckt wird, trägt dort auch
-   * Absenderzeile und Gesprächspartner – dann gilt auf den Folgeseiten
-   * derselbe Abstand wie auf der ersten. Nur ein Bogen mit eigener Folgeseite
-   * (oder gar keinem Kopf) gibt den Platz oberhalb frei.
+   * Von einem einseitigen Bogen steht auf den Folgeseiten nur das Logo (oder
+   * nichts) – dort gilt deshalb der kleine Abstand, ganz gleich was in der
+   * Vorlage eingestellt ist. Nur eine Vorlage mit eigener Folgeseite bringt
+   * dort einen Kopf mit, dessen Höhe sie selbst kennt.
    */
-  const wiederholtDenKopf = vorlage.seiten === 1 && vorlage.ersteSeiteWiederholen
+  const folgeseiteNurLogo = vorlage.seiten === 1
 
   return {
     links: vorlage.randLinks,
     rechts: vorlage.randRechts,
     breite: PAGE.width - vorlage.randLinks - vorlage.randRechts,
-    obenErste,
-    obenFolge: wiederholtDenKopf
-      ? obenErste
+    obenErste: Math.max(vorlage.randOben, CONTENT_TOP_FIRST),
+    obenFolge: folgeseiteNurLogo
+      ? CONTENT_TOP_NEXT
       : Math.max(vorlage.randObenFolgeseiten, CONTENT_TOP_NEXT),
     unten,
     // Derselbe Sicherheitsabstand wie beim Sika-Bogen, nur relativ zum
@@ -445,15 +445,36 @@ export type Kopfangaben = {
 /** Maße des Markenfeldes im Logobereich – unten rechts, wie auf dem Bogen. */
 const MARKE = { breite: 28, hoehe: 13 }
 
+/** Wie weit eine Überdeckung über die vermessene Zone hinausgeht. */
+const UEBERDECKUNG = 1
+
 /**
- * Die eigene Kopfzeile – nur nötig, wenn kein Briefbogen hinterlegt ist.
- * Der Bericht soll trotzdem so aussehen, als läge einer darunter: dieselben
- * Zonen, dieselben Positionen.
+ * Der Kopf, den die App selbst zeichnet.
  *
- * Logo auf jeder Seite, Absenderzeile und Gesprächspartner nur auf Seite 1 –
- * genau wie auf dem gedruckten Bogen.
+ * Ohne Briefbogen ist das alles: Logo auf jeder Seite, Absenderzeile und
+ * Gesprächspartner auf Seite 1 – an denselben Stellen wie auf dem gedruckten
+ * Bogen, damit der Bericht in beiden Fällen gleich aussieht.
+ *
+ * Mit Briefbogen bleibt nur der Gesprächspartner: Logo und Absenderzeile
+ * stehen schon auf dem Papier, der Block darüber aber trägt den Namen, der in
+ * der Vorlage eingesetzt wurde – „Martin Mustermann" oder der Kollege, von dem
+ * die Datei stammt. Er wird deshalb überdeckt und aus dem eigenen Profil neu
+ * geschrieben.
  */
-export function kopfZeichnen(doc: jsPDF, seite: number, angaben: Kopfangaben): void {
+export function kopfZeichnen(
+  doc: jsPDF,
+  seite: number,
+  angaben: Kopfangaben,
+  mitBriefbogen = false,
+): void {
+  if (!mitBriefbogen) markeZeichnen(doc, angaben.marke)
+  if (seite !== 1) return
+  if (!mitBriefbogen) absenderzeileZeichnen(doc, angaben.absenderzeile)
+  gespraechspartnerZeichnen(doc, angaben.gespraechspartner, mitBriefbogen)
+}
+
+/** Ersatz für das Logo, wenn kein Briefbogen darunterliegt. */
+function markeZeichnen(doc: jsPDF, marke: string): void {
   doc.setFillColor(...GELB)
   doc.rect(
     LOGO.x + LOGO.width - MARKE.breite,
@@ -466,39 +487,76 @@ export function kopfZeichnen(doc: jsPDF, seite: number, angaben: Kopfangaben): v
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(SCHRIFT.titel)
   doc.text(
-    angaben.marke,
+    marke,
     LOGO.x + LOGO.width - MARKE.breite + 3,
     LOGO.y + LOGO.height - MARKE.hoehe / 2 + 2,
   )
+}
 
-  if (seite !== 1) return
-
+/** Die kleine Zeile über dem Anschriftfeld. */
+function absenderzeileZeichnen(doc: jsPDF, absenderzeile: string): void {
+  if (!absenderzeile) return
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(SCHRIFT.kopfzeile)
   doc.setTextColor(...GRAU)
-  if (angaben.absenderzeile) {
-    doc.text(angaben.absenderzeile, SENDER_LINE.x, grundlinie(SENDER_LINE.y, SCHRIFT.kopfzeile))
-  }
+  doc.text(absenderzeile, SENDER_LINE.x, grundlinie(SENDER_LINE.y, SCHRIFT.kopfzeile))
+}
 
-  if (angaben.gespraechspartner.length === 0) return
+/**
+ * „Ihr Gesprächspartner" aus dem eigenen Profil.
+ *
+ * Liegt ein Briefbogen darunter, wird der Bereich zuerst weiß überdeckt: Der
+ * Bogen bringt einen vorbelegten Block mit, und zwei Namen übereinander wären
+ * schlimmer als gar keiner.
+ */
+function gespraechspartnerZeichnen(doc: jsPDF, zeilen: string[], ueberdecken: boolean): void {
+  const groesse = SCHRIFT.gespraechspartner
+
+  if (ueberdecken) {
+    doc.setFillColor(255, 255, 255)
+    doc.rect(
+      CONTACT_BLOCK.x - UEBERDECKUNG,
+      CONTACT_BLOCK.y - UEBERDECKUNG,
+      CONTACT_BLOCK.width + 2 * UEBERDECKUNG,
+      CONTACT_BLOCK.bottom - CONTACT_BLOCK.y + 2 * UEBERDECKUNG,
+      'F',
+    )
+  }
+  if (zeilen.length === 0) return
 
   doc.setFont('helvetica', 'bold')
+  doc.setFontSize(groesse)
   doc.setTextColor(...SCHWARZ)
-  let y = grundlinie(CONTACT_BLOCK.y, SCHRIFT.kopfzeile)
+  let y = grundlinie(CONTACT_BLOCK.y, groesse)
   doc.text('Ihr Gesprächspartner', CONTACT_BLOCK.x, y)
-  y += zeilenhoehe(SCHRIFT.kopfzeile)
+  y += zeilenhoehe(groesse)
 
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...GRAU)
-  for (const eintrag of angaben.gespraechspartner) {
+  for (const eintrag of zeilen) {
     for (const zeile of doc.splitTextToSize(eintrag, CONTACT_BLOCK.width) as string[]) {
       // Der Block hat ein festes Ende; was nicht hineinpasst, bleibt lieber
       // weg, als in den Satzspiegel zu rutschen.
       if (y > CONTACT_BLOCK.bottom) return
       doc.text(zeile, CONTACT_BLOCK.x, y)
-      y += zeilenhoehe(SCHRIFT.kopfzeile)
+      y += zeilenhoehe(groesse)
     }
   }
+}
+
+/**
+ * Alles außer dem Logo weiß überdecken.
+ *
+ * Für die Folgeseiten eines einseitigen Briefbogens, der als Bild vorliegt: Er
+ * lässt sich nicht zuschneiden, also wird zugedeckt, was dort nicht hingehört.
+ * Eine PDF-Vorlage wird stattdessen beschnitten (siehe `pdf.ts`).
+ */
+export function nurLogoZeigen(doc: jsPDF): void {
+  const unten = LOGO.y + LOGO.height
+  doc.setFillColor(255, 255, 255)
+  doc.rect(0, 0, PAGE.width, LOGO.y, 'F')
+  doc.rect(0, LOGO.y, LOGO.x, LOGO.height, 'F')
+  doc.rect(LOGO.x + LOGO.width, LOGO.y, PAGE.width - LOGO.x - LOGO.width, LOGO.height, 'F')
+  doc.rect(0, unten, PAGE.width, PAGE.height - unten, 'F')
 }
 
 /**

@@ -1,15 +1,16 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { chargenText } from './aufbau'
-import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
+import { alsAnzeigedatum, kommazahl } from './bericht'
 import { ausgefuellte, hatBruchbild, messwertText, mittelwertText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
-import { bildformat, bytesAusDataUrl, vorlagenseiteFuer } from './vorlage'
+import { bildformat, bogenteilFuer, bytesAusDataUrl } from './vorlage'
 import {
   ABSTAND,
   UEBERSCHRIFT,
   GELB,
+  LOGO,
   GRAU,
   PAGE,
   PdfLayout,
@@ -21,6 +22,7 @@ import {
   ZWISCHENUEBERSCHRIFT,
   fussZeichnen,
   kopfZeichnen,
+  nurLogoZeigen,
   zonenFuer,
 } from '../pdf/layout'
 import type { Protokolleintrag } from '../pdf/layout'
@@ -90,13 +92,6 @@ export async function pdfMitProtokoll(
   /** Ein Briefbogen als Bild wird direkt mitgedruckt, eine PDF erst am Ende. */
   const bildVorlage = vorlage?.art === 'bild' ? vorlage : undefined
   /**
-   * Ohne Briefbogen zeichnet die App den Gesprächspartner selbst in den dafür
-   * reservierten Block. Mit Bogen bleibt der Block dem Bogen überlassen – die
-   * Angaben stehen dann im Text („Bericht erstellt von").
-   */
-  const kopfTraegtAbsender = !vorlage
-
-  /**
    * Welche Seiten ihren Kopf schon haben.
    *
    * autoTable ruft `willDrawPage` auch für die Seite auf, auf der eine Tabelle
@@ -121,10 +116,11 @@ export async function pdfMitProtokoll(
     const groesse = doc.getFontSize()
     const farbe = doc.getTextColor()
 
+    // Eine PDF-Vorlage kommt erst ganz am Ende darunter, ein Bild sofort.
     if (bildVorlage) briefbogenZeichnen(doc, bildVorlage)
-    // Eine PDF-Vorlage kommt erst ganz am Ende darunter – dann aber ohne die
-    // eigene Kopfzeile, sonst stünden zwei Briefköpfe übereinander.
-    else if (!vorlage) kopfZeichnen(doc, seite, kopfangaben(bericht.absender))
+    // Logo und Absenderzeile bringt der Bogen mit; den Gesprächspartner
+    // schreibt die App in jedem Fall selbst – aus dem eigenen Profil.
+    kopfZeichnen(doc, seite, kopfangaben(bericht.absender), Boolean(vorlage))
 
     doc.setFont(schrift.fontName, schrift.fontStyle)
     doc.setFontSize(groesse)
@@ -193,15 +189,6 @@ export async function pdfMitProtokoll(
     theme: 'grid',
     columnStyles: { 0: BESCHRIFTUNGSSPALTE, 2: BESCHRIFTUNGSSPALTE },
   })
-
-  const absender = absenderzeilen(bericht.absender)
-  if (absender.length > 0 && !kopfTraegtAbsender) {
-    layout.ueberschrift('Bericht erstellt von')
-    for (const zeile of absender) {
-      layout.zeile(zeile, { groesse: SCHRIFT.klein, farbe: GRAU }, 'absender')
-    }
-    layout.abstand(ABSTAND.nachBlock)
-  }
 
   if (bericht.kopf.zweck.trim()) {
     layout.abstand(ZWECK.luftOben)
@@ -422,11 +409,13 @@ function kopfangaben(absender: Absender) {
   return {
     marke: 'Sika',
     absenderzeile: teile([absender.firma, absender.strasse, absender.ort], ' · '),
+    // Beschriftet wie auf dem Bogen – der Block wird ja an dessen Stelle
+    // gesetzt und soll nicht wie ein Fremdkörper wirken.
     gespraechspartner: [
       absender.name,
       absender.funktion,
-      absender.telefon && `Telefon ${absender.telefon}`,
-      absender.email,
+      absender.telefon && `Telefon: ${absender.telefon}`,
+      absender.email && `E-Mail: ${absender.email}`,
     ]
       .map((zeile) => zeile.trim())
       .filter(Boolean),
@@ -443,7 +432,8 @@ function kopfangaben(absender: Absender) {
  */
 function briefbogenZeichnen(doc: jsPDF, vorlage: Briefvorlage) {
   const seite = doc.getCurrentPageInfo().pageNumber - 1
-  if (vorlagenseiteFuer(vorlage, seite) === null) return
+  const teil = bogenteilFuer(vorlage, seite)
+  if (teil === null) return
 
   const masse = doc.getImageProperties(vorlage.daten)
   const faktor = Math.min(PAGE.width / masse.width, PAGE.height / masse.height)
@@ -459,6 +449,10 @@ function briefbogenZeichnen(doc: jsPDF, vorlage: Briefvorlage) {
     'briefbogen',
     'NONE',
   )
+
+  // Ein Bild lässt sich nicht beschneiden: auf den Folgeseiten wird alles
+  // zugedeckt, was dort nicht mehr hingehört.
+  if (teil.nurLogo) nurLogoZeigen(doc)
 }
 
 /**
@@ -477,18 +471,26 @@ async function briefbogenUnterlegen(bericht: Blob, vorlage: Briefvorlage): Promi
     const ziel = await PDFDocument.create()
     const bogenSeiten = await ziel.embedPdf(bogen, bogen.getPageIndices())
     const inhaltSeiten = await ziel.embedPages(inhalt.getPages())
+    // Der Logoausschnitt wird nur gebraucht, wenn es Folgeseiten gibt.
+    const logo = inhaltSeiten.length > 1 ? await logoAusschnitt(ziel, bogen.getPage(0)) : null
 
     for (const [nummer, inhaltSeite] of inhaltSeiten.entries()) {
       const seite = ziel.addPage([inhaltSeite.width, inhaltSeite.height])
-      const index = vorlagenseiteFuer(vorlage, nummer)
-      const gewaehlt = index === null ? undefined : (bogenSeiten[index] ?? bogenSeiten[0])
-      if (gewaehlt) {
-        seite.drawPage(gewaehlt, {
-          x: 0,
-          y: 0,
-          width: seite.getWidth(),
-          height: seite.getHeight(),
-        })
+      const teil = bogenteilFuer(vorlage, nummer)
+
+      if (teil?.nurLogo && logo) {
+        // Nur das Logo: der Rest des Bogens gehört auf die erste Seite.
+        seite.drawPage(logo.seite, { x: logo.x, y: logo.y })
+      } else if (teil) {
+        const gewaehlt = bogenSeiten[teil.seite] ?? bogenSeiten[0]
+        if (gewaehlt) {
+          seite.drawPage(gewaehlt, {
+            x: 0,
+            y: 0,
+            width: seite.getWidth(),
+            height: seite.getHeight(),
+          })
+        }
       }
       seite.drawPage(inhaltSeite, { x: 0, y: 0 })
     }
@@ -500,6 +502,39 @@ async function briefbogenUnterlegen(bericht: Blob, vorlage: Briefvorlage): Promi
   } catch {
     // Lieber ein Bericht ohne Briefbogen als gar keiner auf der Baustelle.
     return bericht
+  }
+}
+
+/**
+ * Den Logobereich aus dem Briefbogen schneiden.
+ *
+ * `embedPage` nimmt einen Ausschnitt entgegen; damit landet auf den
+ * Folgeseiten wirklich nur das Logo und nicht der halbe Bogen unter einem
+ * weißen Kasten. PDF rechnet von unten links, die Maße in `layout.ts` von oben
+ * links – daher die Umrechnung. Ein Bogen, der nicht genau A4 ist, wird über
+ * seine tatsächliche Seitengröße umgerechnet.
+ */
+async function logoAusschnitt(
+  ziel: import('pdf-lib').PDFDocument,
+  bogenSeite: import('pdf-lib').PDFPage,
+): Promise<{ seite: import('pdf-lib').PDFEmbeddedPage; x: number; y: number } | null> {
+  try {
+    const breite = bogenSeite.getWidth()
+    const hoehe = bogenSeite.getHeight()
+    const waagerecht = breite / PAGE.width
+    const senkrecht = hoehe / PAGE.height
+
+    const kasten = {
+      left: LOGO.x * waagerecht,
+      right: (LOGO.x + LOGO.width) * waagerecht,
+      top: hoehe - LOGO.y * senkrecht,
+      bottom: hoehe - (LOGO.y + LOGO.height) * senkrecht,
+    }
+    const seite = await ziel.embedPage(bogenSeite, kasten)
+    return { seite, x: kasten.left, y: kasten.bottom }
+  } catch {
+    // Lieber eine Folgeseite ohne Logo als gar kein Bericht.
+    return null
   }
 }
 

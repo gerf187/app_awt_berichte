@@ -378,7 +378,7 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
                     onChange={(e) => aendernVorlage({ ersteSeiteWiederholen: e.target.checked })}
                   />
                   <span className="text-sm font-semibold">
-                    Briefbogen auch auf den Folgeseiten drucken
+                    Logo auch auf den Folgeseiten drucken
                   </span>
                 </label>
               )}

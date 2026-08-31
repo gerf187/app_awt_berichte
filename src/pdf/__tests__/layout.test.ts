@@ -99,24 +99,21 @@ describe('zonenFuer', () => {
     expect(grosszuegig.unten).toBe(297 - 70)
   })
 
-  it('hält den großen Abstand auch auf Folgeseiten, wenn der Bogen sich wiederholt', () => {
-    // Ein einseitiger Bogen auf jeder Seite trägt dort auch Absenderzeile und
-    // Gesprächspartner – dort darf nichts hineinlaufen.
-    const zonen = zonenFuer(briefvorlage({ seiten: 1, ersteSeiteWiederholen: true }))
-    expect(zonen.obenFolge).toBe(zonen.obenErste)
+  it('lässt Folgeseiten höher beginnen – dort steht nur noch das Logo', () => {
+    // Auch wenn in der Vorlage 60 mm stehen: von einem einseitigen Bogen bleibt
+    // auf den Folgeseiten nur das Logo, und das endet bei 31,7 mm.
+    expect(zonenFuer(briefvorlage({ seiten: 1, ersteSeiteWiederholen: true })).obenFolge).toBe(
+      CONTENT_TOP_NEXT,
+    )
+    expect(zonenFuer(briefvorlage({ seiten: 1, ersteSeiteWiederholen: false })).obenFolge).toBe(
+      CONTENT_TOP_NEXT,
+    )
   })
 
-  it('lässt Folgeseiten höher beginnen, wenn sie nur das Logo tragen', () => {
-    const eigeneFolgeseite = zonenFuer(
-      briefvorlage({ seiten: 2, ersteSeiteWiederholen: false, randObenFolgeseiten: 45 }),
-    )
-    expect(eigeneFolgeseite.obenFolge).toBe(CONTENT_TOP_NEXT)
-
-    // Ohne Briefbogen auf den Folgeseiten erst recht.
-    const ohneKopf = zonenFuer(
-      briefvorlage({ seiten: 1, ersteSeiteWiederholen: false, randObenFolgeseiten: 20 }),
-    )
-    expect(ohneKopf.obenFolge).toBe(CONTENT_TOP_NEXT)
+  it('lässt einer eigenen Folgeseite ihren Rand', () => {
+    // Ein zweiseitiger Bogen kennt die Höhe seines Folgekopfes selbst.
+    const zonen = zonenFuer(briefvorlage({ seiten: 2, randObenFolgeseiten: 55 }))
+    expect(zonen.obenFolge).toBe(55)
   })
 })
 

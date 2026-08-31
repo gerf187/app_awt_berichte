@@ -14,7 +14,7 @@ import {
   satzspiegel,
   vorlageArtPruefen,
   vorlageAuffuellen,
-  vorlagenseiteFuer,
+  bogenteilFuer,
 } from '../src/lib/vorlage'
 
 async function seitenzahl(blob: Blob): Promise<number> {
@@ -55,18 +55,22 @@ describe('satzspiegel', () => {
   })
 })
 
-describe('vorlagenseiteFuer', () => {
+describe('bogenteilFuer', () => {
   it('nimmt bei zweiseitigen Vorlagen ab Seite 2 den Folgebogen', async () => {
     const vorlage = await beispielVorlage('pdf')
-    expect(vorlagenseiteFuer(vorlage, 0)).toBe(0)
-    expect(vorlagenseiteFuer(vorlage, 1)).toBe(1)
-    expect(vorlagenseiteFuer(vorlage, 7)).toBe(1)
+    expect(bogenteilFuer(vorlage, 0)).toEqual({ seite: 0, nurLogo: false })
+    expect(bogenteilFuer(vorlage, 1)).toEqual({ seite: 1, nurLogo: false })
+    // Der Folgebogen ist für Folgeseiten gemacht und wird ganz genommen.
+    expect(bogenteilFuer(vorlage, 7)).toEqual({ seite: 1, nurLogo: false })
   })
 
-  it('wiederholt einseitige Vorlagen nur, wenn es so eingestellt ist', async () => {
+  it('lässt von einer einseitigen Vorlage ab Seite 2 nur das Logo stehen', async () => {
     const vorlage = { ...(await beispielVorlage('bild')), ersteSeiteWiederholen: true }
-    expect(vorlagenseiteFuer(vorlage, 3)).toBe(0)
-    expect(vorlagenseiteFuer({ ...vorlage, ersteSeiteWiederholen: false }, 3)).toBeNull()
+    expect(bogenteilFuer(vorlage, 0)).toEqual({ seite: 0, nurLogo: false })
+    // Ein zweites „Ihr Gesprächspartner" und ein zweiter Rechtsblock sagen
+    // nichts Neues – das Logo bleibt.
+    expect(bogenteilFuer(vorlage, 3)).toEqual({ seite: 0, nurLogo: true })
+    expect(bogenteilFuer({ ...vorlage, ersteSeiteWiederholen: false }, 3)).toBeNull()
   })
 })
 

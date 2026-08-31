@@ -101,15 +101,27 @@ export function satzspiegel(vorlage?: Briefvorlage): Satzspiegel {
 }
 
 /**
- * Welche Seite des Briefbogens gehört hinter Blatt `nummer` (ab 0)?
- * Gibt den Seitenindex in der Vorlage zurück oder `null`, wenn diese Seite
- * ohne Briefbogen bleibt.
+ * Was vom Briefbogen auf Blatt `nummer` (ab 0) gehört.
+ *
+ * Die erste Seite bekommt den ganzen Bogen. Auf den Folgeseiten hat der große
+ * Kopf nichts mehr zu suchen: Ein zweites „Ihr Gesprächspartner" und ein
+ * zweiter Rechtsblock sagen nichts Neues, kosten aber 80 mm Papier. Bleiben
+ * soll das Logo – daran erkennt man den Absender auf jedem Blatt.
+ *
+ * Eine zweiseitige Vorlage bringt ihren eigenen Folgebogen mit; der ist genau
+ * dafür gemacht und wird unverändert genommen.
  */
-export function vorlagenseiteFuer(vorlage: Briefvorlage, nummer: number): number | null {
-  if (nummer === 0) return 0
-  // Zweiseitige Vorlagen bringen ihren eigenen Folgebogen mit.
-  if (vorlage.seiten > 1) return 1
-  return vorlage.ersteSeiteWiederholen ? 0 : null
+export type Bogenteil = {
+  /** Seitenindex in der Vorlage. */
+  seite: number
+  /** Nur der Logobereich statt der ganzen Seite. */
+  nurLogo: boolean
+}
+
+export function bogenteilFuer(vorlage: Briefvorlage, nummer: number): Bogenteil | null {
+  if (nummer === 0) return { seite: 0, nurLogo: false }
+  if (vorlage.seiten > 1) return { seite: 1, nurLogo: false }
+  return vorlage.ersteSeiteWiederholen ? { seite: 0, nurLogo: true } : null
 }
 
 /** Bildformat für jsPDF und docx aus der Data-URL. */
@@ -220,10 +232,8 @@ export async function vorlageEinlesen(datei: File): Promise<Briefvorlage> {
     seiten,
     hinzugefuegtAm: new Date().toISOString(),
     ...STANDARD_RAENDER,
-    // Ein einseitiger Briefbogen wiederholt sich – dann steht auf Seite 2
-    // derselbe große Kopf, und der Text muss genauso tief anfangen.
-    randObenFolgeseiten:
-      seiten === 1 ? STANDARD_RAENDER.randOben : STANDARD_RAENDER.randObenFolgeseiten,
+    // Von einem einseitigen Bogen steht auf den Folgeseiten nur noch das Logo
+    // (siehe `bogenteilFuer`), deshalb darf der Text dort höher anfangen.
     ersteSeiteWiederholen: seiten === 1,
   }
 }
