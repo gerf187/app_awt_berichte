@@ -20,7 +20,7 @@ import {
 } from 'docx'
 import { chargenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
-import { ausgefuellte, mittelwertText, werteText } from './pruefungen'
+import { ausgefuellte, messwertText, mittelwertText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { A4, satzspiegel } from './vorlage'
@@ -203,11 +203,18 @@ function pngMasse(daten: Uint8Array): { breite: number; hoehe: number } | null {
   return { breite: zahl(16), hoehe: zahl(20) }
 }
 
-function ueberschrift(text: string): Paragraph {
+/**
+ * Luft um den Zweck des Besuchs, in Millimetern – dieselben Maße wie in der
+ * PDF-Ausgabe.
+ */
+const ZWECK_LUFT = { oben: 4, unten: 6 }
+
+function ueberschrift(text: string, zentriert = false, luftOben?: number): Paragraph {
   return new Paragraph({
     text,
     heading: HeadingLevel.HEADING_2,
-    spacing: { before: 300, after: 120 },
+    alignment: zentriert ? AlignmentType.CENTER : undefined,
+    spacing: { before: luftOben === undefined ? 300 : mmInTwips(luftOben), after: 120 },
   })
 }
 
@@ -219,12 +226,18 @@ function absatz(text: string): Paragraph[] {
 }
 
 /** Tabelle über die volle Breite; die erste Zeile ist wahlweise Kopfzeile. */
-function tabelle(zeilen: string[][], mitKopfzeile: boolean, rotesZeilen: number[] = []): Table {
+function tabelle(
+  zeilen: string[][],
+  mitKopfzeile: boolean,
+  rotesZeilen: number[] = [],
+  fetteZeilen: number[] = [],
+): Table {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: zeilen.map((zelleninhalt, index) => {
       const istKopf = mitKopfzeile && index === 0
       const istRot = rotesZeilen.includes(index)
+      const istFett = fetteZeilen.includes(index)
       return new TableRow({
         tableHeader: istKopf,
         children: zelleninhalt.map(
@@ -236,7 +249,7 @@ function tabelle(zeilen: string[][], mitKopfzeile: boolean, rotesZeilen: number[
                   children: [
                     new TextRun({
                       text,
-                      bold: istKopf || istRot,
+                      bold: istKopf || istRot || istFett,
                       color: istRot ? ROT : undefined,
                     }),
                   ],
@@ -288,7 +301,20 @@ function kopfdaten(bericht: Bericht): (Paragraph | Table)[] {
   }
 
   if (bericht.kopf.zweck.trim()) {
-    teile.push(ueberschrift('Zweck des Besuchs'), ...absatz(bericht.kopf.zweck))
+    // Mittig und fett wie in der PDF – der Zweck ist die Überschrift über
+    // allem, was danach kommt.
+    const zeilen = bericht.kopf.zweck.split('\n')
+    teile.push(
+      ueberschrift('Zweck des Besuchs', true, ZWECK_LUFT.oben),
+      ...zeilen.map(
+        (zeile, index) =>
+          new Paragraph({
+            children: [new TextRun({ text: zeile, bold: true })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: index === zeilen.length - 1 ? mmInTwips(ZWECK_LUFT.unten) : 80 },
+          }),
+      ),
+    )
   }
   return teile
 }
@@ -321,25 +347,45 @@ function untergrund(bericht: Bericht): (Paragraph | Table)[] {
   return [ueberschrift('Untergrund'), tabelle(beschreibung, false)]
 }
 
-/** Gemessene Werte – ungemessene Prüfungen stehen gar nicht erst im Bericht. */
+/**
+ * Gemessene Werte – ungemessene Prüfungen stehen gar nicht erst im Bericht.
+ *
+ * Ein Block je Prüfung, wie in der PDF: zu jedem Wert gehört sein Bruchbild.
+ */
 function pruefungen(bericht: Bericht): (Paragraph | Table)[] {
   const gemessen = ausgefuellte(bericht.pruefungen)
   if (gemessen.length === 0) return []
-  return [
-    ueberschrift('Prüfungen'),
-    tabelle(
-      [
-        ['Prüfung', 'Einzelwerte', 'Mittelwert', 'Bemerkung'],
-        ...gemessen.map((pruefung) => [
-          pruefung.art,
-          werteText(pruefung),
-          mittelwertText(pruefung),
-          pruefung.bemerkung,
-        ]),
-      ],
-      true,
-    ),
-  ]
+
+  const teile: (Paragraph | Table)[] = [ueberschrift('Prüfungen')]
+  for (const pruefung of gemessen) {
+    const werte = pruefung.messwerte.filter((messwert) => messwert.wert !== null)
+    const einheit = pruefung.einheit.trim()
+
+    teile.push(
+      new Paragraph({
+        children: [new TextRun({ text: pruefung.bezeichnung, bold: true })],
+        spacing: { before: 200, after: 80 },
+      }),
+      tabelle(
+        [
+          ['Nr.', einheit ? `Wert [${einheit}]` : 'Wert', 'Bruchbild / Bemerkung'],
+          ...werte.map((messwert, nummer) => [
+            `${nummer + 1}`,
+            messwertText(messwert.wert),
+            messwert.bemerkung.trim(),
+          ]),
+          ['Mittelwert', mittelwertText(pruefung), ''],
+        ],
+        true,
+        [],
+        // Die Mittelwertzeile schließt die Tabelle ab und steht fett.
+        [werte.length + 1],
+      ),
+    )
+
+    if (pruefung.bemerkung?.trim()) teile.push(...absatz(pruefung.bemerkung.trim()))
+  }
+  return teile
 }
 
 function klima(bericht: Bericht): (Paragraph | Table)[] {

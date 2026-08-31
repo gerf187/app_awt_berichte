@@ -14,6 +14,7 @@
  * Das Zeichnen macht `pdf.ts` (PDF) beziehungsweise `docx.ts` (Word).
  */
 
+import { CONTENT_BOTTOM, CONTENT_TOP_FIRST, CONTENT_TOP_NEXT, MARGIN, PAGE } from '../pdf/layout'
 import type { Briefvorlage, Einstellungen, VorlagenArt } from './typen'
 
 /** A4 hochkant in Millimetern – das Maß, auf dem alles hier rechnet. */
@@ -63,18 +64,20 @@ export const STANDARD_RAENDER = {
 } as const
 
 /**
- * Satzspiegel der Sika-Briefvorlage, aus der Word-Vorlage ausgemessen.
+ * Satzspiegel der Sika-Briefvorlage.
  *
- * Oben beginnt der Bericht unter dem Adress- und Ansprechpartnerblock
- * (der endet bei 84 mm), unten hört er vor der Fußzeile auf (die beginnt bei
- * 253,8 mm). Auf den Folgeseiten reicht der Seitenrand von 49 mm.
+ * Die Maße stehen in `src/pdf/layout.ts` – dort, wo auch die PDF-Ausgabe sie
+ * liest. Hier werden sie nur in die Form gebracht, die eine gespeicherte
+ * Briefvorlage hat (Ränder statt Koordinaten), damit die Schaltfläche in den
+ * Einstellungen genau den Satzspiegel setzt, mit dem die PDF ohnehin rechnet.
  */
 export const SIKA_RAENDER = {
-  randOben: 88,
-  randObenFolgeseiten: 49,
-  randUnten: 49,
-  randLinks: 24.5,
-  randRechts: 20,
+  randOben: CONTENT_TOP_FIRST,
+  randObenFolgeseiten: CONTENT_TOP_NEXT,
+  // Nicht der Beginn des Rechtsblocks, sondern der Sicherheitsabstand davor.
+  randUnten: PAGE.height - CONTENT_BOTTOM,
+  randLinks: MARGIN.left,
+  randRechts: MARGIN.right,
 } as const
 
 export type Satzspiegel = {

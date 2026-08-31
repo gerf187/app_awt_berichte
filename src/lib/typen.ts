@@ -61,21 +61,44 @@ export type Untergrund = {
 }
 
 /**
+ * Ein einzelner Messwert samt Bruchbild.
+ *
+ * Beim Haftzug sagt die Zahl allein wenig: 1,2 N/mm² mit Bruch im Beton ist ein
+ * gutes Ergebnis, derselbe Wert mit Bruch im Prüfkleber ist gar keines. Deshalb
+ * hat jeder Wert seine eigene Bemerkung.
+ *
+ * Hier steht die Zahl ausnahmsweise als `number` und nicht als Text (anders als
+ * bei Verbrauch und Fläche): über die Messwerte wird gerechnet, und der
+ * Mittelwert soll nicht davon abhängen, ob jemand Komma oder Punkt getippt hat.
+ * Das Eingabefeld merkt sich den Wortlaut der Eingabe selbst.
+ */
+export type Messwert = {
+  id: string
+  /** `null`, solange die Zeile leer ist oder Unlesbares darin steht. */
+  wert: number | null
+  /** Das Bruchbild oder was sonst zu diesem einen Wert gehört. */
+  bemerkung: string
+}
+
+/**
  * Eine Prüfung auf der Baustelle: Haftzug, Rauhtiefe, Restfeuchte, LP-Gehalt,
  * Ausbreitmaß, Schichtdicke – oder etwas, das in keiner Liste steht.
  *
  * Gemessen wird selten nur einmal: beim Haftzug sind drei Werte die Regel, bei
- * der Schichtdicke gern ein Dutzend. Deshalb steht hier eine Liste von Werten
- * und keine einzelne Zahl. Bezeichnung und Einheit sind freier Text, damit
- * niemand auf eine mitgelieferte Liste warten muss.
+ * der Schichtdicke gern ein Dutzend. Bezeichnung und Einheit sind freier Text,
+ * damit niemand auf eine mitgelieferte Liste warten muss.
+ *
+ * Der Mittelwert steht bewusst **nicht** hier: er wird immer aus den Messwerten
+ * gerechnet, sonst hinkt er nach der ersten Korrektur hinterher.
  */
 export type Pruefung = {
-  art: string
+  id: string
+  /** Was geprüft wurde, z. B. „Haftzugfestigkeit". */
+  bezeichnung: string
   einheit: string
-  /** Die Einzelwerte, so getippt wie abgelesen. */
-  werte: string[]
-  /** Wo gemessen wurde, oder was sonst dazugehört. */
-  bemerkung: string
+  messwerte: Messwert[]
+  /** Gesamtbemerkung: wo gemessen wurde, oder was sonst dazugehört. */
+  bemerkung?: string
 }
 
 export type Klimawert = {

@@ -6,6 +6,7 @@ import {
   neuerBericht,
 } from '../src/lib/bericht'
 import { blattStand } from '../src/lib/blattstand'
+import { neuePruefung, neuerMesswert } from '../src/lib/pruefungen'
 import { klimaBerechnen } from '../src/lib/taupunkt'
 import type { Bericht, BlattId } from '../src/lib/typen'
 
@@ -69,9 +70,13 @@ describe('blattStand', () => {
 
     bericht.aufbau = [{ ...LEERE_AUFBAUZEILE, bereich: 'EG', schicht: 'Grundierung' }]
     bericht.pruefungen = [
-      { art: 'Rauhtiefe', einheit: 'mm', werte: ['0,6'], bemerkung: '' },
+      neuePruefung({
+        bezeichnung: 'Rauhtiefe',
+        einheit: 'mm',
+        messwerte: [neuerMesswert({ wert: 0.6 })],
+      }),
       // Ohne Messwert ist es keine Prüfung, sondern eine angefangene Zeile.
-      { art: 'Haftzugfestigkeit', einheit: 'N/mm²', werte: [''], bemerkung: '' },
+      neuePruefung({ bezeichnung: 'Haftzugfestigkeit', einheit: 'N/mm²' }),
     ]
 
     expect(stand(bericht, 'pruefungen')).toEqual({ art: 'neutral', text: '1 Prüfung' })

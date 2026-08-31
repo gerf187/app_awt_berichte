@@ -244,9 +244,15 @@ describe('berichtAuffuellen', () => {
     })
 
     const aufgefuellt = berichtAuffuellen(alt)
-    expect(aufgefuellt.pruefungen).toEqual([
-      { art: 'Haftzugfestigkeit', einheit: 'N/mm²', werte: ['1,5'], bemerkung: '' },
-      { art: 'Restfeuchte (CM)', einheit: 'CM-%', werte: ['1,8'], bemerkung: '' },
+    expect(
+      aufgefuellt.pruefungen.map((pruefung) => [
+        pruefung.bezeichnung,
+        pruefung.einheit,
+        pruefung.messwerte.map((messwert) => messwert.wert),
+      ]),
+    ).toEqual([
+      ['Haftzugfestigkeit', 'N/mm²', [1.5]],
+      ['Restfeuchte (CM)', 'CM-%', [1.8]],
     ])
     // Die alten Felder reisen nicht als Altlast mit.
     expect(aufgefuellt.untergrund).toEqual({

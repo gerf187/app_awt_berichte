@@ -5,7 +5,7 @@
 
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
 import { STANDARD_ORDNER } from './onedrive'
-import { pruefungAuffuellen } from './pruefungen'
+import { neuePruefung, neuerMesswert, pruefungAuffuellen, zahlAusEingabe } from './pruefungen'
 import { vorlageAuffuellen } from './vorlage'
 import type {
   Absender,
@@ -171,7 +171,13 @@ function pruefungenAusUntergrund(untergrund: AlterUntergrund): Pruefung[] {
   ]
   return alt
     .filter(([wert]) => wert?.trim())
-    .map(([wert, art, einheit]) => ({ art, einheit, werte: [wert!.trim()], bemerkung: '' }))
+    .map(([wert, bezeichnung, einheit]) =>
+      neuePruefung({
+        bezeichnung,
+        einheit,
+        messwerte: [neuerMesswert({ wert: zahlAusEingabe(wert!) })],
+      }),
+    )
 }
 
 /**

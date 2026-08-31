@@ -1,5 +1,6 @@
 import sharp from 'sharp'
 import { LEERE_EINSTELLUNGEN, neuerBericht } from '../../src/lib/bericht'
+import { neuePruefung, neuerMesswert } from '../../src/lib/pruefungen'
 import { klimaBerechnen } from '../../src/lib/taupunkt'
 import type { Bericht, Foto } from '../../src/lib/typen'
 
@@ -54,14 +55,27 @@ export async function beispielBericht(): Promise<Bericht> {
   }
 
   bericht.pruefungen = [
-    {
-      art: 'Haftzugfestigkeit',
+    neuePruefung({
+      bezeichnung: 'Haftzugfestigkeit',
       einheit: 'N/mm²',
-      werte: ['1,5', '1,7', '1,4'],
+      messwerte: [
+        neuerMesswert({ wert: 1.545, bemerkung: 'Bruch im Beton' }),
+        neuerMesswert({ wert: 1.7, bemerkung: 'Bruch in der Kleberschicht' }),
+        neuerMesswert({ wert: 1.412, bemerkung: '' }),
+      ],
       bemerkung: 'Halle Nord, Achse C',
-    },
-    { art: 'Rauhtiefe', einheit: 'mm', werte: ['0,6'], bemerkung: '' },
-    { art: 'Restfeuchte (CM)', einheit: 'CM-%', werte: ['1,8', '2,1'], bemerkung: 'Torbereich' },
+    }),
+    neuePruefung({
+      bezeichnung: 'Rauhtiefe',
+      einheit: 'mm',
+      messwerte: [neuerMesswert({ wert: 0.6 })],
+    }),
+    neuePruefung({
+      bezeichnung: 'Restfeuchte (CM)',
+      einheit: 'CM-%',
+      messwerte: [neuerMesswert({ wert: 1.8 }), neuerMesswert({ wert: 2.1 })],
+      bemerkung: 'Torbereich',
+    }),
   ]
 
   bericht.klima = [

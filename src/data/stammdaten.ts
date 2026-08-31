@@ -35,6 +35,23 @@ export const UNTERGRUND_VORBEREITUNGEN = [
  * „Sonstiges" und schreibt Bezeichnung und Einheit selbst. Die Liste steht in
  * der Reihenfolge, in der auf der Baustelle geprüft wird.
  */
+/**
+ * Vorschläge für das Bruchbild eines Haftzugwertes.
+ *
+ * Ein Vorschlag, keine Vorschrift: das Feld bleibt frei beschreibbar. Die Liste
+ * nennt die Bruchbilder in der Reihenfolge, in der sie auf der Baustelle
+ * vorkommen – vom guten Ergebnis (Bruch im Beton) bis zur ungültigen Messung.
+ */
+export const BRUCHBILDER = [
+  'Bruch im Beton',
+  'Bruch in der Kleberschicht',
+  'Bruch im Estrich',
+  'Adhäsionsbruch Grundierung/Beton',
+  'Kohäsionsbruch Beschichtung',
+  'Bruch Sinterschicht/Beton',
+  'Bruch im Prüfkleber (ungültig)',
+] as const
+
 export const PRUEFUNGEN = [
   { art: 'Haftzugfestigkeit', einheit: 'N/mm²' },
   { art: 'Rauhtiefe', einheit: 'mm' },

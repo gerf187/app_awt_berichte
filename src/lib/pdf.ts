@@ -2,11 +2,29 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { chargenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
-import { ausgefuellte, mittelwertText, werteText } from './pruefungen'
+import { ausgefuellte, messwertText, mittelwertText } from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
-import { A4, bildformat, bytesAusDataUrl, satzspiegel, vorlagenseiteFuer } from './vorlage'
-import type { Bericht, Briefvorlage } from './typen'
+import { bildformat, bytesAusDataUrl, vorlagenseiteFuer } from './vorlage'
+import {
+  ABSTAND,
+  UEBERSCHRIFT,
+  GELB,
+  GRAU,
+  PAGE,
+  PdfLayout,
+  ROT,
+  SCHRIFT,
+  SCHWARZ,
+  TEXT,
+  TITEL,
+  ZWISCHENUEBERSCHRIFT,
+  fussZeichnen,
+  kopfZeichnen,
+  zonenFuer,
+} from '../pdf/layout'
+import type { Protokolleintrag } from '../pdf/layout'
+import type { Absender, Bericht, Briefvorlage } from './typen'
 
 /**
  * PDF-Ausgabe des Baustellenberichts – der Hauptweg für den Versand.
@@ -17,24 +35,67 @@ import type { Bericht, Briefvorlage } from './typen'
  * Ist in den Einstellungen ein **Briefbogen** hinterlegt, steht der Bericht
  * darauf: bei einem Bild wird es als Untergrund auf jede Seite gezeichnet,
  * bei einer PDF-Vorlage werden die fertigen Seiten am Ende über den Briefbogen
- * gelegt. Ohne Vorlage druckt die App ihre eigene schlichte Kopfzeile.
+ * gelegt. Ohne Vorlage druckt die App ihre eigene Kopfzeile – an denselben
+ * Stellen, damit der Satzspiegel in beiden Fällen derselbe ist.
+ *
+ * Wo etwas stehen darf, weiß diese Datei nicht selbst: das steht in
+ * `src/pdf/layout.ts`. Hier wird nur gesagt, **was** gedruckt wird, und der
+ * Schreibzeiger (`PdfLayout`) sorgt dafür, dass es in den freien Bereich passt.
  */
 
-const SEITE = A4 // A4 hochkant, in Millimetern
+/** Anteil der Beschriftungsspalte an einer Bezeichnung/Wert-Spalte. */
+const BESCHRIFTUNG_ANTEIL = { einspaltig: 0.33 }
 
-const GELB: [number, number, number] = [255, 196, 0]
-const SCHWARZ: [number, number, number] = [26, 26, 26]
-const ROT: [number, number, number] = [208, 2, 27]
-const GRAU: [number, number, number] = [107, 114, 128]
+/**
+ * Beschriftungsspalte der Kopfdaten: so breit wie ihr längster Eintrag, der
+ * Rest gehört den Werten. Fest gesetzt bräche autoTable „Verarbeiter-Anschrift"
+ * mitten im Wort um.
+ */
+const BESCHRIFTUNGSSPALTE = { cellWidth: 'wrap' as const, fontStyle: 'bold' as const }
+
+/**
+ * Der Zweck des Besuchs steht mittig und fett über dem Bericht – er sagt in
+ * einem Satz, warum jemand auf der Baustelle war. Dafür etwas mehr Luft als
+ * zwischen den übrigen Abschnitten.
+ */
+const ZWECK = {
+  ueberschrift: { ...UEBERSCHRIFT, zentriert: true },
+  text: { ...TEXT, dick: true, zentriert: true },
+  luftOben: 4,
+  luftUnten: 6,
+}
+
+/** Breite des Unterschriftenfeldes. */
+const UNTERSCHRIFT = { breite: 70, hoehe: 25 }
+
+/** Zusammen mit dem Bildkasten der Platz, den ein Foto samt Text braucht. */
+const BILDTEXT_ABSTAND = 5
 
 export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Promise<Blob> {
+  return (await pdfMitProtokoll(bericht, vorlage)).blob
+}
+
+/**
+ * Wie `pdfErzeugen`, gibt aber zusätzlich zurück, wo jeder Block gelandet ist.
+ *
+ * Dafür gibt es die Layout-Tests: an einer fertigen PDF lässt sich schlecht
+ * ablesen, ob eine Tabellenzeile in den Rechtsblock ragt – am Protokoll schon.
+ */
+export async function pdfMitProtokoll(
+  bericht: Bericht,
+  vorlage?: Briefvorlage,
+): Promise<{ blob: Blob; protokoll: Protokolleintrag[]; seiten: number }> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
-  const rand = satzspiegel(vorlage)
-  const INHALTSBREITE = SEITE.breite - rand.links - rand.rechts
+  const zonen = zonenFuer(vorlage)
   /** Ein Briefbogen als Bild wird direkt mitgedruckt, eine PDF erst am Ende. */
   const bildVorlage = vorlage?.art === 'bild' ? vorlage : undefined
+  /**
+   * Ohne Briefbogen zeichnet die App den Gesprächspartner selbst in den dafür
+   * reservierten Block. Mit Bogen bleibt der Block dem Bogen überlassen – die
+   * Angaben stehen dann im Text („Bericht erstellt von").
+   */
+  const kopfTraegtAbsender = !vorlage
 
-  let y = rand.obenErste
   /**
    * Welche Seiten ihren Kopf schon haben.
    *
@@ -52,8 +113,7 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
    * mitten im Textfluss aufgerufen (beim Seitenumbruch), und der laufende
    * Absatz soll danach nicht plötzlich in Titelgröße weitergehen.
    */
-  function seitenanfang() {
-    const seite = doc.getCurrentPageInfo().pageNumber
+  function seitenanfang(seite: number) {
     if (bekopft.has(seite)) return
     bekopft.add(seite)
 
@@ -64,64 +124,41 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
     if (bildVorlage) briefbogenZeichnen(doc, bildVorlage)
     // Eine PDF-Vorlage kommt erst ganz am Ende darunter – dann aber ohne die
     // eigene Kopfzeile, sonst stünden zwei Briefköpfe übereinander.
-    else if (!vorlage) eigeneKopfzeile(doc, rand.links)
+    else if (!vorlage) kopfZeichnen(doc, seite, kopfangaben(bericht.absender))
 
     doc.setFont(schrift.fontName, schrift.fontStyle)
     doc.setFontSize(groesse)
     doc.setTextColor(farbe)
   }
 
-  /** Sorgt dafür, dass `hoehe` Millimeter auf der Seite noch frei sind. */
-  function platz(hoehe: number) {
-    if (y + hoehe <= SEITE.hoehe - rand.unten) return
-    doc.addPage()
-    seitenanfang()
-    // Ab Seite 2 ist der Briefkopf meist kleiner – dort beginnt der Text höher.
-    y = rand.obenFolge
-  }
-
-  function ueberschrift(text: string) {
-    platz(14)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(13)
-    doc.setTextColor(...SCHWARZ)
-    doc.text(text, rand.links, y)
-    y += 7
-  }
-
-  function absatz(text: string) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(11)
-    for (const zeile of doc.splitTextToSize(text, INHALTSBREITE) as string[]) {
-      platz(6)
-      doc.text(zeile, rand.links, y)
-      y += 5.5
-    }
-    y += 3
-  }
+  const layout = new PdfLayout(doc, zonen, seitenanfang)
 
   /** Tabelle setzen und den Schreibzeiger hinter sie stellen. */
   function tabelle(optionen: Parameters<typeof autoTable>[1]) {
     autoTable(doc, {
-      startY: y,
-      margin: {
-        left: rand.links,
-        right: rand.rechts,
-        top: rand.obenFolge,
-        bottom: rand.unten,
-      },
-      styles: { font: 'helvetica', fontSize: 10, cellPadding: 2, textColor: SCHWARZ },
+      ...layout.tabellenRahmen(),
+      styles: { font: 'helvetica', fontSize: SCHRIFT.tabelle, cellPadding: 2, textColor: SCHWARZ },
       headStyles: { fillColor: GELB, textColor: SCHWARZ, fontStyle: 'bold' },
+      // Kopfzeile auf jeder Seite wiederholen, und lieber eine hohe Zeile
+      // umbrechen als sie am Seitenfuß abschneiden.
+      showHead: 'everyPage',
+      rowPageBreak: 'auto',
       // `willDrawPage`, nicht `didDrawPage`: der Briefbogen muss unter der
       // Tabelle liegen, nicht über ihr.
-      willDrawPage: seitenanfang,
+      willDrawPage: () => seitenanfang(doc.getCurrentPageInfo().pageNumber),
+      didDrawCell: (daten) =>
+        layout.notieren(daten.cell.y, daten.cell.height, `tabelle-${daten.section}`),
       ...optionen,
     })
     const ende = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable
-    y = (ende?.finalY ?? y) + 8
+    layout.nachTabelle(ende?.finalY ?? layout.y)
   }
 
-  seitenanfang()
+  // --- Titel ------------------------------------------------------------
+  // Der Briefbogen kennt den Bericht nicht; ohne diese Zeile hätte die Seite
+  // keine Überschrift.
+  layout.zeile('Baustellenbericht', TITEL, 'titel')
+  layout.abstand(ABSTAND.nachBlock)
 
   // --- Kopfdaten: zwei Spalten, damit alles auf eine Seite passt ---------
   const kopfPaare: [string, string][] = [
@@ -140,46 +177,45 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
     ['Vertrieb', bericht.kopf.vertrieb],
   ]
 
-  // Steht ein Briefbogen dahinter, fehlt sonst der Titel – der Bogen kennt
-  // den Bericht ja nicht.
-  if (vorlage) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(16)
-    doc.setTextColor(...SCHWARZ)
-    doc.text('Baustellenbericht', rand.links, y)
-    y += 9
+  // Je Zeile zwei Paare nebeneinander – zehn Einzelzeilen würden die halbe
+  // erste Seite fressen, und die ist unter dem Briefkopf ohnehin knapp.
+  const kopfZeilen: string[][] = []
+  for (let stelle = 0; stelle < kopfPaare.length; stelle += 2) {
+    const zeile = kopfPaare
+      .slice(stelle, stelle + 2)
+      .flatMap(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.'])
+    while (zeile.length < 4) zeile.push('')
+    kopfZeilen.push(zeile)
   }
 
   tabelle({
-    body: kopfPaare.map(([bezeichnung, wert]) => [bezeichnung, wert.trim() || 'k.A.']),
+    body: kopfZeilen,
     theme: 'grid',
-    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
+    columnStyles: { 0: BESCHRIFTUNGSSPALTE, 2: BESCHRIFTUNGSSPALTE },
   })
 
   const absender = absenderzeilen(bericht.absender)
-  if (absender.length > 0) {
-    ueberschrift('Bericht erstellt von')
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.setTextColor(...GRAU)
+  if (absender.length > 0 && !kopfTraegtAbsender) {
+    layout.ueberschrift('Bericht erstellt von')
     for (const zeile of absender) {
-      platz(6)
-      doc.text(zeile, rand.links, y)
-      y += 5
+      layout.zeile(zeile, { groesse: SCHRIFT.klein, farbe: GRAU }, 'absender')
     }
-    doc.setTextColor(...SCHWARZ)
-    y += 5
+    layout.abstand(ABSTAND.nachBlock)
   }
 
   if (bericht.kopf.zweck.trim()) {
-    ueberschrift('Zweck des Besuchs')
-    absatz(bericht.kopf.zweck)
+    layout.abstand(ZWECK.luftOben)
+    layout.ueberschrift('Zweck des Besuchs', ZWECK.ueberschrift)
+    for (const zeile of layout.umbrechen(bericht.kopf.zweck, ZWECK.text)) {
+      layout.zeile(zeile, ZWECK.text, 'zweck')
+    }
+    layout.abstand(ZWECK.luftUnten)
   }
 
   // --- Anwesende --------------------------------------------------------
   const anwesende = bericht.anwesende.filter((person) => person.name.trim())
   if (anwesende.length > 0) {
-    ueberschrift('Anwesende')
+    layout.ueberschriftVorTabelle('Anwesende')
     tabelle({
       head: [['Name', 'Firma', 'Funktion']],
       body: anwesende.map((person) => [person.name, person.firma, person.funktion]),
@@ -194,11 +230,11 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
   ].filter(([, wert]) => wert.trim()) as [string, string][]
 
   if (untergrundPaare.length > 0) {
-    ueberschrift('Untergrund')
+    layout.ueberschriftVorTabelle('Untergrund')
     tabelle({
       body: untergrundPaare,
       theme: 'grid',
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55 } },
+      columnStyles: spaltenbreiten(layout.paarSpalten(1, BESCHRIFTUNG_ANTEIL.einspaltig), true),
     })
   }
 
@@ -207,21 +243,53 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
   // etwas nicht geprüft wurde, sagt das Fehlen der Zeile deutlich genug.
   const pruefungen = ausgefuellte(bericht.pruefungen)
   if (pruefungen.length > 0) {
-    ueberschrift('Prüfungen')
-    tabelle({
-      head: [['Prüfung', 'Einzelwerte', 'Mittelwert', 'Bemerkung']],
-      body: pruefungen.map((pruefung) => [
-        pruefung.art,
-        werteText(pruefung),
-        mittelwertText(pruefung),
-        pruefung.bemerkung,
-      ]),
-    })
+    layout.ueberschriftVorTabelle('Prüfungen')
+
+    // Ein Block je Prüfung statt einer Zeile mit allen Werten nebeneinander:
+    // beim Haftzug gehört zu jedem Wert sein Bruchbild, und das ist die
+    // eigentliche Aussage der Messung.
+    for (const pruefung of pruefungen) {
+      layout.ueberschriftVorTabelle(pruefung.bezeichnung, ZWISCHENUEBERSCHRIFT)
+      const einheit = pruefung.einheit.trim()
+      const gemessen = pruefung.messwerte.filter((messwert) => messwert.wert !== null)
+
+      tabelle({
+        head: [['Nr.', einheit ? `Wert [${einheit}]` : 'Wert', 'Bruchbild / Bemerkung']],
+        body: gemessen.map((messwert, nummer) => [
+          `${nummer + 1}`,
+          messwertText(messwert.wert),
+          // Leere Bemerkung bleibt leer – ein Strich behauptet, hier fehle etwas.
+          messwert.bemerkung.trim(),
+        ]),
+        // Der Mittelwert schließt den Block ab; auf Folgeseiten wäre er nur
+        // ein Zwischenstand, den es nicht gibt.
+        foot: [[{ content: 'Mittelwert', colSpan: 2 }, mittelwertText(pruefung)]],
+        showFoot: 'lastPage',
+        footStyles: {
+          fontStyle: 'bold',
+          fillColor: false,
+          textColor: SCHWARZ,
+          // Dünne Linie darüber, sonst liest sich der Mittelwert wie ein
+          // weiterer Messwert.
+          lineWidth: { top: 0.3, right: 0, bottom: 0, left: 0 },
+        },
+        columnStyles: spaltenbreiten(layout.messwertSpalten()),
+      })
+
+      // Mit Beschriftung, sonst steht unter der Tabelle ein Wort ohne Bezug.
+      if (pruefung.bemerkung?.trim()) {
+        layout.absatz(
+          `Bemerkung: ${pruefung.bemerkung.trim()}`,
+          { groesse: SCHRIFT.klein, farbe: GRAU },
+          'pruefungsbemerkung',
+        )
+      }
+    }
   }
 
   // --- Klimawerte -------------------------------------------------------
   if (bericht.klima.length > 0) {
-    ueberschrift('Klimawerte')
+    layout.ueberschriftVorTabelle('Klimawerte')
     tabelle({
       head: [['Uhrzeit', 'Luft °C', 'Untergrund °C', 'rF %', 'Taupunkt °C', 'Abstand K']],
       body: bericht.klima.map((messung) => [
@@ -243,24 +311,15 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
     })
 
     if (bericht.klima.some((messung) => messung.warnung)) {
-      doc.setTextColor(...ROT)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
       const warnung = `Achtung: Abstand zum Taupunkt unter ${MINDESTABSTAND_TAUPUNKT} K – Beschichtung nicht freigeben.`
-      // Umbrechen, sonst läuft der Satz über den rechten Rand hinaus.
-      for (const zeile of doc.splitTextToSize(warnung, INHALTSBREITE) as string[]) {
-        platz(6)
-        doc.text(zeile, rand.links, y)
-        y += 5
-      }
-      y += 5
-      doc.setTextColor(...SCHWARZ)
+      layout.absatz(warnung, { groesse: SCHRIFT.klein, dick: true, farbe: ROT }, 'warnung')
+      layout.abstand(ABSTAND.nachBlock)
     }
   }
 
   // --- Aufbau -----------------------------------------------------------
   if (bericht.aufbau.length > 0) {
-    ueberschrift('Aufbau')
+    layout.ueberschriftVorTabelle('Aufbau')
     tabelle({
       head: [['Bereich', 'Schicht', 'Produkt', 'Verbrauch', 'Fläche', 'Gesamt', 'Chargen']],
       body: bericht.aufbau.map((zeile) => [
@@ -285,80 +344,84 @@ export async function pdfErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pro
   ]
   for (const [titel, inhalt] of textbloecke) {
     if (!inhalt.trim()) continue
-    ueberschrift(titel)
-    absatz(inhalt)
+    layout.ueberschrift(titel)
+    layout.absatz(inhalt)
   }
 
   // --- Unterschrift -----------------------------------------------------
   if (bericht.unterschrift) {
-    platz(40)
-    ueberschrift('Unterschrift')
-    doc.addImage(bericht.unterschrift, 'PNG', rand.links, y, 70, 25)
-    y += 28
-    doc.setDrawColor(...GRAU)
-    doc.setLineWidth(0.3)
-    doc.line(rand.links, y, rand.links + 70, y)
-    y += 10
+    // Bild, Linie und Überschrift gehören zusammen auf eine Seite.
+    layout.ensureSpace(UNTERSCHRIFT.hoehe + 20)
+    layout.ueberschrift('Unterschrift')
+    layout.bild(bericht.unterschrift, 'PNG', UNTERSCHRIFT.breite, UNTERSCHRIFT.hoehe)
+    layout.abstand(ABSTAND.nachBlock / 2)
+    layout.linie(UNTERSCHRIFT.breite)
+    layout.abstand(ABSTAND.nachBlock)
   }
 
   // --- Fotos: zwei je Seite --------------------------------------------
   if (bericht.fotos.length > 0) {
-    doc.addPage()
-    seitenanfang()
-    y = rand.obenFolge
-    ueberschrift('Fotos')
+    layout.neueSeite()
+    layout.ueberschrift('Fotos')
 
-    // Halbe freie Seitenhöhe, damit zwei Bilder samt Beschriftung Platz haben.
-    const kastenHoehe = Math.max(60, (SEITE.hoehe - rand.obenFolge - rand.unten) / 2 - 18)
+    const kastenHoehe = layout.bildkastenHoehe()
     for (const [nummer, foto] of bericht.fotos.entries()) {
-      platz(kastenHoehe + 12)
-      const { breite, hoehe } = einpassen(doc, foto.dataUrl, INHALTSBREITE, kastenHoehe)
-      doc.addImage(
-        foto.dataUrl,
-        'JPEG',
-        rand.links + (INHALTSBREITE - breite) / 2,
-        y,
-        breite,
-        hoehe,
-      )
-      y += hoehe + 5
+      const { breite, hoehe } = einpassen(doc, foto.dataUrl, zonen.breite, kastenHoehe)
+      // Bild und Beschriftung nicht trennen.
+      layout.ensureSpace(hoehe + BILDTEXT_ABSTAND + 12)
+      layout.bild(foto.dataUrl, 'JPEG', breite, hoehe, true)
+      layout.abstand(BILDTEXT_ABSTAND)
 
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(10)
-      doc.setTextColor(...GRAU)
       const beschriftung = `Bild ${nummer + 1}${foto.beschreibung ? `: ${foto.beschreibung}` : ''}`
-      for (const zeile of doc.splitTextToSize(beschriftung, INHALTSBREITE) as string[]) {
-        platz(5)
-        doc.text(zeile, rand.links, y)
-        y += 4.5
-      }
-      doc.setTextColor(...SCHWARZ)
-      y += 6
+      layout.absatz(beschriftung, { groesse: SCHRIFT.klein, farbe: GRAU }, 'bildtext')
+      layout.abstand(ABSTAND.nachBlock)
     }
   }
 
-  fusszeilen(doc, bericht.kopf.berichtsnummer, rand.links, rand.rechts, rand.unten)
+  const seiten = doc.getNumberOfPages()
+  for (let seite = 1; seite <= seiten; seite++) {
+    doc.setPage(seite)
+    fussZeichnen(doc, seite, seiten, zonen, bericht.kopf.berichtsnummer)
+  }
 
   const fertig = doc.output('blob')
-  if (vorlage?.art === 'pdf') return briefbogenUnterlegen(fertig, vorlage)
-  return fertig
+  const blob = vorlage?.art === 'pdf' ? await briefbogenUnterlegen(fertig, vorlage) : fertig
+  return { blob, protokoll: layout.protokoll, seiten }
 }
 
-/** Die eigene Kopfzeile – nur, wenn kein Briefbogen hinterlegt ist. */
-function eigeneKopfzeile(doc: jsPDF, links: number) {
-  doc.setFillColor(...GELB)
-  doc.rect(links, 10, 16, 12, 'F')
-  doc.setTextColor(...SCHWARZ)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.text('Sika', links + 3, 18)
+/**
+ * Spaltenbreiten in die Form bringen, die autoTable erwartet. `fett` macht
+ * jede zweite Spalte zur Beschriftung.
+ */
+function spaltenbreiten(breiten: number[], fett = false) {
+  return Object.fromEntries(
+    breiten.map((cellWidth, spalte) => [
+      spalte,
+      fett && spalte % 2 === 0 ? { cellWidth, fontStyle: 'bold' as const } : { cellWidth },
+    ]),
+  )
+}
 
-  doc.setFontSize(16)
-  doc.text('Baustellenbericht', links + 22, 19)
+/** Die Angaben, die ohne Briefbogen in den Kopf gehören. */
+function kopfangaben(absender: Absender) {
+  const teile = (werte: string[], trenner: string) =>
+    werte
+      .map((wert) => wert.trim())
+      .filter(Boolean)
+      .join(trenner)
 
-  doc.setDrawColor(...GELB)
-  doc.setLineWidth(0.8)
-  doc.line(links, 24, SEITE.breite - links, 24)
+  return {
+    marke: 'Sika',
+    absenderzeile: teile([absender.firma, absender.strasse, absender.ort], ' · '),
+    gespraechspartner: [
+      absender.name,
+      absender.funktion,
+      absender.telefon && `Telefon ${absender.telefon}`,
+      absender.email,
+    ]
+      .map((zeile) => zeile.trim())
+      .filter(Boolean),
+  }
 }
 
 /**
@@ -374,14 +437,14 @@ function briefbogenZeichnen(doc: jsPDF, vorlage: Briefvorlage) {
   if (vorlagenseiteFuer(vorlage, seite) === null) return
 
   const masse = doc.getImageProperties(vorlage.daten)
-  const faktor = Math.min(SEITE.breite / masse.width, SEITE.hoehe / masse.height)
+  const faktor = Math.min(PAGE.width / masse.width, PAGE.height / masse.height)
   const breite = masse.width * faktor
   const hoehe = masse.height * faktor
   doc.addImage(
     vorlage.daten,
     bildformat(vorlage.daten),
-    (SEITE.breite - breite) / 2,
-    (SEITE.hoehe - hoehe) / 2,
+    (PAGE.width - breite) / 2,
+    (PAGE.height - hoehe) / 2,
     breite,
     hoehe,
     'briefbogen',
@@ -453,30 +516,4 @@ function einpassen(
   const eigenschaften = doc.getImageProperties(dataUrl)
   const faktor = Math.min(maxBreite / eigenschaften.width, maxHoehe / eigenschaften.height)
   return { breite: eigenschaften.width * faktor, hoehe: eigenschaften.height * faktor }
-}
-
-/**
- * Fußzeile auf jede Seite – erst am Ende, weil die Gesamtseitenzahl
- * vorher nicht feststeht. Sie sitzt im unteren Rand, also über einer
- * eventuellen Fußzeile des Briefbogens.
- */
-function fusszeilen(
-  doc: jsPDF,
-  berichtsnummer: string,
-  links: number,
-  rechts: number,
-  unten: number,
-) {
-  const seiten = doc.getNumberOfPages()
-  const zeile = Math.min(SEITE.hoehe - 8, SEITE.hoehe - unten + 8)
-  for (let seite = 1; seite <= seiten; seite++) {
-    doc.setPage(seite)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.setTextColor(...GRAU)
-    doc.text(`Bericht ${berichtsnummer}`, links, zeile)
-    doc.text(`Seite ${seite} von ${seiten}`, SEITE.breite - rechts, zeile, {
-      align: 'right',
-    })
-  }
 }

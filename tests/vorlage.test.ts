@@ -114,8 +114,10 @@ describe('Bericht auf dem Briefbogen', () => {
     const ohne = await pdfErzeugen(bericht)
     const mit = await pdfErzeugen(bericht, vorlage)
 
-    // Der breitere Satzspiegel darf Seiten hinzufügen, aber keine wegnehmen.
-    expect(await seitenzahl(mit)).toBeGreaterThanOrEqual(await seitenzahl(ohne))
+    // Beide Wege haben ihren eigenen Satzspiegel – der des Beispielbogens ist
+    // großzügiger als der reservierte Bereich des Sika-Bogens, deshalb darf die
+    // Seitenzahl in beide Richtungen abweichen. Sie darf nur nicht davonlaufen.
+    expect(Math.abs((await seitenzahl(mit)) - (await seitenzahl(ohne)))).toBeLessThanOrEqual(2)
     expect(mit.size).toBeGreaterThan(ohne.size)
     // Der Briefbogen steckt einmal in der Datei, nicht je Seite – sonst wäre
     // die Datei um ein Vielfaches seiner Größe gewachsen.
@@ -127,7 +129,7 @@ describe('Bericht auf dem Briefbogen', () => {
     const ohne = await pdfErzeugen(bericht)
     const mit = await pdfErzeugen(bericht, await beispielVorlage('pdf'))
 
-    expect(await seitenzahl(mit)).toBeGreaterThanOrEqual(await seitenzahl(ohne))
+    expect(Math.abs((await seitenzahl(mit)) - (await seitenzahl(ohne)))).toBeLessThanOrEqual(2)
     expect(new TextDecoder().decode((await mit.arrayBuffer()).slice(0, 5))).toBe('%PDF-')
   })
 
