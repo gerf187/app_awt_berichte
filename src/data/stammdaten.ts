@@ -57,10 +57,18 @@ export const MIT_BRUCHBILD: readonly string[] = ['Haftzugfestigkeit']
 /** Dieselben Prüfungen als reine Auswahlliste, mit „Sonstiges" am Ende. */
 export const PRUEFUNGSARTEN = [...PRUEFUNGEN.map((eintrag) => eintrag.art), SONSTIGES] as const
 
-/** Übliche Schichtbezeichnungen im Bodenaufbau – als Vorschlag, nicht als Zwang. */
+/**
+ * Übliche Schichtbezeichnungen im Bodenaufbau – als Vorschlag, nicht als Zwang.
+ *
+ * Die Leitschicht steht zwischen Kratzspachtelung und Ausgleichsschicht: Bei
+ * ableitfähigen Systemen (AS-Produkte) wird sie dort eingebaut und mit den
+ * Erdungspunkten verbunden. Ohne sie fehlte im Bericht genau die Zeile, auf
+ * die es bei der Ableitfähigkeit ankommt.
+ */
 export const SCHICHTEN = [
   'Grundierung',
   'Kratzspachtelung',
+  'Leitschicht',
   'Ausgleichsschicht',
   'Verlaufsbeschichtung',
   'Deckversiegelung',
