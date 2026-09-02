@@ -1,5 +1,11 @@
 import { useId } from 'react'
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import { useZahlEingabe } from './zahlEingabe'
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react'
 
 const RAHMEN =
   'w-full rounded-xl border-2 border-sika-schwarz/15 bg-white px-4 py-3 text-lg tippziel focus:border-sika-schwarz'
@@ -18,7 +24,12 @@ type TextfeldEigenschaften = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> &
   hinweis?: string
 }
 
-export function Textfeld({ beschriftung, hinweis, className = '', ...rest }: TextfeldEigenschaften) {
+export function Textfeld({
+  beschriftung,
+  hinweis,
+  className = '',
+  ...rest
+}: TextfeldEigenschaften) {
   const id = useId()
   return (
     <div>
@@ -85,4 +96,19 @@ export function Auswahlfeld({
       </select>
     </div>
   )
+}
+
+type ZahlfeldEigenschaften = Omit<TextfeldEigenschaften, 'value' | 'onChange' | 'onBlur'> & {
+  wert: number
+  aendern: (wert: number) => void
+}
+
+/**
+ * Textfeld für eine Zahl. Anders als ein Feld mit `value={zahl}` lässt es sich
+ * zwischendurch leeren – sonst steht nach dem Löschen sofort wieder eine 0 im
+ * Weg und die getippte 18 wird zu „018".
+ */
+export function Zahlfeld({ wert, aendern, ...rest }: ZahlfeldEigenschaften) {
+  const eingabe = useZahlEingabe(wert, aendern)
+  return <Textfeld type="number" inputMode="decimal" {...rest} {...eingabe} />
 }

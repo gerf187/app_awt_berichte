@@ -1,4 +1,5 @@
 import { Knopf } from '../../components/Knopf'
+import { useZahlEingabe } from '../../components/zahlEingabe'
 import { alsUhrzeit, kommazahl } from '../../lib/bericht'
 import { MINDESTABSTAND_TAUPUNKT, klimaBerechnen } from '../../lib/taupunkt'
 import type { Klimawert } from '../../lib/typen'
@@ -21,6 +22,7 @@ function Messfeld({
   schritt?: number
   aendern: (wert: number) => void
 }) {
+  const eingabe = useZahlEingabe(wert, aendern)
   return (
     <label className="flex flex-1 flex-col">
       <span className="mb-1 text-sm font-semibold">
@@ -30,8 +32,7 @@ function Messfeld({
         type="number"
         inputMode="decimal"
         step={schritt}
-        value={wert}
-        onChange={(e) => aendern(Number(e.target.value))}
+        {...eingabe}
         className="border-sika-schwarz/15 tippziel focus:border-sika-schwarz w-full rounded-xl border-2 bg-white px-3 py-3 text-lg"
       />
     </label>

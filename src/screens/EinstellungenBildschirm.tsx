@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Ansicht } from '../App'
 import { Knopf } from '../components/Knopf'
 import { Kopfzeile } from '../components/Kopfzeile'
-import { Textfeld } from '../components/Felder'
+import { Textfeld, Zahlfeld } from '../components/Felder'
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
 import { LEERE_EINSTELLUNGEN, alsDatumstext } from '../lib/bericht'
 import {
@@ -309,50 +309,45 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Textfeld
+                <Zahlfeld
                   beschriftung="Oben, Seite 1 (mm)"
-                  type="number"
                   inputMode="numeric"
                   min={0}
                   max={130}
-                  value={vorlage.randOben}
-                  onChange={(e) => aendernVorlage({ randOben: Number(e.target.value) })}
+                  wert={vorlage.randOben}
+                  aendern={(mm) => aendernVorlage({ randOben: mm })}
                 />
-                <Textfeld
+                <Zahlfeld
                   beschriftung="Oben, ab Seite 2 (mm)"
-                  type="number"
                   inputMode="numeric"
                   min={0}
                   max={130}
-                  value={vorlage.randObenFolgeseiten}
-                  onChange={(e) => aendernVorlage({ randObenFolgeseiten: Number(e.target.value) })}
+                  wert={vorlage.randObenFolgeseiten}
+                  aendern={(mm) => aendernVorlage({ randObenFolgeseiten: mm })}
                 />
-                <Textfeld
+                <Zahlfeld
                   beschriftung="Unten (mm)"
-                  type="number"
                   inputMode="numeric"
                   min={0}
                   max={130}
-                  value={vorlage.randUnten}
-                  onChange={(e) => aendernVorlage({ randUnten: Number(e.target.value) })}
+                  wert={vorlage.randUnten}
+                  aendern={(mm) => aendernVorlage({ randUnten: mm })}
                 />
-                <Textfeld
+                <Zahlfeld
                   beschriftung="Links (mm)"
-                  type="number"
                   inputMode="numeric"
                   min={0}
                   max={90}
-                  value={vorlage.randLinks}
-                  onChange={(e) => aendernVorlage({ randLinks: Number(e.target.value) })}
+                  wert={vorlage.randLinks}
+                  aendern={(mm) => aendernVorlage({ randLinks: mm })}
                 />
-                <Textfeld
+                <Zahlfeld
                   beschriftung="Rechts (mm)"
-                  type="number"
                   inputMode="numeric"
                   min={0}
                   max={90}
-                  value={vorlage.randRechts}
-                  onChange={(e) => aendernVorlage({ randRechts: Number(e.target.value) })}
+                  wert={vorlage.randRechts}
+                  aendern={(mm) => aendernVorlage({ randRechts: mm })}
                 />
               </div>
 
