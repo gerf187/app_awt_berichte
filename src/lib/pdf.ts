@@ -1,8 +1,14 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { chargenText } from './aufbau'
+import { chargenText, mischungenText } from './aufbau'
 import { alsAnzeigedatum, kommazahl } from './bericht'
-import { ausgefuellte, hatBruchbild, messwertText, mittelwertText } from './pruefungen'
+import {
+  ausgefuellte,
+  hatBruchbild,
+  messwertText,
+  mittelwertText,
+  sichtpruefungText,
+} from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { bildformat, bogenteilFuer, bytesAusDataUrl } from './vorlage'
@@ -229,9 +235,25 @@ export async function pdfMitProtokoll(
   // Nur, was wirklich gemessen wurde. Eine Zeile „k.A." hilft niemandem; dass
   // etwas nicht geprüft wurde, sagt das Fehlen der Zeile deutlich genug.
   const pruefungen = ausgefuellte(bericht.pruefungen)
-  if (pruefungen.length > 0) {
+  const sicht = sichtpruefungText(bericht.sichtpruefung)
+  if (pruefungen.length > 0 || sicht) {
     layout.ueberschriftVorTabelle('Prüfungen')
+  }
 
+  // Die Sichtprüfung kommt zuerst: sie ist das Erste, was man sich ansieht.
+  if (sicht) {
+    layout.ueberschrift('Sichtprüfung', ZWISCHENUEBERSCHRIFT)
+    layout.absatz(sicht, undefined, 'sichtpruefung')
+    if (bericht.sichtpruefung.bemerkung.trim()) {
+      layout.absatz(
+        `Bemerkung: ${bericht.sichtpruefung.bemerkung.trim()}`,
+        { groesse: SCHRIFT.klein, farbe: GRAU },
+        'pruefungsbemerkung',
+      )
+    }
+  }
+
+  if (pruefungen.length > 0) {
     // Ein Block je Prüfung statt einer Zeile mit allen Werten nebeneinander:
     // beim Haftzug gehört zu jedem Wert sein Bruchbild, und das ist die
     // eigentliche Aussage der Messung.
@@ -328,6 +350,11 @@ export async function pdfMitProtokoll(
         chargenText(zeile.chargen),
       ]),
     })
+
+    // Wer Mischung für Mischung mitgeschrieben hat, findet sie unter der Tabelle.
+    for (const text of bericht.aufbau.map(mischungenText).filter(Boolean)) {
+      layout.absatz(text, { groesse: SCHRIFT.klein, farbe: GRAU }, 'mischungen')
+    }
   }
 
   // --- Freitexte --------------------------------------------------------

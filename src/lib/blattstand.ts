@@ -4,6 +4,10 @@
  * Bewusst ohne Oberfläche – so lässt sich die Regel einzeln prüfen. Die
  * Farbsprache ist die der App: Gelb heißt „fehlt noch" und hält niemanden auf,
  * Rot bleibt der Gefahr vorbehalten, heute dem unterschrittenen Taupunkt.
+ *
+ * Grün heißt „hier steht etwas": Blätter ohne Pflichtangaben bekommen ihren
+ * Haken, sobald etwas eingetragen ist. Wer auf den Abschluss schaut, sieht so
+ * auf einen Blick, wo er schon war – und wo nicht.
  */
 
 import type { FehlendesPflichtfeld } from './bericht'
@@ -15,6 +19,11 @@ export type Stand = { art: BlattStand; text: string }
 /** „1 Foto" statt „1 Fotos". */
 function mal(anzahl: number, ein: string, viele: string): string {
   return `${anzahl} ${anzahl === 1 ? ein : viele}`
+}
+
+/** Blätter ohne Pflichtangaben: Haken, sobald etwas drinsteht, sonst kein Zeichen. */
+function frei(eingetragen: boolean, text: string): Stand {
+  return { art: eingetragen ? 'fertig' : 'neutral', text }
 }
 
 /** Blätter mit Pflichtangaben: gelb, solange eine fehlt. */
@@ -34,21 +43,28 @@ export function blattStand(id: BlattId, bericht: Bericht, fehlt: FehlendesPflich
 
     case 'thematik': {
       const anzahl = bericht.anwesende.filter((person) => person.name.trim()).length
-      return {
-        art: 'neutral',
-        text: anzahl === 0 ? 'niemand eingetragen' : mal(anzahl, 'Person', 'Personen'),
-      }
+      // Die erste Person setzt die App selbst aus dem Profil – das allein ist
+      // noch kein ausgefülltes Blatt. Erst der Zweck oder ein Zweiter zählt.
+      return frei(
+        Boolean(bericht.kopf.zweck.trim()) || anzahl > 1,
+        anzahl === 0 ? 'niemand eingetragen' : mal(anzahl, 'Person', 'Personen'),
+      )
     }
 
     case 'untergrund':
-      return { art: 'neutral', text: bericht.untergrund.art.trim() || 'noch leer' }
+      return frei(
+        Boolean(bericht.untergrund.art.trim()),
+        bericht.untergrund.art.trim() || 'noch leer',
+      )
 
     case 'pruefungen': {
       const anzahl = ausgefuellte(bericht.pruefungen).length
-      return {
-        art: 'neutral',
-        text: anzahl === 0 ? 'nichts geprüft' : mal(anzahl, 'Prüfung', 'Prüfungen'),
-      }
+      const sicht = bericht.sichtpruefung.ergebnis !== ''
+      const teile = [
+        sicht ? 'Sichtprüfung' : '',
+        anzahl > 0 ? mal(anzahl, 'Prüfung', 'Prüfungen') : '',
+      ].filter(Boolean)
+      return frei(sicht || anzahl > 0, teile.join(' + ') || 'nichts geprüft')
     }
 
     case 'klima': {
@@ -59,11 +75,10 @@ export function blattStand(id: BlattId, bericht: Bericht, fehlt: FehlendesPflich
     }
 
     case 'aufbau':
-      return {
-        art: 'neutral',
-        text:
-          bericht.aufbau.length === 0 ? 'noch leer' : mal(bericht.aufbau.length, 'Zeile', 'Zeilen'),
-      }
+      return frei(
+        bericht.aufbau.length > 0,
+        bericht.aufbau.length === 0 ? 'noch leer' : mal(bericht.aufbau.length, 'Zeile', 'Zeilen'),
+      )
 
     case 'text':
       return pflicht('text', fehlt, () => {
@@ -78,15 +93,14 @@ export function blattStand(id: BlattId, bericht: Bericht, fehlt: FehlendesPflich
       })
 
     case 'fotos':
-      return {
-        art: 'neutral',
-        text: bericht.fotos.length === 0 ? 'kein Foto' : mal(bericht.fotos.length, 'Foto', 'Fotos'),
-      }
+      return frei(
+        bericht.fotos.length > 0,
+        bericht.fotos.length === 0 ? 'kein Foto' : mal(bericht.fotos.length, 'Foto', 'Fotos'),
+      )
 
     case 'abschluss':
-      return {
-        art: 'neutral',
-        text: bericht.status === 'Abgeschlossen' ? 'abgeschlossen' : 'Entwurf',
-      }
+      return bericht.status === 'Abgeschlossen'
+        ? { art: 'fertig', text: 'abgeschlossen' }
+        : { art: 'neutral', text: 'Entwurf' }
   }
 }

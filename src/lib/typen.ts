@@ -101,6 +101,17 @@ export type Pruefung = {
   bemerkung?: string
 }
 
+/**
+ * Die Sichtprüfung des Untergrunds: frei von Schmutz, Staub und
+ * Verunreinigungen? Kein Messwert, sondern ein Urteil – deshalb nicht als
+ * `Pruefung` geführt, wo ein Mittelwert ohne Zahlen keinen Sinn hätte.
+ */
+export type Sichtpruefung = {
+  /** Leer, solange nicht geprüft wurde – dann fehlt sie im Bericht. */
+  ergebnis: '' | 'io' | 'nio'
+  bemerkung: string
+}
+
 export type Klimawert = {
   uhrzeit: string
   luft: number
@@ -127,6 +138,20 @@ export type Aufbauzeile = {
    * Komponenten auf die Baustelle – eine einzige Nummer je Zeile wäre gelogen.
    */
   chargen: string[]
+  flaeche: string
+  /**
+   * Die Schicht, Mischung für Mischung: „Mischung 1 = 25 kg auf 60 m²".
+   * Sind welche eingetragen, ergeben sich Fläche, Gesamtmenge und Verbrauch
+   * aus ihrer Summe – die drei Felder oben tippt dann niemand mehr.
+   */
+  mischungen?: Mischung[]
+}
+
+/** Eine angerührte Mischung. Beides getippter Text, wie Verbrauch und Fläche. */
+export type Mischung = {
+  /** Menge der Mischung in kg. */
+  menge: string
+  /** Fläche, die mit dieser Mischung belegt wurde, in m². */
   flaeche: string
 }
 
@@ -212,6 +237,7 @@ export type Bericht = {
   kopf: Kopf
   anwesende: Anwesender[]
   untergrund: Untergrund
+  sichtpruefung: Sichtpruefung
   pruefungen: Pruefung[]
   klima: Klimawert[]
   aufbau: Aufbauzeile[]

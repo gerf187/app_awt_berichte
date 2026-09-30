@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FILLER_WORDS, cleanDictation } from './cleanDictation'
+import { FILLER_WORDS, anfuegen, cleanDictation } from './cleanDictation'
 
 describe('cleanDictation', () => {
   it('macht aus einem Diktat einen Satz', () => {
@@ -31,9 +31,7 @@ describe('cleanDictation', () => {
     expect(cleanDictation('CM-Wert 1,8 %, Haftzug 2,4 N/mm²')).toBe(
       'CM-Wert 1,8 %, Haftzug 2,4 N/mm².',
     )
-    expect(cleanDictation('bei 22 °C und 55 % rF gemessen')).toBe(
-      'Bei 22 °C und 55 % rF gemessen.',
-    )
+    expect(cleanDictation('bei 22 °C und 55 % rF gemessen')).toBe('Bei 22 °C und 55 % rF gemessen.')
   })
 
   it('schreibt Abkürzungen nicht klein', () => {
@@ -43,9 +41,7 @@ describe('cleanDictation', () => {
   })
 
   it('setzt die übrigen gesprochenen Satzzeichen', () => {
-    expect(cleanDictation('Frage Doppelpunkt wer liefert Fragezeichen')).toBe(
-      'Frage: wer liefert?',
-    )
+    expect(cleanDictation('Frage Doppelpunkt wer liefert Fragezeichen')).toBe('Frage: wer liefert?')
     expect(cleanDictation('Achtung Ausrufezeichen Klammer auf siehe Foto Klammer zu')).toBe(
       'Achtung! (siehe Foto).',
     )
@@ -60,5 +56,18 @@ describe('cleanDictation', () => {
   it('kommt mit leerer Eingabe klar', () => {
     expect(cleanDictation('')).toBe('')
     expect(cleanDictation('   \n  ')).toBe('')
+  })
+})
+
+describe('anfuegen', () => {
+  it('hängt Gesprochenes mit einem Leerzeichen an', () => {
+    expect(anfuegen('Untergrund trocken.  ', 'Keine Risse.')).toBe(
+      'Untergrund trocken. Keine Risse.',
+    )
+  })
+
+  it('schreibt in ein leeres Feld nur das Neue', () => {
+    expect(anfuegen('', 'Keine Risse.')).toBe('Keine Risse.')
+    expect(anfuegen('   ', 'Keine Risse.')).toBe('Keine Risse.')
   })
 })

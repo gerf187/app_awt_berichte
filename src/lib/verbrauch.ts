@@ -89,3 +89,28 @@ export function verbrauchszeile(zeile: {
     .filter(Boolean)
     .join(' · ')
 }
+
+/**
+ * Mischungen zusammenzählen: „Mischung 1 = 25 kg auf 60 m², Mischung 2 = 25 kg
+ * auf 55 m²" ergibt 50 kg auf 115 m².
+ *
+ * Nur Mischungen mit Fläche zählen – ohne Fläche weiß niemand, wohin die
+ * Menge ging. Eine Menge darf fehlen; dann bleibt die Gesamtmenge offen,
+ * statt mit einer Lücke falsch gerechnet zu werden. `null`, wenn keine
+ * Mischung eine Fläche hat.
+ */
+export function mischungenSumme(
+  mischungen: { menge: string; flaeche: string }[],
+): { flaecheM2: number; mengeKg: number | null } | null {
+  const gezaehlt = mischungen
+    .map((mischung) => ({ menge: zahlLesen(mischung.menge), flaeche: zahlLesen(mischung.flaeche) }))
+    .filter((mischung) => mischung.flaeche !== null)
+  if (gezaehlt.length === 0) return null
+
+  const flaecheM2 = gezaehlt.reduce((summe, mischung) => summe + mischung.flaeche!, 0)
+  const vollstaendig = gezaehlt.every((mischung) => mischung.menge !== null)
+  return {
+    flaecheM2,
+    mengeKg: vollstaendig ? gezaehlt.reduce((summe, mischung) => summe + mischung.menge!, 0) : null,
+  }
+}

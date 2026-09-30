@@ -2,22 +2,22 @@
 
 | Datei / Ordner | Was drin ist |
 |---|---|
-| `Anleitung_Baustellenbericht.pdf` | Die vollständige Anleitung mit Bildern. Dieselbe Datei liegt als `public/Anleitung.pdf` in der App. |
-| `bilder/` | Die Bildschirmfotos der Anleitung. Erzeugt, nicht von Hand gepflegt. |
+| `Anleitung_Baustellenbericht.pdf` | Die Kurzanleitung, drei Seiten. Dieselbe Datei liegt als `public/Anleitung.pdf` in der App. |
+| `bilder/` | Bildschirmfotos der App für Schulungen. Erzeugt, nicht von Hand gepflegt; die Kurzanleitung selbst kommt ohne Bilder aus. |
 | `beispiel/` | Neutraler Beispiel-Briefbogen „Musterfirma GmbH" als PNG und als zweiseitige PDF. |
 
 ## Neu bauen
 
 ```bash
 npm run briefbogen         # Beispiel-Briefbogen (nur nötig, wenn er fehlt)
-npm run build              # die Anleitung fotografiert die gebaute App
+npm run anleitung          # setzt die Kurzanleitung neu
+npm run build              # nur für die Bildschirmfotos: sie fotografieren die gebaute App
 npm run anleitung:bilder   # einmalig vorher: npx playwright install chromium
-npm run anleitung          # setzt die PDF neu
 ```
 
-Nach jeder sichtbaren Änderung an der Oberfläche gehören die Bilder neu
-gemacht – eine Anleitung, die etwas anderes zeigt als die App, ist schlimmer
-als keine.
+Nach jeder sichtbaren Änderung an der Oberfläche gehört der Text der
+Anleitung geprüft – eine Anleitung, die etwas anderes beschreibt als die App,
+ist schlimmer als keine.
 
 ## Keine echten Daten
 

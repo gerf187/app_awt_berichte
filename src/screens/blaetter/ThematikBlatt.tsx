@@ -2,6 +2,7 @@ import { Knopf } from '../../components/Knopf'
 import { Textbereich, Textfeld } from '../../components/Felder'
 import { Spracheingabe } from '../../components/Spracheingabe'
 import { TextGlaetten } from '../../components/TextGlaetten'
+import { anfuegen } from '../../utils/cleanDictation'
 import type { BlattEigenschaften } from './liste'
 
 export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
@@ -43,10 +44,12 @@ export function ThematikBlatt({ bericht, aendern }: BlattEigenschaften) {
           onChange={(e) => setzeZweck(e.target.value)}
           nebenBeschriftung={
             <Spracheingabe
-              anhaengen={(gesprochen) => {
-                const bisher = bericht.kopf.zweck
-                setzeZweck(bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
-              }}
+              anhaengen={(gesprochen) =>
+                aendern((vorher) => ({
+                  ...vorher,
+                  kopf: { ...vorher.kopf, zweck: anfuegen(vorher.kopf.zweck, gesprochen) },
+                }))
+              }
             />
           }
         />

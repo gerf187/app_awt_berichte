@@ -8,6 +8,7 @@ import { useGemerkteProdukte } from '../../lib/useGemerkteProdukte'
 import {
   gesamtmengeRechnen,
   mengeAnzeigen,
+  mischungenSumme,
   verbrauchAnzeigen,
   verbrauchLesen,
   verbrauchRechnen,
@@ -15,7 +16,7 @@ import {
   zahlLesen,
   zahlSchreiben,
 } from '../../lib/verbrauch'
-import type { Aufbauzeile } from '../../lib/typen'
+import type { Aufbauzeile, Mischung } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
 /**
@@ -31,6 +32,8 @@ type Entwurf = {
   verbrauch: string
   gesamtmenge: string
   flaeche: string
+  /** Leer heißt: Verbrauch, Menge und Fläche werden oben direkt getippt. */
+  mischungen: Mischung[]
   /** Bereich und Fläche für die nächsten Zeilen feststellen. */
   fest: boolean
 }
@@ -42,7 +45,27 @@ function entwurfAus(index: number, zeile: Aufbauzeile, fest: boolean): Entwurf {
     verbrauch: zeile.verbrauch,
     gesamtmenge: zeile.gesamtmenge,
     flaeche: zeile.flaeche,
+    mischungen: zeile.mischungen ?? [],
     fest,
+  }
+}
+
+/**
+ * Fläche, Gesamtmenge und Verbrauch aus den Mischungen.
+ *
+ * Sind Mischungen erfasst, gelten nur noch sie: sonst stünde oben eine
+ * getippte Fläche, die zu den Mischungen darunter nicht passt.
+ */
+function ausMischungen(entwurf: Entwurf, mischungen: Mischung[]): Entwurf {
+  const summe = mischungenSumme(mischungen)
+  const flaeche = summe?.flaecheM2 ?? null
+  const menge = summe?.mengeKg ?? null
+  return {
+    ...entwurf,
+    mischungen,
+    flaeche: flaeche !== null ? zahlSchreiben(flaeche) : '',
+    gesamtmenge: menge !== null ? zahlSchreiben(menge) : '',
+    verbrauch: menge !== null && flaeche ? zahlSchreiben(verbrauchRechnen(menge, flaeche)!, 3) : '',
   }
 }
 
@@ -77,6 +100,7 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
       : bericht.aufbau[bearbeitet.index - 1]?.bereich)
 
   const kgProM2 = bearbeitet ? verbrauchLesen(bearbeitet.verbrauch) : null
+  const mitMischungen = Boolean(bearbeitet && bearbeitet.mischungen.length > 0)
   const gesamtKg = bearbeitet ? zahlLesen(bearbeitet.gesamtmenge) : null
 
   /** Den Entwurf in den Bericht schreiben und die abgelegte Zeile zurückgeben. */
@@ -90,6 +114,12 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
       gesamtmenge: gesamtKg !== null ? zahlSchreiben(gesamtKg) : '',
       chargen: bearbeitet.zeile.chargen.map((charge) => charge.trim()),
     }
+    // Leere Mischungszeilen fallen weg; ganz ohne bleibt das Feld weg.
+    const mischungen = bearbeitet.mischungen
+      .map((mischung) => ({ menge: mischung.menge.trim(), flaeche: mischung.flaeche.trim() }))
+      .filter((mischung) => mischung.menge || mischung.flaeche)
+    if (mischungen.length > 0) zeile.mischungen = mischungen
+    else delete zeile.mischungen
 
     aendern((vorher) => ({
       ...vorher,
@@ -174,6 +204,43 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
         zeile: { ...vorher.zeile, chargen: chargen.length > 0 ? chargen : [''] },
       }
     })
+  }
+
+  /**
+   * Eine weitere Mischung. Meist wird dasselbe Gebinde angerührt – die Menge
+   * der vorigen steht deshalb schon drin, nur die Fläche ist neu.
+   */
+  function mischungHinzufuegen() {
+    setBearbeitet((vorher) => {
+      if (!vorher) return vorher
+      const letzte = vorher.mischungen[vorher.mischungen.length - 1]
+      return ausMischungen(vorher, [
+        ...vorher.mischungen,
+        { menge: letzte?.menge ?? '', flaeche: '' },
+      ])
+    })
+  }
+
+  function setzeMischung(stelle: number, teil: Partial<Mischung>) {
+    setBearbeitet((vorher) =>
+      vorher
+        ? ausMischungen(
+            vorher,
+            vorher.mischungen.map((alt, i) => (i === stelle ? { ...alt, ...teil } : alt)),
+          )
+        : vorher,
+    )
+  }
+
+  function mischungEntfernen(stelle: number) {
+    setBearbeitet((vorher) =>
+      vorher
+        ? ausMischungen(
+            vorher,
+            vorher.mischungen.filter((_, i) => i !== stelle),
+          )
+        : vorher,
+    )
   }
 
   /** Verbrauch getippt: die Gesamtmenge zieht nach, sobald die Fläche steht. */
@@ -268,6 +335,10 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
               <span className="text-sika-grau mt-1 block text-sm">
                 {[
                   verbrauchszeile(zeile),
+                  zeile.mischungen?.length &&
+                    (zeile.mischungen.length === 1
+                      ? '1 Mischung'
+                      : `${zeile.mischungen.length} Mischungen`),
                   chargenText(zeile.chargen) && `Charge ${chargenText(zeile.chargen)}`,
                 ]
                   .filter(Boolean)
@@ -358,7 +429,10 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
 
             <Textfeld
               beschriftung="Fläche (m²)"
+              hinweis={mitMischungen ? 'Summe der Mischungen' : undefined}
               inputMode="decimal"
+              readOnly={mitMischungen}
+              className={mitMischungen ? 'bg-sika-hell' : ''}
               value={bearbeitet.flaeche}
               onChange={(e) => setzeFlaeche(e.target.value)}
             />
@@ -383,8 +457,10 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
               <div className="flex-1">
                 <Textfeld
                   beschriftung="Verbrauch"
-                  hinweis="kg/m² oder g/m²"
+                  hinweis={mitMischungen ? 'aus den Mischungen' : 'kg/m² oder g/m²'}
                   inputMode="decimal"
+                  readOnly={mitMischungen}
+                  className={mitMischungen ? 'bg-sika-hell' : ''}
                   value={bearbeitet.verbrauch}
                   onChange={(e) => setzeVerbrauch(e.target.value)}
                 />
@@ -392,8 +468,10 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
               <div className="flex-1">
                 <Textfeld
                   beschriftung="Gesamtmenge"
-                  hinweis="kg"
+                  hinweis={mitMischungen ? 'Summe in kg' : 'kg'}
                   inputMode="decimal"
+                  readOnly={mitMischungen}
+                  className={mitMischungen ? 'bg-sika-hell' : ''}
                   value={bearbeitet.gesamtmenge}
                   onChange={(e) => setzeGesamtmenge(e.target.value)}
                 />
@@ -412,6 +490,70 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
                   .join(' · ')}
               </p>
             )}
+
+            {/* Mischungen: wer Gebinde für Gebinde mitschreibt, bekommt am Ende
+                den Verbrauch über alle ausgerechnet. */}
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-semibold">Mischungen</span>
+              {!mitMischungen && (
+                <span className="text-sika-grau -mt-1 text-sm">
+                  Freiwillig: je Mischung Menge und Fläche – Verbrauch und Gesamtmenge rechnet die
+                  App dann über alle zusammen.
+                </span>
+              )}
+              {bearbeitet.mischungen.map((mischung, stelle) => (
+                <div key={stelle} className="flex items-end gap-2">
+                  <span className="text-sika-grau w-8 shrink-0 pb-4 text-sm font-semibold">
+                    {stelle + 1}.
+                  </span>
+                  <label className="flex-1">
+                    <span className="text-sika-grau mb-1 block text-xs font-semibold">kg</span>
+                    <input
+                      inputMode="decimal"
+                      aria-label={`Menge Mischung ${stelle + 1} in kg`}
+                      value={mischung.menge}
+                      onChange={(e) => setzeMischung(stelle, { menge: e.target.value })}
+                      className="border-sika-schwarz/15 focus:border-sika-schwarz tippziel w-full rounded-xl border-2 bg-white px-4 py-3 text-lg"
+                    />
+                  </label>
+                  <label className="flex-1">
+                    <span className="text-sika-grau mb-1 block text-xs font-semibold">m²</span>
+                    <input
+                      inputMode="decimal"
+                      aria-label={`Fläche Mischung ${stelle + 1} in m²`}
+                      value={mischung.flaeche}
+                      onChange={(e) => setzeMischung(stelle, { flaeche: e.target.value })}
+                      className="border-sika-schwarz/15 focus:border-sika-schwarz tippziel w-full rounded-xl border-2 bg-white px-4 py-3 text-lg"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => mischungEntfernen(stelle)}
+                    aria-label={`Mischung ${stelle + 1} entfernen`}
+                    className="text-sika-grau active:text-sika-rot tippziel w-12 shrink-0 text-2xl"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {/* Die Summe steht auch hier: die Felder oben sind beim Tippen
+                  meist schon aus dem Bild gescrollt. */}
+              {mitMischungen && (
+                <p className="text-sika-grau text-sm font-semibold">
+                  Gesamt:{' '}
+                  {[
+                    gesamtKg !== null ? mengeAnzeigen(gesamtKg) : 'Menge offen',
+                    bearbeitet.flaeche && `${bearbeitet.flaeche} m²`,
+                    kgProM2 !== null ? verbrauchAnzeigen(kgProM2) : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              )}
+              <Knopf art="zweit" onClick={mischungHinzufuegen} className="self-start">
+                + Mischung
+              </Knopf>
+            </div>
 
             {/* Chargen: ein Feld je Komponente. Ein 3-K-Produkt hat drei Nummern,
                 und im Schadensfall wird nach genau diesen gefragt. */}

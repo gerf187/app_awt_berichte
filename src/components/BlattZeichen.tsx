@@ -10,14 +10,14 @@ const ZEICHEN: Record<
   Exclude<BlattStand, 'neutral'>,
   { zeichen: string; farbe: string; wort: string }
 > = {
-  fertig: { zeichen: '✓', farbe: 'text-sika-gruen', wort: 'Pflichtangaben vollständig' },
+  fertig: { zeichen: '✓', farbe: 'text-sika-gruen', wort: 'erledigt' },
   fehlt: { zeichen: '●', farbe: 'text-sika-gelb-dunkel', wort: 'Pflichtangabe fehlt noch' },
   warnung: { zeichen: '⚠', farbe: 'text-sika-rot', wort: 'Warnung' },
 }
 
 export function BlattZeichen({ art, klasse = '' }: { art: BlattStand; klasse?: string }) {
-  // Blätter ohne Pflichtangaben bekommen gar kein Zeichen: drei Zeichen kann man
-  // sich merken, ein viertes für „hier ist nichts zu holen" wäre nur Rauschen.
+  // Ein leeres Blatt ohne Pflichtangaben bekommt gar kein Zeichen: drei Zeichen
+  // kann man sich merken, ein viertes für „noch nichts drin" wäre nur Rauschen.
   if (art === 'neutral') return null
 
   const { zeichen, farbe, wort } = ZEICHEN[art]

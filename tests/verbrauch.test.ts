@@ -8,6 +8,7 @@ import {
   verbrauchszeile,
   zahlLesen,
   zahlSchreiben,
+  mischungenSumme,
 } from '../src/lib/verbrauch'
 
 describe('zahlLesen', () => {
@@ -88,5 +89,39 @@ describe('verbrauchszeile', () => {
   it('lässt weg, was nicht eingetragen ist', () => {
     expect(verbrauchszeile({ verbrauch: '0,2', flaeche: '', gesamtmenge: '' })).toBe('200 g/m²')
     expect(verbrauchszeile({ verbrauch: '', flaeche: '', gesamtmenge: '' })).toBe('')
+  })
+})
+
+describe('mischungenSumme', () => {
+  it('zählt Menge und Fläche aller Mischungen zusammen', () => {
+    expect(
+      mischungenSumme([
+        { menge: '25', flaeche: '60' },
+        { menge: '25', flaeche: '40' },
+      ]),
+    ).toEqual({ flaecheM2: 100, mengeKg: 50 })
+  })
+
+  it('übergeht Mischungen ohne Fläche', () => {
+    expect(
+      mischungenSumme([
+        { menge: '25', flaeche: '60' },
+        { menge: '25', flaeche: '' },
+      ]),
+    ).toEqual({ flaecheM2: 60, mengeKg: 25 })
+  })
+
+  it('lässt die Menge offen, wenn bei einer Mischung die Menge fehlt', () => {
+    expect(
+      mischungenSumme([
+        { menge: '25', flaeche: '60' },
+        { menge: '', flaeche: '40' },
+      ]),
+    ).toEqual({ flaecheM2: 100, mengeKg: null })
+  })
+
+  it('gibt null zurück, solange keine Fläche eingetragen ist', () => {
+    expect(mischungenSumme([])).toBeNull()
+    expect(mischungenSumme([{ menge: '25', flaeche: '' }])).toBeNull()
   })
 })

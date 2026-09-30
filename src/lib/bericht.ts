@@ -14,8 +14,10 @@ import type {
   Berichtstext,
   BlattId,
   Einstellungen,
+  Mischung,
   OneDriveZugang,
   Pruefung,
+  Sichtpruefung,
   Untergrund,
 } from './typen'
 
@@ -47,6 +49,8 @@ export const LEERER_UNTERGRUND: Untergrund = {
   vorbereitung: '',
   bemerkung: '',
 }
+
+export const LEERE_SICHTPRUEFUNG: Sichtpruefung = { ergebnis: '', bemerkung: '' }
 
 export const LEERE_AUFBAUZEILE: Aufbauzeile = {
   bereich: '',
@@ -140,6 +144,7 @@ export function neuerBericht(
       },
     ],
     untergrund: { ...LEERER_UNTERGRUND },
+    sichtpruefung: { ...LEERE_SICHTPRUEFUNG },
     pruefungen: [],
     klima: [],
     aufbau: [],
@@ -200,6 +205,7 @@ export function berichtAuffuellen(bericht: Bericht): Bericht {
       vorbereitung: untergrund.vorbereitung,
       bemerkung: untergrund.bemerkung,
     },
+    sichtpruefung: sichtpruefungAuffuellen(bericht.sichtpruefung),
     pruefungen: Array.isArray(bericht.pruefungen)
       ? bericht.pruefungen.map(pruefungAuffuellen)
       : pruefungenAusUntergrund(untergrund),
@@ -218,7 +224,32 @@ function aufbauzeileAuffuellen(zeile: AlteAufbauzeile): Aufbauzeile {
       ? [zeile.charge]
       : ['']
   const { charge: _alt, ...rest } = { ...gefuellt, chargen }
+  // Mischungen gibt es erst seit Herbst 2026; ohne welche fehlt das Feld ganz.
+  const mischungen = mischungenAuffuellen(zeile.mischungen)
+  if (mischungen.length === 0) delete rest.mischungen
+  else rest.mischungen = mischungen
   return rest
+}
+
+function mischungenAuffuellen(gespeichert: unknown): Mischung[] {
+  if (!Array.isArray(gespeichert)) return []
+  return gespeichert
+    .filter(
+      (eintrag): eintrag is Partial<Mischung> => typeof eintrag === 'object' && eintrag !== null,
+    )
+    .map((eintrag) => ({
+      menge: typeof eintrag.menge === 'string' ? eintrag.menge : '',
+      flaeche: typeof eintrag.flaeche === 'string' ? eintrag.flaeche : '',
+    }))
+}
+
+/** Ältere Berichte kennen keine Sichtprüfung; Unbekanntes gilt als nicht geprüft. */
+function sichtpruefungAuffuellen(gespeichert: unknown): Sichtpruefung {
+  const alt = (gespeichert ?? {}) as Partial<Sichtpruefung>
+  return {
+    ergebnis: alt.ergebnis === 'io' || alt.ergebnis === 'nio' ? alt.ergebnis : '',
+    bemerkung: typeof alt.bemerkung === 'string' ? alt.bemerkung : '',
+  }
 }
 
 /** Dasselbe für die Einstellungen: vor dem Profil standen Name und Mail einzeln da. */

@@ -2,6 +2,7 @@ import { Textbereich } from '../../components/Felder'
 import { Spracheingabe } from '../../components/Spracheingabe'
 import { TextGlaetten } from '../../components/TextGlaetten'
 import type { Berichtstext } from '../../lib/typen'
+import { anfuegen } from '../../utils/cleanDictation'
 import type { BlattEigenschaften } from './liste'
 
 const FELDER: { name: keyof Berichtstext; beschriftung: string; hinweis: string }[] = [
@@ -45,17 +46,19 @@ export function TextBlatt({ bericht, aendern }: BlattEigenschaften) {
             onChange={(e) => setze(feld.name, e.target.value)}
             nebenBeschriftung={
               <Spracheingabe
-                anhaengen={(gesprochen) => {
-                  const bisher = bericht.text[feld.name]
-                  setze(feld.name, bisher ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen)
-                }}
+                anhaengen={(gesprochen) =>
+                  aendern((vorher) => ({
+                    ...vorher,
+                    text: {
+                      ...vorher.text,
+                      [feld.name]: anfuegen(vorher.text[feld.name], gesprochen),
+                    },
+                  }))
+                }
               />
             }
           />
-          <TextGlaetten
-            wert={bericht.text[feld.name]}
-            setzen={(text) => setze(feld.name, text)}
-          />
+          <TextGlaetten wert={bericht.text[feld.name]} setzen={(text) => setze(feld.name, text)} />
         </div>
       ))}
     </>

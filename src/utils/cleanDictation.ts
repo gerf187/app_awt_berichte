@@ -119,3 +119,11 @@ export function cleanDictation(input: string): string {
 
   return text
 }
+
+/**
+ * Gesprochenes an ein Feld hängen: mit einem Leerzeichen dazwischen, ohne
+ * doppelte Leerzeichen am Übergang. Ein leeres Feld bekommt nur das Neue.
+ */
+export function anfuegen(bisher: string, gesprochen: string): string {
+  return bisher.trim() ? `${bisher.trimEnd()} ${gesprochen}` : gesprochen
+}

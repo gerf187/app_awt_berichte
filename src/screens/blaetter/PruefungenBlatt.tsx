@@ -1,7 +1,8 @@
 import { Auswahlfeld, Textfeld } from '../../components/Felder'
 import { Knopf } from '../../components/Knopf'
-import { PRUEFUNGSARTEN, SONSTIGES } from '../../data/stammdaten'
+import { PRUEFUNGSARTEN, SICHTPRUEFUNG_TEXT, SONSTIGES } from '../../data/stammdaten'
 import {
+  SICHTPRUEFUNG_ERGEBNIS,
   hatBruchbild,
   messwertEingabe,
   mittelwertText,
@@ -10,7 +11,7 @@ import {
   standardEinheit,
   zahlAusEingabe,
 } from '../../lib/pruefungen'
-import type { Messwert, Pruefung } from '../../lib/typen'
+import type { Messwert, Pruefung, Sichtpruefung } from '../../lib/typen'
 import type { BlattEigenschaften } from './liste'
 
 /**
@@ -72,11 +73,17 @@ export function PruefungenBlatt({ bericht, aendern }: BlattEigenschaften) {
     }))
   }
 
+  function aendereSicht(teil: Partial<Sichtpruefung>) {
+    aendern((vorher) => ({ ...vorher, sichtpruefung: { ...vorher.sichtpruefung, ...teil } }))
+  }
+
   return (
     <>
+      <SichtpruefungKarte sichtpruefung={bericht.sichtpruefung} aendere={aendereSicht} />
+
       {bericht.pruefungen.length === 0 && (
         <p className="text-sika-grau">
-          Noch nichts geprüft. Nicht gemessene Werte tauchen im Bericht gar nicht erst auf.
+          Noch nichts gemessen. Nicht gemessene Werte tauchen im Bericht gar nicht erst auf.
         </p>
       )}
 
@@ -244,6 +251,56 @@ function Messwertzeile({
           className={FELD}
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * Die Sichtprüfung: ein Urteil statt einer Zahl.
+ *
+ * Zwei Tasten statt eines Hakens, weil „nicht geprüft" und „nicht in Ordnung"
+ * zweierlei sind. Nochmal tippen hebt die Wahl wieder auf.
+ */
+function SichtpruefungKarte({
+  sichtpruefung,
+  aendere,
+}: {
+  sichtpruefung: Sichtpruefung
+  aendere: (teil: Partial<Sichtpruefung>) => void
+}) {
+  const wahl = (ergebnis: 'io' | 'nio') =>
+    aendere({ ergebnis: sichtpruefung.ergebnis === ergebnis ? '' : ergebnis })
+
+  return (
+    <div className="border-sika-schwarz/10 flex flex-col gap-3 rounded-xl border-2 bg-white p-4">
+      <span className="text-sika-grau text-sm font-semibold">Sichtprüfung</span>
+      <p className="font-semibold">{SICHTPRUEFUNG_TEXT}</p>
+      <div className="flex gap-3" role="group" aria-label="Ergebnis der Sichtprüfung">
+        {(['io', 'nio'] as const).map((ergebnis) => (
+          <button
+            key={ergebnis}
+            type="button"
+            aria-pressed={sichtpruefung.ergebnis === ergebnis}
+            onClick={() => wahl(ergebnis)}
+            className={`tippziel flex-1 rounded-xl border-2 px-4 font-semibold ${
+              sichtpruefung.ergebnis === ergebnis
+                ? 'border-sika-schwarz bg-sika-gelb'
+                : 'border-sika-schwarz/15 bg-white'
+            }`}
+          >
+            {sichtpruefung.ergebnis === ergebnis ? '✓ ' : ''}
+            {SICHTPRUEFUNG_ERGEBNIS[ergebnis]}
+          </button>
+        ))}
+      </div>
+      <Textfeld
+        beschriftung="Bemerkung zur Sichtprüfung"
+        placeholder={
+          sichtpruefung.ergebnis === 'nio' ? 'z. B. Zementschlämme, Ölflecken' : 'freiwillig'
+        }
+        value={sichtpruefung.bemerkung}
+        onChange={(e) => aendere({ bemerkung: e.target.value })}
+      />
     </div>
   )
 }

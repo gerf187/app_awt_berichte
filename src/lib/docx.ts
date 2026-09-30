@@ -18,9 +18,15 @@ import {
   VerticalPositionRelativeFrom,
   WidthType,
 } from 'docx'
-import { chargenText } from './aufbau'
+import { chargenText, mischungenText } from './aufbau'
 import { absenderzeilen, alsAnzeigedatum, kommazahl } from './bericht'
-import { ausgefuellte, hatBruchbild, messwertText, mittelwertText } from './pruefungen'
+import {
+  ausgefuellte,
+  hatBruchbild,
+  messwertText,
+  mittelwertText,
+  sichtpruefungText,
+} from './pruefungen'
 import { mengeAnzeigen, verbrauchAnzeigen, zahlLesen } from './verbrauch'
 import { MINDESTABSTAND_TAUPUNKT } from './taupunkt'
 import { A4, satzspiegel } from './vorlage'
@@ -354,9 +360,21 @@ function untergrund(bericht: Bericht): (Paragraph | Table)[] {
  */
 function pruefungen(bericht: Bericht): (Paragraph | Table)[] {
   const gemessen = ausgefuellte(bericht.pruefungen)
-  if (gemessen.length === 0) return []
+  const sicht = sichtpruefungText(bericht.sichtpruefung)
+  if (gemessen.length === 0 && !sicht) return []
 
   const teile: (Paragraph | Table)[] = [ueberschrift('Prüfungen')]
+  if (sicht) {
+    teile.push(
+      new Paragraph({
+        children: [new TextRun({ text: 'Sichtprüfung', bold: true })],
+        spacing: { before: 200, after: 80 },
+      }),
+      ...absatz(sicht),
+    )
+    const bemerkung = bericht.sichtpruefung.bemerkung.trim()
+    if (bemerkung) teile.push(...absatz(`Bemerkung: ${bemerkung}`))
+  }
   for (const pruefung of gemessen) {
     const werte = pruefung.messwerte.filter((messwert) => messwert.wert !== null)
     const einheit = pruefung.einheit.trim()
@@ -448,6 +466,8 @@ function aufbau(bericht: Bericht): (Paragraph | Table)[] {
       ],
       true,
     ),
+    // Wie in der PDF: die Mischungen stehen unter der Tabelle.
+    ...bericht.aufbau.map(mischungenText).filter(Boolean).flatMap(absatz),
   ]
 }
 

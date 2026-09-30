@@ -125,8 +125,13 @@ export async function beispielBericht(): Promise<Bericht> {
       gesamtmenge: '28',
       chargen: ['C55512'],
       flaeche: '35',
+      mischungen: [
+        { menge: '14', flaeche: '18' },
+        { menge: '14', flaeche: '17' },
+      ],
     },
   ]
+  bericht.sichtpruefung = { ergebnis: 'io', bemerkung: 'nach dem Kugelstrahlen abgesaugt' }
 
   bericht.text = {
     ausgefuehrteArbeiten:

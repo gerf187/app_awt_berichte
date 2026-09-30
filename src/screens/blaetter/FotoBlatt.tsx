@@ -4,6 +4,7 @@ import { Knopf } from '../../components/Knopf'
 import { Spracheingabe } from '../../components/Spracheingabe'
 import { fotoAufbereiten } from '../../lib/bilder'
 import { neueId } from '../../lib/bericht'
+import { anfuegen } from '../../utils/cleanDictation'
 import type { BlattEigenschaften } from './liste'
 
 export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
@@ -11,19 +12,29 @@ export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
   const galerie = useRef<HTMLInputElement>(null)
   const [laeuft, setLaeuft] = useState(false)
   const [fehler, setFehler] = useState('')
+  /**
+   * Frisch aufgenommene Fotos, die noch auf ihre Beschreibung warten.
+   *
+   * Direkt nach dem Auslösen weiß man noch, was auf dem Bild ist – eine
+   * Stunde später auf dem Parkplatz nicht mehr. Deshalb fragt die App sofort.
+   */
+  const [zuBeschreiben, setZuBeschreiben] = useState<string[]>([])
 
   async function aufnehmen(dateien: FileList) {
     setLaeuft(true)
     setFehler('')
+    const neu: string[] = []
     try {
       for (const datei of Array.from(dateien)) {
         const dataUrl = await fotoAufbereiten(datei)
+        const id = neueId()
+        neu.push(id)
         aendern((vorher) => ({
           ...vorher,
           fotos: [
             ...vorher.fotos,
             {
-              id: neueId(),
+              id,
               dataUrl,
               beschreibung: '',
               aufgenommenAm: new Date().toISOString(),
@@ -35,6 +46,7 @@ export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
       setFehler('Ein Foto konnte nicht verarbeitet werden. Bitte noch einmal versuchen.')
     } finally {
       setLaeuft(false)
+      if (neu.length > 0) setZuBeschreiben((vorher) => [...vorher, ...neu])
     }
   }
 
@@ -44,6 +56,21 @@ export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
       fotos: vorher.fotos.map((foto) => (foto.id === id ? { ...foto, beschreibung: text } : foto)),
     }))
   }
+
+  function diktiertAnhaengen(id: string, gesprochen: string) {
+    aendern((vorher) => ({
+      ...vorher,
+      fotos: vorher.fotos.map((foto) =>
+        foto.id === id ? { ...foto, beschreibung: anfuegen(foto.beschreibung, gesprochen) } : foto,
+      ),
+    }))
+  }
+
+  // Ein inzwischen gelöschtes Foto wartet auf nichts mehr.
+  const wartend = zuBeschreiben
+    .map((id) => bericht.fotos.find((foto) => foto.id === id))
+    .filter((foto) => foto !== undefined)
+  const aktuell = wartend[0]
 
   function verschieben(index: number, richtung: -1 | 1) {
     const ziel = index + richtung
@@ -123,16 +150,7 @@ export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
               onChange={(e) => beschreiben(foto.id, e.target.value)}
               placeholder="Was ist zu sehen?"
               nebenBeschriftung={
-                <Spracheingabe
-                  anhaengen={(gesprochen) =>
-                    beschreiben(
-                      foto.id,
-                      foto.beschreibung
-                        ? `${foto.beschreibung.trimEnd()} ${gesprochen}`
-                        : gesprochen,
-                    )
-                  }
-                />
+                <Spracheingabe anhaengen={(gesprochen) => diktiertAnhaengen(foto.id, gesprochen)} />
               }
             />
             <div className="flex items-center justify-between gap-2">
@@ -171,6 +189,67 @@ export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
           </li>
         ))}
       </ul>
+
+      {aktuell && (
+        <div
+          className="fixed inset-0 z-30 flex flex-col overflow-y-auto bg-black/50 p-3"
+          role="dialog"
+          aria-modal
+          aria-label="Foto beschreiben"
+        >
+          {/* Wie beim Aufbau: unten am Daumen, nach oben scrollbar. */}
+          <div className="mx-auto mt-auto flex w-full max-w-3xl flex-col gap-4 rounded-2xl bg-white p-4">
+            <h2 className="text-xl font-bold">
+              Foto {bericht.fotos.findIndex((foto) => foto.id === aktuell.id) + 1} beschreiben
+            </h2>
+            <img
+              src={aktuell.dataUrl}
+              alt=""
+              className="max-h-56 w-full rounded-lg object-contain"
+            />
+            <Textbereich
+              beschriftung="Was ist zu sehen?"
+              rows={3}
+              autoFocus
+              value={aktuell.beschreibung}
+              onChange={(e) => beschreiben(aktuell.id, e.target.value)}
+              placeholder="z. B. Blasenbildung im Randbereich, Achse C"
+              nebenBeschriftung={
+                <Spracheingabe
+                  key={aktuell.id}
+                  anhaengen={(gesprochen) => diktiertAnhaengen(aktuell.id, gesprochen)}
+                />
+              }
+            />
+            <div className="flex flex-col gap-3">
+              <Knopf
+                art="haupt"
+                breit
+                onClick={() =>
+                  setZuBeschreiben((vorher) => vorher.filter((id) => id !== aktuell.id))
+                }
+              >
+                {wartend.length > 1 ? `Weiter (noch ${wartend.length - 1})` : 'Fertig'}
+              </Knopf>
+              <Knopf
+                art="zweit"
+                breit
+                disabled={laeuft}
+                onClick={() => {
+                  setZuBeschreiben((vorher) => vorher.filter((id) => id !== aktuell.id))
+                  kamera.current?.click()
+                }}
+              >
+                Nächstes Foto aufnehmen
+              </Knopf>
+              {/* Später geht auch: die Beschreibung steht weiter unter jedem Foto. */}
+              <Knopf art="still" breit onClick={() => setZuBeschreiben([])}>
+                Später beschreiben
+              </Knopf>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

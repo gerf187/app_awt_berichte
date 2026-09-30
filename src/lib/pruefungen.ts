@@ -6,9 +6,9 @@
  * beides einzeln prüfen lässt. Das Blatt zeigt nur an, was hier entsteht.
  */
 
-import { MIT_BRUCHBILD, PRUEFUNGEN } from '../data/stammdaten'
+import { MIT_BRUCHBILD, PRUEFUNGEN, SICHTPRUEFUNG_TEXT } from '../data/stammdaten'
 import { neueId } from './bericht'
-import type { Messwert, Pruefung } from './typen'
+import type { Messwert, Pruefung, Sichtpruefung } from './typen'
 import { zahlLesen, zahlSchreiben } from './verbrauch'
 
 /** Nachkommastellen: Einzelwerte werden genau abgelesen, der Mittelwert gerundet. */
@@ -96,6 +96,19 @@ export function mittelwertText(pruefung: Pruefung): string {
   const zahl = mitKomma(wert, MITTELWERT_STELLEN)
   const einheit = pruefung.einheit.trim()
   return einheit ? `${zahl} ${einheit}` : zahl
+}
+
+/** Das Urteil als Wort – so steht es im Bericht. */
+export const SICHTPRUEFUNG_ERGEBNIS = { io: 'i. O.', nio: 'nicht i. O.' } as const
+
+/**
+ * Die Sichtprüfung als Satz für den Bericht:
+ * „Untergrund frei von Schmutz, Staub und Verunreinigungen: i. O."
+ * Leer, solange nicht geprüft wurde – dann steht sie nicht im Bericht.
+ */
+export function sichtpruefungText(sichtpruefung: Sichtpruefung): string {
+  if (!sichtpruefung.ergebnis) return ''
+  return `${SICHTPRUEFUNG_TEXT}: ${SICHTPRUEFUNG_ERGEBNIS[sichtpruefung.ergebnis]}`
 }
 
 /** Prüfungen, in denen wirklich etwas steht – leere Zeilen gehören in keinen Bericht. */

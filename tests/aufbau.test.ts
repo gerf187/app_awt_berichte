@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chargenText, komponentenName } from '../src/lib/aufbau'
+import { chargenText, komponentenName, mischungenText } from '../src/lib/aufbau'
 
 describe('komponentenName', () => {
   it('zählt die Komponenten wie auf den Gebinden', () => {
@@ -23,5 +23,42 @@ describe('chargenText', () => {
 
   it('ist leer, wenn keine Nummer eingetragen wurde', () => {
     expect(chargenText(['', ' '])).toBe('')
+  })
+})
+
+describe('mischungenText', () => {
+  const zeile = {
+    bereich: 'Halle 1',
+    schicht: 'Verlaufsbeschichtung',
+    produkt: 'Sikafloor-264',
+    verbrauch: '',
+    gesamtmenge: '',
+    chargen: [''],
+    flaeche: '',
+  }
+
+  it('ist leer ohne Mischungen', () => {
+    expect(mischungenText(zeile)).toBe('')
+    expect(mischungenText({ ...zeile, mischungen: [] })).toBe('')
+  })
+
+  it('zählt die Mischungen mit Menge und Fläche auf', () => {
+    expect(
+      mischungenText({
+        ...zeile,
+        mischungen: [
+          { menge: '25', flaeche: '60' },
+          { menge: '25', flaeche: '55,5' },
+        ],
+      }),
+    ).toBe(
+      'Sikafloor-264 (Verlaufsbeschichtung) – Mischung 1: 25 kg auf 60 m² · Mischung 2: 25 kg auf 55,5 m²',
+    )
+  })
+
+  it('lässt weg, was nicht eingetragen ist', () => {
+    expect(
+      mischungenText({ ...zeile, schicht: '', mischungen: [{ menge: '', flaeche: '60' }] }),
+    ).toBe('Sikafloor-264 – Mischung 1: 60 m²')
   })
 })

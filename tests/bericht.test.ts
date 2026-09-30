@@ -228,6 +228,7 @@ describe('berichtAuffuellen', () => {
     expect(aufgefuellt.text.offeneFragen).toBe('')
     expect(aufgefuellt.absender.name).toBe('')
     expect(aufgefuellt.pruefungen).toEqual([])
+    expect(aufgefuellt.sichtpruefung).toEqual({ ergebnis: '', bemerkung: '' })
     // Vorhandenes bleibt unangetastet.
     expect(aufgefuellt.kopf.berichtsnummer).toBe('2026-08-25-01')
   })

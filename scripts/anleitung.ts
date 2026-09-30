@@ -3,8 +3,8 @@
  *
  *   npm run anleitung
  *
- * Text kommt aus `scripts/anleitungInhalt.ts`, die Bilder aus
- * `dokumentation/bilder/` (dort hinein schreibt `npm run anleitung:bilder`).
+ * Text kommt aus `scripts/anleitungInhalt.ts`. Bilder kann der Satz noch
+ * (aus `dokumentation/bilder/`), die Kurzanleitung verzichtet aber darauf.
  * Die fertige Datei liegt danach zweimal:
  *
  * - `dokumentation/Anleitung_Baustellenbericht.pdf` – zum Verteilen
@@ -64,11 +64,10 @@ async function bildDaten(datei: string): Promise<{ dataUrl: string; verhaeltnis:
 const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
 let y = RAND.oben
 let kapitelTitel = ''
-/** Auf welcher Seite ein Kapitel anfängt – für das Inhaltsverzeichnis. */
-const verzeichnis: { titel: string; seite: number }[] = []
 
 function kopfzeile() {
-  if (!kapitelTitel) return
+  // Seite 1 hat den gelben Balken; eine Kopfzeile darin wäre doppelt.
+  if (!kapitelTitel || doc.getCurrentPageInfo().pageNumber === 1) return
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...GRAU)
@@ -269,81 +268,46 @@ async function block(inhalt: Block) {
   }
 }
 
-// --- Titelseite -------------------------------------------------------------
+// --- Kopf auf Seite 1 --------------------------------------------------------
+// Eine Kurzanleitung braucht keine Titelseite und kein Inhaltsverzeichnis:
+// ein gelber Balken, dann geht es los.
 doc.setFillColor(...GELB)
-doc.rect(0, 0, SEITE.breite, 78, 'F')
+doc.rect(0, 0, SEITE.breite, 34, 'F')
 doc.setTextColor(...SCHWARZ)
 doc.setFont('helvetica', 'bold')
-doc.setFontSize(34)
-doc.text(TITEL, RAND.links, 45)
+doc.setFontSize(24)
+doc.text(TITEL, RAND.links, 18)
 doc.setFont('helvetica', 'normal')
-doc.setFontSize(15)
-doc.text(UNTERTITEL, RAND.links, 58)
-
-doc.setFontSize(11)
+doc.setFontSize(12)
+doc.text(UNTERTITEL, RAND.links, 26)
+doc.setFontSize(9)
 doc.setTextColor(...GRAU)
-doc.text(`Stand: ${STAND}`, RAND.links, 95)
+doc.text(`Stand: ${STAND}`, SEITE.breite - RAND.rechts, 26, { align: 'right' })
 doc.setTextColor(...SCHWARZ)
-doc.setFontSize(11)
-for (const [nummer, zeile] of [
-  'Diese Anleitung führt durch jeden Schritt der App – vom Einrichten des',
-  'Profils über die Briefvorlage bis zum fertigen Bericht beim Kunden.',
-  '',
-  'Alle Bildschirmfotos zeigen erfundene Musterdaten.',
-].entries()) {
-  doc.text(zeile, RAND.links, 110 + nummer * 6)
-}
+y = 46
 
-// --- Kapitel ----------------------------------------------------------------
+// Folgeseiten tragen oben rechts den Titel.
+kapitelTitel = TITEL
+
+// --- Kapitel: laufen ohne Seitenwechsel durch --------------------------------
 for (const [nummer, kapitel] of KAPITEL.entries()) {
-  kapitelTitel = kapitel.titel
-  doc.addPage()
-  kopfzeile()
-  y = RAND.oben + 4
-
+  if (nummer > 0) y += 2
+  platz(22)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(...GRAU)
-  doc.text(`Kapitel ${nummer + 1}`, RAND.links, y)
-  y += 8
-  doc.setFontSize(19)
+  doc.setFontSize(14)
   doc.setTextColor(...SCHWARZ)
-  for (const zeile of doc.splitTextToSize(druckbar(kapitel.titel), BREITE) as string[]) {
-    doc.text(zeile, RAND.links, y)
-    y += 9
-  }
-  y += 3
-
-  verzeichnis.push({ titel: kapitel.titel, seite: doc.getCurrentPageInfo().pageNumber })
+  doc.text(druckbar(`${nummer + 1}. ${kapitel.titel}`), RAND.links, y)
+  doc.setDrawColor(...GELB)
+  doc.setLineWidth(0.6)
+  doc.line(RAND.links, y + 2, RAND.links + 30, y + 2)
+  y += 9
 
   for (const inhalt of kapitel.bloecke) await block(inhalt)
 }
 
-// --- Inhaltsverzeichnis: eingeschoben, wenn die Seitenzahlen feststehen ------
-kapitelTitel = ''
-doc.insertPage(2)
-doc.setPage(2)
-doc.setFont('helvetica', 'bold')
-doc.setFontSize(19)
-doc.setTextColor(...SCHWARZ)
-doc.text('Inhalt', RAND.links, RAND.oben)
-let verzeichnisY = RAND.oben + 12
-for (const [nummer, eintrag] of verzeichnis.entries()) {
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10.5)
-  const text = `${nummer + 1}.  ${druckbar(eintrag.titel)}`
-  doc.text(text, RAND.links, verzeichnisY)
-  // +1, weil das Verzeichnis selbst alle Kapitel um eine Seite verschiebt.
-  doc.text(String(eintrag.seite + 1), SEITE.breite - RAND.rechts, verzeichnisY, { align: 'right' })
-  doc.setDrawColor(225, 227, 231)
-  doc.setLineWidth(0.2)
-  doc.line(RAND.links, verzeichnisY + 1.6, SEITE.breite - RAND.rechts, verzeichnisY + 1.6)
-  verzeichnisY += 8
-}
-
 // --- Fußzeilen --------------------------------------------------------------
 const seiten = doc.getNumberOfPages()
-for (let seite = 2; seite <= seiten; seite++) {
+for (let seite = 1; seite <= seiten; seite++) {
   doc.setPage(seite)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8.5)

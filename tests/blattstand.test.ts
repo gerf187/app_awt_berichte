@@ -63,11 +63,18 @@ describe('blattStand', () => {
     expect(stand(bericht, 'klima')).toEqual({ art: 'fertig', text: '1 Messung' })
   })
 
-  it('führt Blätter ohne Pflichtangaben grau, egal ob voll oder leer', () => {
+  it('lässt leere Blätter ohne Pflichtangaben ohne Zeichen', () => {
     const bericht = frisch()
     expect(stand(bericht, 'fotos')).toEqual({ art: 'neutral', text: 'kein Foto' })
     expect(stand(bericht, 'pruefungen')).toEqual({ art: 'neutral', text: 'nichts geprüft' })
+    expect(stand(bericht, 'untergrund')).toEqual({ art: 'neutral', text: 'noch leer' })
+    expect(stand(bericht, 'aufbau')).toEqual({ art: 'neutral', text: 'noch leer' })
+    expect(stand(bericht, 'abschluss')).toEqual({ art: 'neutral', text: 'Entwurf' })
+  })
 
+  it('setzt den Haken, sobald auf einem Blatt etwas eingetragen ist', () => {
+    const bericht = frisch()
+    bericht.untergrund.art = 'Beton'
     bericht.aufbau = [{ ...LEERE_AUFBAUZEILE, bereich: 'EG', schicht: 'Grundierung' }]
     bericht.pruefungen = [
       neuePruefung({
@@ -78,9 +85,28 @@ describe('blattStand', () => {
       // Ohne Messwert ist es keine Prüfung, sondern eine angefangene Zeile.
       neuePruefung({ bezeichnung: 'Haftzugfestigkeit', einheit: 'N/mm²' }),
     ]
+    bericht.status = 'Abgeschlossen'
 
-    expect(stand(bericht, 'pruefungen')).toEqual({ art: 'neutral', text: '1 Prüfung' })
-    expect(stand(bericht, 'aufbau')).toEqual({ art: 'neutral', text: '1 Zeile' })
+    expect(stand(bericht, 'untergrund')).toEqual({ art: 'fertig', text: 'Beton' })
+    expect(stand(bericht, 'pruefungen')).toEqual({ art: 'fertig', text: '1 Prüfung' })
+    expect(stand(bericht, 'aufbau')).toEqual({ art: 'fertig', text: '1 Zeile' })
+    expect(stand(bericht, 'abschluss')).toEqual({ art: 'fertig', text: 'abgeschlossen' })
+  })
+
+  it('zählt die Sichtprüfung als Prüfung', () => {
+    const bericht = frisch()
+    bericht.sichtpruefung = { ergebnis: 'io', bemerkung: '' }
+
+    expect(stand(bericht, 'pruefungen')).toEqual({ art: 'fertig', text: 'Sichtprüfung' })
+  })
+
+  it('hakt Thematik nicht ab, nur weil das Profil die erste Zeile gefüllt hat', () => {
+    const bericht = frisch()
+    bericht.anwesende = [{ name: 'B. Esser', firma: 'Sika', funktion: 'AWT' }]
+    expect(stand(bericht, 'thematik').art).toBe('neutral')
+
+    bericht.kopf.zweck = 'Abnahme Grundierung'
+    expect(stand(bericht, 'thematik')).toEqual({ art: 'fertig', text: '1 Person' })
   })
 
   it('zählt nur Anwesende mit Namen', () => {
@@ -90,6 +116,6 @@ describe('blattStand', () => {
       { name: '  ', firma: '', funktion: '' },
     ]
 
-    expect(stand(bericht, 'thematik')).toEqual({ art: 'neutral', text: '1 Person' })
+    expect(stand(bericht, 'thematik').text).toBe('1 Person')
   })
 })

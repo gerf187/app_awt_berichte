@@ -50,11 +50,11 @@ Das Zeichen an Reiter und Kachel sagt, wie es um das Blatt steht:
 
 | Zeichen | Bedeutung |
 |---------|-----------|
-| ✓ grün  | Pflichtangaben sind da |
+| ✓ grün  | auf dem Blatt steht etwas, Pflichtangaben sind da |
 | ● gelb  | eine Pflichtangabe fehlt noch – hält Sie nicht auf |
 | ⚠ rot   | Warnung: der Untergrund liegt zu nah am Taupunkt |
 
-Blätter, auf denen nichts Pflicht ist, tragen kein Zeichen.
+Ein Blatt ohne Zeichen ist noch leer.
 
 - **Einen Speichern-Knopf gibt es nicht.** Alles wird sofort gespeichert.
 - Fehlende Pflichtangaben stehen am Ende noch einmal zusammen; ein Tipp darauf
@@ -67,7 +67,7 @@ Blätter, auf denen nichts Pflicht ist, tragen kein Zeichen.
 
 ## Anleitung
 
-Die vollständige Anleitung mit Bildern zu jedem Schritt liegt als PDF bei:
+Eine Kurzanleitung (drei Seiten) liegt als PDF bei:
 **[dokumentation/Anleitung_Baustellenbericht.pdf](dokumentation/Anleitung_Baustellenbericht.pdf)**.
 In der App steht sie unter **Einstellungen → Anleitung** und lässt sich auch
 ohne Empfang öffnen – sie wird mit ausgeliefert.
@@ -151,7 +151,7 @@ npm run lint      # Codeprüfung
 npm run build     # Fertige Dateien nach dist/
 npm run icons     # App-Symbole aus public/favicon.svg neu erzeugen
 npm run briefbogen        # neutralen Beispiel-Briefbogen erzeugen
-npm run anleitung:bilder  # Bildschirmfotos für die Anleitung (braucht Chromium)
+npm run anleitung:bilder  # Bildschirmfotos der App (braucht Chromium)
 npm run anleitung         # Anleitung als PDF setzen
 ```
 
@@ -162,12 +162,15 @@ mit Bild-Briefbogen und mit PDF-Briefbogen:
 npx vite-node scripts/beispielPdf.ts beispiel
 ```
 
-**Die Anleitung neu bauen** (nach Änderungen an der Oberfläche):
+**Die Anleitung neu bauen** (nach Änderungen an der Oberfläche): Text in
+`scripts/anleitungInhalt.ts` anpassen, dann `npm run anleitung`. Die
+Kurzanleitung kommt ohne Bilder aus.
+
+Bildschirmfotos der App für Schulungen oder Präsentationen:
 
 ```bash
 npm run build
 npm run anleitung:bilder   # einmalig vorher: npx playwright install chromium
-npm run anleitung
 ```
 
 `anleitung:bilder` startet die gebaute App örtlich, legt erfundene Musterdaten

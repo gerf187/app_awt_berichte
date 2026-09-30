@@ -136,24 +136,25 @@ Alle Auswahllisten liegen zentral in **einer** Datei `src/data/stammdaten.ts`.
 
 Blätter statt Schritte: Ein **neuer** Bericht öffnet direkt in den Kopfdaten – dort ist ohnehin nichts ausgefüllt. Aus der Liste geöffnet, beginnt ein Bericht mit der **Kachelübersicht** aller Blätter, jede Kachel mit Zeichen und Kurztext (siehe unten). Im Blatt steht oben eine waagerecht scrollbare **Reiterleiste**, deren letzter Reiter **„Übersicht"** in die Kacheln zurückführt; unten bleiben **Zurück / Weiter**. Auf der Baustelle wird über den Tag zu einzelnen Punkten nachgetragen – ein Tipp führt ins Blatt, ohne Zurückblättern. **Kein Speichern-Knopf** – nach jeder Eingabe wird automatisch gespeichert (debounced).
 
-Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Pflichtangaben vollständig · **● gelb** Pflichtangabe fehlt noch (hält nicht auf) · **⚠ rot** Warnung, heute nur der unterschrittene Taupunkt. Blätter ohne Pflichtangaben bekommen kein Zeichen.
+Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Blatt ausgefüllt, Pflichtangaben vollständig · **● gelb** Pflichtangabe fehlt noch (hält nicht auf) · **⚠ rot** Warnung, heute nur der unterschrittene Taupunkt. Blätter ohne Pflichtangaben bekommen den Haken, sobald etwas eingetragen ist, und bleiben leer ohne Zeichen – so zeigt die Übersicht vor dem Abschluss, wo man schon war. Thematik zählt erst mit Zweck oder einer zweiten Person (die erste setzt das Profil), Abschluss erst im Status „Abgeschlossen".
 
 1. **Start** – Sika-Logo, zwei große Schaltflächen: „Neuer Bericht", „Meine Berichte". Unten klein: „Einstellungen".
 2. **Meine Berichte** – Liste aller Berichte: Objekt, Datum, Status-Punkt (grau = Entwurf, grün = abgeschlossen). Suchfeld. Papierkorb-Symbol zum Löschen (mit Rückfrage). Tippen öffnet den Bericht.
 3. **Kopfdaten** – Felder aus `kopf`. Telefonfeld mit `inputMode="tel"`. Nur der **Verarbeiter** steht hier, mit eigener Anschrift; ein Feld „Kunde" gibt es nicht – im Bodenbau ist der Verarbeiter der Ansprechpartner.
 4. **Thematik & Anwesende** – Zweck-Feld (mit Spracheingabe) + beliebig viele Anwesende. Erste Zeile aus dem Profil (Name, Firma, Funktion); ohne Profil greifen die Stammdaten „Sika" / „AWT".
 5. **Untergrund** – zwei Auswahllisten, Bemerkungsfeld erscheint automatisch bei „Sonstiges". Gemessen wird auf dem nächsten Blatt.
-5a. **Prüfungen** – Liste von Karten wie bei „Anwesende": Prüfung aus der Auswahlliste (oder selbst geschrieben), vorbelegte Einheit, **beliebig viele Einzelwerte** je Prüfung, Bemerkung. Ab zwei Werten zeigt die App den **Mittelwert**; er steht auch im Bericht. Nicht Gemessenes taucht im Dokument gar nicht erst auf – ein „k.A." bei einer Prüfung, die niemand vorhatte, sagt nichts.
+5a. **Prüfungen** – Oben die **Sichtprüfung** (`Bericht.sichtpruefung`): „Untergrund frei von Schmutz, Staub und Verunreinigungen" mit den Tasten „i. O." / „nicht i. O." und einer Bemerkung; erneutes Tippen hebt die Wahl auf. Nicht geprüft heißt: steht nicht im Bericht. Darunter eine Liste von Karten wie bei „Anwesende": Prüfung aus der Auswahlliste (oder selbst geschrieben), vorbelegte Einheit, **beliebig viele Einzelwerte** je Prüfung, Bemerkung. Ab zwei Werten zeigt die App den **Mittelwert**; er steht auch im Bericht. Nicht Gemessenes taucht im Dokument gar nicht erst auf – ein „k.A." bei einer Prüfung, die niemand vorhatte, sagt nichts.
 6. **Klimawerte** – Liste + „+ Messung". Uhrzeit vorbelegt. **Taupunkt und Abstand live berechnet.** Abstand < 3 K → rote Warnung: „Achtung: Abstand zum Taupunkt unter 3 K – Beschichtung nicht freigeben."
 7. **Aufbau** – Liste + Dialog für Bereich, Schicht, Produkt, Fläche, Verbrauch, Gesamtmenge, Chargen.
    - **Bereich**: Beispiele als Platzhalter; ab der zweiten Zeile eine Schaltfläche **„wie Vorposition"**, damit „Halle 1" nicht jedes Mal neu getippt wird.
    - **Bereich und Fläche feststellen**: ein Haken im Dialog. Danach beginnt jede neue Zeile mit demselben Bereich und derselben Fläche (`Bericht.aufbauFest`); oben auf dem Blatt steht, was festgestellt ist, und lässt sich aufheben. Grundierung, Kratzspachtelung und Beschichtung liegen auf derselben Fläche.
    - **Produkt**: Freitext mit Vorschlägen aus den gemerkten Produkten.
    - **Chargen**: eine Nummer je Komponente (`Komp. A`, `Komp. B`, …), „+ Komponente" legt eine weitere an. Zwei- bis vierkomponentige Gebinde sind der Normalfall; im Schadensfall wird nach genau diesen Nummern gefragt.
+   - **Mischungen** (freiwillig, `Aufbauzeile.mischungen`): „+ Mischung" erfasst je Mischung Menge (kg) und Fläche (m²); die Menge der vorigen ist vorbelegt. Sobald Mischungen da sind, ergeben sich Fläche, Gesamtmenge und Verbrauch aus ihrer Summe und sind nicht mehr von Hand zu ändern. Im Bericht stehen die Mischungen unter der Aufbautabelle.
    - **Verbrauch und Gesamtmenge** (`src/lib/verbrauch.ts`): Eingetragen wird das eine oder das andere, die App rechnet über die Fläche um. Gespeichert wird immer in kg/m². Die Einheit springt automatisch: Eingaben ab 10 sind g/m² gemeint (200 → 0,2 kg/m²), darunter kg/m². Angezeigt wird nach Praxis – unter 1,00 kg in g/m², darüber in kg/m².
-8. **Bericht & Feststellungen** – fünf Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel, Empfehlung und **offene Fragen**. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden). Leere Felder erscheinen im Dokument nicht. Pflicht ist einer der ersten vier Abschnitte – eine offene Frage allein ersetzt keinen Bericht.
+8. **Bericht & Feststellungen** – fünf Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel, Empfehlung und **offene Fragen**. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden). Ohne Empfang oder bei einem Fehler sagt die Taste das in einem Satz, statt stumm auszugehen; angehängt wird nur, was neu erkannt wurde. Leere Felder erscheinen im Dokument nicht. Pflicht ist einer der ersten vier Abschnitte – eine offene Frage allein ersetzt keinen Bericht.
    - **„Text glätten"** unter jedem mehrzeiligen Feld (`src/utils/cleanDictation.ts`, `src/components/TextGlaetten.tsx`): gesprochene Satzzeichen („Komma", „neuer Absatz"), Dezimalzahlen („3 Komma 5" → 3,5), Füllwörter (`FILLER_WORDS`), Abstände und Satzanfänge. **Reine Funktion, kein Netz, keine Bibliothek** – Berichtstexte enthalten Kundendaten. Messwerte, Einheiten, Produktnamen und Großbuchstaben bleiben unverändert; zweimal angewendet ändert sich nichts mehr. Ausgelöst wird nur auf Knopfdruck, danach wird derselbe Knopf zu **„Rückgängig"** (solange der geglättete Text unverändert im Feld steht).
-10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Beschreibungsfeld je Foto, ebenfalls mit Spracheingabe. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
+10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Nach der Aufnahme öffnet sich sofort ein Fenster für die Beschreibung (mit Spracheingabe, „Weiter" bei mehreren Fotos, „Nächstes Foto aufnehmen", „Später beschreiben"); danach steht sie weiter unter jedem Foto. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
 11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**. Eine erfolgreiche Ausgabe setzt den Bericht **selbst auf „Abgeschlossen"** (abgebrochenes Teilen nicht); von Hand umstellen geht weiterhin. Ganz unten führen zwei Schaltflächen zu „Meine Berichte" und zur Startseite.
 
 **Einstellungen:** vier Abschnitte.
@@ -237,12 +238,11 @@ In Berichten, Briefvorlage und Anforderungsformular stehen Kunden- und Mitarbeit
 
 ## 8b. Anleitung
 
-Eine vollständige Anleitung mit Bildern zu jedem Schritt, die **als PDF bereitsteht**:
+Eine **Kurzanleitung von zwei bis drei Seiten**, die als PDF bereitsteht. Die frühere Fassung mit einem Kapitel und Bild je Blatt (32 Seiten) hat auf der Baustelle niemand gelesen.
 
-- `npm run anleitung:bilder` baut die App, startet sie örtlich, legt erfundene Musterdaten in die Browser-Datenbank und fotografiert mit Playwright jeden Bildschirm nach `dokumentation/bilder/`. Dazu zwei Seiten des erzeugten Berichts über `pdftoppm`.
-- `npm run anleitung` setzt daraus `dokumentation/Anleitung_Baustellenbericht.pdf` und legt dieselbe Datei als `public/Anleitung.pdf` ab – damit wird sie mit der App ausgeliefert und ist unter `Einstellungen → Anleitung` auch offline zu öffnen.
-- Text in `scripts/anleitungInhalt.ts`, Satz in `scripts/anleitung.ts`: Titelseite, Inhaltsverzeichnis mit Seitenzahlen, ein Kapitel je Blatt, Hinweis- und Warnkästen, Bildunterschriften.
-- **Keine echten Daten in der Anleitung.** Alle Bilder zeigen „Musterfirma GmbH" / „Max Muster"; der Beispiel-Briefbogen entsteht aus `scripts/beispielBriefbogen.mjs`.
+- `npm run anleitung` setzt `dokumentation/Anleitung_Baustellenbericht.pdf` und legt dieselbe Datei als `public/Anleitung.pdf` ab – damit wird sie mit der App ausgeliefert und ist unter `Einstellungen → Anleitung` auch offline zu öffnen.
+- Text in `scripts/anleitungInhalt.ts`, Satz in `scripts/anleitung.ts`: gelber Kopfbalken statt Titelseite, kein Inhaltsverzeichnis, Kapitel ohne Seitenwechsel, die Blätter als eine Tabelle, Hinweis- und Warnkästen.
+- `npm run anleitung:bilder` fotografiert die App mit erfundenen Musterdaten nach `dokumentation/bilder/` – für Schulungen, nicht mehr für die Anleitung. **Keine echten Daten:** alle Bilder zeigen „Musterfirma GmbH" / „Max Muster".
 
 ## 9. PWA-Anforderungen
 
@@ -314,4 +314,4 @@ Eine vollständige Anleitung mit Bildern zu jedem Schritt, die **als PDF bereits
 - [ ] Vorlage taucht in keinem Commit auf; im Repository liegt nur der Beispiel-Briefbogen „Musterfirma"
 - [ ] „Alle Daten auf diesem Gerät löschen" entfernt Berichte, Profil und Vorlage
 - [ ] `DATENSCHUTZ.md` und der Datenschutz-Bildschirm sagen dasselbe
-- [ ] Anleitung als PDF vorhanden, jeder Schritt mit Bild, in der App offline zu öffnen
+- [ ] Kurzanleitung (höchstens drei Seiten) als PDF vorhanden, in der App offline zu öffnen

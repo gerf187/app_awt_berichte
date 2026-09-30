@@ -54,6 +54,12 @@ export const PRUEFUNGEN = [
  */
 export const MIT_BRUCHBILD: readonly string[] = ['Haftzugfestigkeit']
 
+/**
+ * Die Sichtprüfung des Untergrunds – ohne Messgerät, aber vor jeder Beschichtung.
+ * Der Wortlaut steht so im Bericht, gefolgt vom Ergebnis.
+ */
+export const SICHTPRUEFUNG_TEXT = 'Untergrund frei von Schmutz, Staub und Verunreinigungen'
+
 /** Dieselben Prüfungen als reine Auswahlliste, mit „Sonstiges" am Ende. */
 export const PRUEFUNGSARTEN = [...PRUEFUNGEN.map((eintrag) => eintrag.art), SONSTIGES] as const
 
@@ -70,6 +76,7 @@ export const SCHICHTEN = [
   'Kratzspachtelung',
   'Leitschicht',
   'Ausgleichsschicht',
+  'Laminatschicht',
   'Verlaufsbeschichtung',
   'Deckversiegelung',
   'Einstreuung',

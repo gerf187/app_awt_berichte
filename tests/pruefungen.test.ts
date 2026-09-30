@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  sichtpruefungText,
   ausgefuellte,
   gemesseneWerte,
   hatBruchbild,
@@ -162,5 +163,20 @@ describe('pruefungAuffuellen', () => {
     const leer = pruefungAuffuellen(undefined)
     expect(leer.bezeichnung).toBe('')
     expect(leer.messwerte).toHaveLength(1)
+  })
+})
+
+describe('sichtpruefungText', () => {
+  it('ist leer, solange nicht geprüft wurde', () => {
+    expect(sichtpruefungText({ ergebnis: '', bemerkung: 'egal' })).toBe('')
+  })
+
+  it('nennt Prüfung und Ergebnis', () => {
+    expect(sichtpruefungText({ ergebnis: 'io', bemerkung: '' })).toBe(
+      'Untergrund frei von Schmutz, Staub und Verunreinigungen: i. O.',
+    )
+    expect(sichtpruefungText({ ergebnis: 'nio', bemerkung: '' })).toBe(
+      'Untergrund frei von Schmutz, Staub und Verunreinigungen: nicht i. O.',
+    )
   })
 })
