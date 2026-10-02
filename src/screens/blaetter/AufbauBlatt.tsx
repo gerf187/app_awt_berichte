@@ -326,7 +326,7 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
             <button
               type="button"
               onClick={() => setBearbeitet(entwurfAus(index, zeile, Boolean(fest)))}
-              className="active:bg-sika-hell flex-1 p-4 text-left"
+              className="active:bg-sika-hell min-w-0 flex-1 p-4 text-left break-words"
             >
               <span className="block text-lg font-semibold">{zeile.produkt || 'Ohne Produkt'}</span>
               <span className="text-sika-grau mt-1 block text-sm">
@@ -363,7 +363,7 @@ export function AufbauBlatt({ bericht, aendern }: BlattEigenschaften) {
 
       {bearbeitet && (
         <div
-          className="fixed inset-0 z-30 flex flex-col overflow-y-auto bg-black/50 p-3"
+          className="unten-frei fixed inset-0 z-30 flex flex-col overflow-y-auto overscroll-contain bg-black/50 px-3 pt-3"
           role="dialog"
           aria-modal
           aria-label="Aufbauzeile bearbeiten"

@@ -73,9 +73,6 @@ const ZWECK = {
   luftUnten: 6,
 }
 
-/** Breite des Unterschriftenfeldes. */
-const UNTERSCHRIFT = { breite: 70, hoehe: 25 }
-
 /** Zusammen mit dem Bildkasten der Platz, den ein Foto samt Text braucht. */
 const BILDTEXT_ABSTAND = 5
 
@@ -369,17 +366,6 @@ export async function pdfMitProtokoll(
     if (!inhalt.trim()) continue
     layout.ueberschrift(titel)
     layout.absatz(inhalt)
-  }
-
-  // --- Unterschrift -----------------------------------------------------
-  if (bericht.unterschrift) {
-    // Bild, Linie und Überschrift gehören zusammen auf eine Seite.
-    layout.ensureSpace(UNTERSCHRIFT.hoehe + 20)
-    layout.ueberschrift('Unterschrift')
-    layout.bild(bericht.unterschrift, 'PNG', UNTERSCHRIFT.breite, UNTERSCHRIFT.hoehe)
-    layout.abstand(ABSTAND.nachBlock / 2)
-    layout.linie(UNTERSCHRIFT.breite)
-    layout.abstand(ABSTAND.nachBlock)
   }
 
   // --- Fotos: zwei je Seite --------------------------------------------

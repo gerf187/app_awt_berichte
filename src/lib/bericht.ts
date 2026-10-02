@@ -194,9 +194,15 @@ function pruefungenAusUntergrund(untergrund: AlterUntergrund): Pruefung[] {
  */
 export function berichtAuffuellen(bericht: Bericht): Bericht {
   const untergrund = { ...LEERER_UNTERGRUND, ...bericht.untergrund } as AlterUntergrund
+  // Die Unterschrift gibt es nicht mehr – die Berichte sind intern. Eine alte
+  // fällt hier weg und verschwindet beim nächsten Speichern aus der Datenbank:
+  // Personendaten, die niemand braucht, bleiben nicht liegen.
+  const { unterschrift: _unterschrift, ...ohneUnterschrift } = bericht as Bericht & {
+    unterschrift?: string
+  }
 
   return {
-    ...bericht,
+    ...ohneUnterschrift,
     text: { ...LEERER_TEXT, ...bericht.text },
     absender: { ...LEERES_PROFIL, ...bericht.absender },
     // Die alten Messwertfelder fallen weg, statt als Altlast mitzureisen.

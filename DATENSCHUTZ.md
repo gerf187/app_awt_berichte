@@ -48,11 +48,11 @@ Tastendruck ausgelöst:
 |---|---|
 | **Bezeichnung** | Baustellenbericht-App (PWA) für die Anwendungstechnik |
 | **Verantwortlicher** | `<Firma, Anschrift, Vertretungsberechtigter>` |
-| **Datenschutzbeauftragter** | `<Name, Kontakt>` |
+| **Datenschutzbeauftragter** | `<Björn Esser, Tel.: 01733095148 E-Mail: esser.bjoern@de.sika.com>` |
 | **Zweck** | Dokumentation eines Baustellenbesuchs: Feststellungen, Messwerte, verwendete Produkte, Fotos; Erstellung und Versand des Berichts an Kunde und Verarbeiter |
-| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragsdurchführung/-anbahnung) für Kunden- und Verarbeiterdaten; Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer belastbaren Dokumentation) für Feststellungen, Fotos und Unterschrift; für Beschäftigtendaten `<§ 26 BDSG bzw. Betriebsvereinbarung>` |
+| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragsdurchführung/-anbahnung) für Kunden- und Verarbeiterdaten; Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer belastbaren Dokumentation) für Feststellungen und Fotos; für Beschäftigtendaten `<§ 26 BDSG bzw. Betriebsvereinbarung>` |
 | **Betroffene Personen** | Ansprechpartner beim Kunden und beim Verarbeiter, weitere Anwesende, eigene Beschäftigte (Anwendungstechniker, Vertrieb) |
-| **Datenkategorien** | Name, Firma, Funktion, dienstliche Anschrift, dienstliche Telefonnummer, E-Mail-Adresse, Unterschrift, Lichtbilder der Baustelle, Freitexte zum Besuch |
+| **Datenkategorien** | Name, Firma, Funktion, dienstliche Anschrift, dienstliche Telefonnummer, E-Mail-Adresse, Lichtbilder der Baustelle, Freitexte zum Besuch |
 | **Empfänger** | Die vom Anwender gewählten Empfänger des fertigen Berichts (Kunde, Verarbeiter, interne Stellen). Kein Dienstleister und kein Cloud-Anbieter für die gespeicherten Daten. Bei Nutzung der **Diktierfunktion** zusätzlich der Browser-Hersteller (Apple bzw. Google) als Empfänger der Sprachaufnahme – siehe Abschnitt 5. |
 | **Drittlandübermittlung** | Durch die App keine. Bei Nutzung der Diktierfunktion ist eine Übermittlung in die USA anzunehmen; Rechtsgrundlage, Angemessenheitsbeschluss und etwaige Auftragsverarbeitung sind vom Verantwortlichen zu klären `<offen>`. |
 | **Löschfristen** | Auf dem Gerät: sofort nach Versand und Ablage, spätestens `<Frist>`. Im führenden Ablagesystem: `<handels-/steuerrechtliche Aufbewahrung>` |
@@ -65,7 +65,7 @@ Tastendruck ausgelöst:
 | Datenart | Ort | Verlässt das Gerät? |
 |---|---|---|
 | Berichte inkl. Kopfdaten, Anwesende, Messwerte, Freitexte | IndexedDB `awt-berichte` im Browser des Geräts | nein |
-| Fotos und Unterschrift | als Data-URL im jeweiligen Bericht, dieselbe Datenbank | nein |
+| Fotos | als Data-URL im jeweiligen Bericht, dieselbe Datenbank | nein |
 | Eigenes Profil (Name, Funktion, Anschrift, Telefon, E-Mail) | dieselbe Datenbank, Objektspeicher `einstellungen` | nein |
 | **Briefvorlage** (Briefbogen als PDF/PNG/JPEG) | dieselbe Datenbank, Objektspeicher `einstellungen` | nein |
 | Fertige PDF/Word-Datei | vom Anwender ausgelöster Download bzw. Teilen-Dialog | **ja, bewusst** |

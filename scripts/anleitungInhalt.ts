@@ -42,7 +42,7 @@ export const KAPITEL: Kapitel[] = [
         'App-Link öffnen und auf den Startbildschirm legen – iPhone: Teilen → „Zum Home-Bildschirm", Android: Menü (drei Punkte) → „Zum Startbildschirm hinzufügen". Beim ersten Mal mit Internet öffnen und warten, bis die Startseite steht; danach läuft die App auch ohne Empfang.',
         'Einstellungen → „Mein Profil": Name, Funktion, Firma, Anschrift, Telefon, E-Mail. Jeder neue Bericht übernimmt das.',
         'Einstellungen → „Briefvorlage": Briefbogen als PDF, PNG oder JPEG hochladen und die Abstände an einem Probebericht prüfen. Für die Word-Datei muss der Bogen ein PNG oder JPEG sein.',
-        'Freiwillig: Einstellungen → „OneDrive" mit dem dienstlichen Microsoft-Konto verbinden.',
+        'Freiwillig: Einstellungen → „OneDrive" mit dem dienstlichen Microsoft-Konto verbinden und mit „Ordner wählen" den Zielordner aussuchen.',
       ),
       hinweis(
         'Einen Speichern-Knopf gibt es nirgends. Jede Eingabe ist sofort auf dem Gerät gesichert.',
@@ -89,7 +89,7 @@ export const KAPITEL: Kapitel[] = [
           ],
           ['Bericht', 'Freitexte. Pflicht: mindestens einer der ersten vier Abschnitte.'],
           ['Fotos', 'Nach der Aufnahme fragt die App gleich nach der Beschreibung.'],
-          ['Abschluss', 'Fehlende Angaben, Unterschrift, Ausgabe.'],
+          ['Abschluss', 'Fehlende Angaben, Ausgabe als PDF oder Word, Versand.'],
         ],
       },
       absatz('Nützlich im Aufbau:'),
@@ -110,8 +110,7 @@ export const KAPITEL: Kapitel[] = [
     bloecke: [
       schritte(
         'Blatt „Abschluss": gelb aufgeführte Angaben antippen und nachtragen.',
-        'Den Kunden mit dem Finger unterschreiben lassen.',
-        '„PDF erzeugen", „Word erzeugen", „Bericht versenden" (Teilen-Funktion des Handys) oder „PDF in OneDrive ablegen".',
+        '„PDF erzeugen" öffnet den Bericht und legt ihn, wenn OneDrive verbunden ist, zugleich im gewählten Ordner ab – neu erzeugt ersetzt die ältere Fassung. Außerdem: „Word erzeugen" und „Bericht versenden" (Teilen-Funktion des Handys).',
       ),
       absatz(
         'Danach gilt der Bericht als abgeschlossen (grüner Punkt in „Meine Berichte"). Ändern lässt er sich weiterhin.',

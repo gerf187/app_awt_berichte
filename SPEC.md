@@ -116,7 +116,6 @@ type Bericht = {
 
   fotos: { id: string; dataUrl: string; beschreibung: string; aufgenommenAm: string }[];
 
-  unterschrift?: string;      // dataUrl (PNG) – optional
 };
 ```
 
@@ -155,14 +154,15 @@ Zeichen an Reiter und Kachel (`src/lib/blattstand.ts`): **✓ grün** Blatt ausg
 8. **Bericht & Feststellungen** – fünf Freitextfelder: ausgeführte Arbeiten, Besprochenes, Mängel, Empfehlung und **offene Fragen**. Jedes mit **Spracheingabe-Taste** (Web Speech API, `de-DE`; wenn nicht unterstützt, Taste ausblenden). Ohne Empfang oder bei einem Fehler sagt die Taste das in einem Satz, statt stumm auszugehen; angehängt wird nur, was neu erkannt wurde. Leere Felder erscheinen im Dokument nicht. Pflicht ist einer der ersten vier Abschnitte – eine offene Frage allein ersetzt keinen Bericht.
    - **„Text glätten"** unter jedem mehrzeiligen Feld (`src/utils/cleanDictation.ts`, `src/components/TextGlaetten.tsx`): gesprochene Satzzeichen („Komma", „neuer Absatz"), Dezimalzahlen („3 Komma 5" → 3,5), Füllwörter (`FILLER_WORDS`), Abstände und Satzanfänge. **Reine Funktion, kein Netz, keine Bibliothek** – Berichtstexte enthalten Kundendaten. Messwerte, Einheiten, Produktnamen und Großbuchstaben bleiben unverändert; zweimal angewendet ändert sich nichts mehr. Ausgelöst wird nur auf Knopfdruck, danach wird derselbe Knopf zu **„Rückgängig"** (solange der geglättete Text unverändert im Feld steht).
 10. **Fotos** – „Foto aufnehmen" (`capture="environment"`) und „Aus Galerie wählen". Nach der Aufnahme öffnet sich sofort ein Fenster für die Beschreibung (mit Spracheingabe, „Weiter" bei mehreren Fotos, „Nächstes Foto aufnehmen", „Später beschreiben"); danach steht sie weiter unter jedem Foto. Downscaling auf **max. 1600 px lange Kante, JPEG-Qualität 0,75**. Reihenfolge per Pfeiltasten, Löschen möglich.
-11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, Unterschrift, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**. Eine erfolgreiche Ausgabe setzt den Bericht **selbst auf „Abgeschlossen"** (abgebrochenes Teilen nicht); von Hand umstellen geht weiterhin. Ganz unten führen zwei Schaltflächen zu „Meine Berichte" und zur Startseite.
+11. **Abschluss** – Zusammenfassung, fehlende Pflichtfelder (antippbar, führen ins zuständige Blatt), Absenderzeile aus dem Profil, dann **„PDF erzeugen"**, **„Word erzeugen"**, **„Bericht versenden"**. „PDF erzeugen" **öffnet** die PDF (Fenster geht beim Tippen auf, damit der Popup-Blocker es durchlässt; klappt das nicht, wird heruntergeladen und „PDF öffnen" angeboten) und legt sie **zugleich in OneDrive** ab, wenn das Gerät verbunden ist – in den unter Einstellungen gewählten Ordner, eine ältere Fassung gleichen Namens wird ersetzt (`conflictBehavior=replace`). Einen eigenen OneDrive-Knopf gibt es nicht mehr. Eine erfolgreiche Ausgabe setzt den Bericht **selbst auf „Abgeschlossen"** (abgebrochenes Teilen nicht); von Hand umstellen geht weiterhin. Ganz unten führen zwei Schaltflächen zu „Meine Berichte" und zur Startseite.
 
-**Einstellungen:** vier Abschnitte.
+**Einstellungen:** fünf Abschnitte.
 
 1. **Profil** (Name, Funktion, Firma, Straße, PLZ/Ort, Telefon, E-Mail), füllt „Anwesende" vor und liefert die Absenderzeile im Bericht.
 2. **Briefvorlage** – siehe Abschnitt 6a.
 3. **Datensicherung** („Alle Daten sichern (JSON)" / „Daten wiederherstellen"), mit dem Hinweis, dass die Datei unverschlüsselt ist.
-4. **Anleitung** (Verweis auf die mitgelieferte PDF) und **Datenschutz** (eigener Bildschirm, dazu „Alle Daten auf diesem Gerät löschen").
+4. **OneDrive** – „Mit OneDrive verbinden" / „Verbindung trennen" und **„Ordner wählen"**: ein Dialog (`src/components/OrdnerWahl.tsx`) zeigt die Ordner des eigenen OneDrive (`ordnerAuflisten`), man tippt sich hinein, springt über den Pfad zurück oder legt mit „+ Neuer Ordner" einen an (`ordnerAnlegen`). Die oberste Ebene ist nicht wählbar. Ohne Verbindung steht der Ordner nur da. Die Rechte bleiben `Files.ReadWrite` – Auflisten und Anlegen brauchen nicht mehr.
+5. **Anleitung** (Verweis auf die mitgelieferte PDF) und **Datenschutz** (eigener Bildschirm, dazu „Alle Daten auf diesem Gerät löschen").
 
 ---
 
@@ -197,7 +197,7 @@ Ergebnis auf eine Nachkommastelle runden. Unit-Tests mit mindestens fünf bekann
 
 **Pflichtfelder:** Datum, Projekt, Verarbeiter, AWT, mindestens ein Klimawert, mindestens ein Absatz Freitext. Fehlende Pflichtfelder blockieren das Weiterklicken **nicht** – sie werden auf dem Abschlussbildschirm gelb markiert.
 
-**Unterschrift (optional):** Canvas-Feld mit Finger-Eingabe und „Löschen"-Taste. Als PNG im Bericht, im PDF unter dem Text. Wenn leer, im PDF weglassen.
+**Keine Unterschrift.** Die Berichte sind intern; ein Unterschriftenfeld gab es bis Herbst 2026 und ist entfallen. Eine in älteren Berichten gespeicherte Unterschrift wird beim Laden verworfen (`berichtAuffuellen`) und verschwindet beim nächsten Speichern aus der Datenbank.
 
 ---
 
@@ -209,7 +209,6 @@ Ergebnis auf eine Nachkommastelle runden. Unit-Tests mit mindestens fünf bekann
 - Anwesende, Klimawerte, Aufbau als Tabellen; Klimawert-Zeilen mit Taupunkt-Warnung rot markiert
 - Freitextblöcke mit Überschriften
 - Fotos: zwei pro Seite, Beschriftung darunter
-- Unterschriftenfeld, falls vorhanden
 - Dateiname: `Baustellenbericht_<Berichtsnummer>_<Projekt>.pdf`, Umlaute sauber ersetzt
 
 ### Word (.docx)
@@ -292,7 +291,7 @@ Eine **Kurzanleitung von zwei bis drei Seiten**, die als PDF bereitsteht. Die fr
 6. **Fotos** inkl. Downscaling und Reihenfolge.
 7. **PDF-Export** – Beispiel-PDF mit Testdaten selbst prüfen.
 8. **Word-Export** – Datei erzeugen und validieren.
-9. **Versand, Backup/Restore, Unterschrift.**
+9. **Versand, Backup/Restore.**
 10. **Feinschliff** – Offline-Test, Ladezeiten, Fehlerbehandlung, README.
 
 ---

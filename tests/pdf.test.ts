@@ -27,7 +27,6 @@ describe('pdfErzeugen', () => {
       klima: [],
       aufbau: [],
       fotos: [],
-      unterschrift: undefined,
       text: {
         ausgefuehrteArbeiten: '',
         besprochenes: '',

@@ -251,8 +251,6 @@ export type Bericht = {
   fotos: Foto[]
   /** Absenderzeile des Berichts, aus dem Profil übernommen. */
   absender: Absender
-  /** PNG als Data-URL. Fehlt, wenn nicht unterschrieben wurde. */
-  unterschrift?: string
 }
 
 /**

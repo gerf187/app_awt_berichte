@@ -53,6 +53,15 @@
   .tippziel {
     min-height: 3rem;
   }
+
+  /*
+   * Unterer Rand für alles, was unten am Bildschirm klebt (Fußleiste,
+   * Dialoge). Der Abstand am <body> greift erst am Seitenende – eine
+   * klebende Leiste läge sonst auf dem iPhone unter dem Home-Balken.
+   */
+  .unten-frei {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
 }
 
 /* Ein Druck-Layout brauchen wir nicht – Ausgabe läuft über PDF/Word. */

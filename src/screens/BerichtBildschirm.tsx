@@ -92,9 +92,11 @@ export function BerichtBildschirm({
                   className="border-sika-schwarz/10 active:bg-sika-hell flex min-h-28 flex-col justify-between gap-2 rounded-xl border-2 bg-white p-3 text-left"
                 >
                   <span className="text-base leading-tight font-bold">{eintrag.titel}</span>
-                  <span className="text-sika-grau flex items-center gap-1.5 text-sm font-semibold">
+                  {/* Zwei Zeilen statt „…": sonst stünde auf dem schmalen Handy
+                      „Taupunkt 1…" – und genau die Uhrzeit fehlte. */}
+                  <span className="text-sika-grau flex items-start gap-1.5 text-sm leading-snug font-semibold">
                     <BlattZeichen art={stand.art} />
-                    <span className="truncate">{stand.text}</span>
+                    <span className="line-clamp-2 min-w-0 break-words hyphens-auto">{stand.text}</span>
                   </span>
                 </button>
               )
@@ -148,7 +150,7 @@ export function BerichtBildschirm({
       </main>
 
       {/* Fußleiste klebt unten – erreichbar mit dem Daumen, auch einhändig. */}
-      <nav className="bg-sika-hell/95 border-sika-schwarz/10 sticky bottom-0 flex gap-3 border-t p-3 backdrop-blur">
+      <nav className="bg-sika-hell/95 border-sika-schwarz/10 unten-frei sticky bottom-0 flex gap-3 border-t px-3 pt-3 backdrop-blur">
         <Knopf art="zweit" breit onClick={() => wechsle(vorheriges?.id)}>
           {vorheriges ? 'Zurück' : 'Übersicht'}
         </Knopf>

@@ -115,7 +115,7 @@ export async function produktSpeichern(produkt: string): Promise<void> {
 
 /**
  * Alles löschen, was die App auf diesem Gerät gespeichert hat: Berichte,
- * Fotos, Unterschriften, Profil und Briefvorlage.
+ * Fotos, Profil und Briefvorlage.
  *
  * Gehört zum Datenschutz (siehe DATENSCHUTZ.md): Wer das Gerät abgibt,
  * tauscht oder den Bericht nicht mehr braucht, muss die Daten in einem

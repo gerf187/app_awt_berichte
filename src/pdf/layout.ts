@@ -352,14 +352,6 @@ export class PdfLayout {
     this.doc.addImage(dataUrl, format, x, oben, breite, hoehe)
   }
 
-  /** Waagerechte Linie über eine Teilbreite – für die Unterschrift. */
-  linie(breite: number, farbe: Farbe = GRAU): void {
-    const oben = this.platz(0.5, 'linie')
-    this.doc.setDrawColor(...farbe)
-    this.doc.setLineWidth(0.3)
-    this.doc.line(this.zonen.links, oben, this.zonen.links + breite, oben)
-  }
-
   /**
    * Ränder und Startpunkt für autoTable. `bottom` ist der Abstand zur
    * Blattunterkante – so rechnet autoTable – und hält die Tabelle damit

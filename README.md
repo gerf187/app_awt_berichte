@@ -23,12 +23,11 @@ PDF- oder Word-Datei, die Sie direkt weiterschicken können.
 - **Verbrauch rechnet mit.** Verbrauch je m² oder Gesamtmenge eintragen – das
   andere ergibt sich aus der Fläche. Die Einheit springt selbst um: 1,2 kg/m²,
   200 g/m².
-- Unterschrift mit dem Finger
 - **Bericht auf dem eigenen Briefbogen.** Die Briefvorlage wird in der App
   hinterlegt und bleibt auf dem Gerät.
 - Ausgabe als PDF und als Word-Datei, Versand über die Teilen-Funktion des Handys
-- **Ablage in OneDrive**, wenn Sie wollen: einmal verbinden, danach legt ein
-  Tastendruck den fertigen Bericht in Ihren OneDrive-Ordner. Siehe unten.
+- **Ablage in OneDrive**, wenn Sie wollen: einmal verbinden und einen Ordner
+  wählen, danach legt „PDF erzeugen" den Bericht zugleich dort ab. Siehe unten.
 - **Alles bleibt auf Ihrem Gerät.** Von allein schickt die App nichts
   irgendwohin – nur was Sie selbst versenden oder ablegen.
 
@@ -113,7 +112,13 @@ keine Voraussetzung.
 anmelden, fertig. Mehr ist nicht einzurichten: Die App bringt ihre eigene
 App-Registrierung mit, jeder meldet sich damit an seinem eigenen OneDrive an.
 
-Danach steht auf dem Abschlussblatt **„PDF in OneDrive ablegen"**. Die Anmeldung
+Danach **„Ordner wählen"**: Die App zeigt die Ordner im eigenen OneDrive,
+man tippt sich hinein oder legt einen neuen an. Voreingestellt ist
+„Baustellenberichte“.
+
+Ab dann öffnet **„PDF erzeugen"** auf dem Abschlussblatt den Bericht und legt
+ihn zugleich in diesem Ordner ab. Wer nach einer Korrektur neu erzeugt,
+ersetzt die ältere Fassung in OneDrive. Die Anmeldung
 läuft direkt zwischen Gerät und Microsoft; die Zugangsschlüssel bleiben auf dem
 Gerät und stehen nicht in der Sicherungsdatei. **„Verbindung trennen"** löscht
 sie wieder.
@@ -187,7 +192,7 @@ Der Basispfad in `vite.config.ts` muss zum Repository-Namen passen.
 | Ordner | Inhalt |
 |---|---|
 | `src/screens/` | Die Bildschirme, `blaetter/` sind die Blätter eines Berichts |
-| `src/components/` | Wiederverwendete Bausteine (Knöpfe, Felder, Unterschrift) |
+| `src/components/` | Wiederverwendete Bausteine (Knöpfe, Felder, Spracheingabe) |
 | `src/lib/` | Datenhaltung (`db.ts`), Fachlogik (`taupunkt.ts`), Briefbogen (`vorlage.ts`), Ausgabe (`pdf.ts`, `docx.ts`, `teilen.ts`) |
 | `src/data/stammdaten.ts` | Alle Auswahllisten – hier ändern, sonst nirgends |
 | `src/data/datenschutz.ts` | Die Datenschutz-Sätze für App **und** Anleitung |

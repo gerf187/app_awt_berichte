@@ -21,8 +21,11 @@ export function BlattZeichen({ art, klasse = '' }: { art: BlattStand; klasse?: s
   if (art === 'neutral') return null
 
   const { zeichen, farbe, wort } = ZEICHEN[art]
+  // `relative` hält den unsichtbaren Text (`sr-only` ist absolut positioniert)
+  // im Zeichen fest. Ohne das entwischt er aus der waagerecht scrollenden
+  // Reiterleiste und macht die ganze Seite auf dem Handy dreimal so breit.
   return (
-    <span className={`${farbe} ${klasse}`}>
+    <span className={`relative ${farbe} ${klasse}`}>
       <span className="sr-only">{wort}: </span>
       <span aria-hidden>{zeichen}</span>
     </span>

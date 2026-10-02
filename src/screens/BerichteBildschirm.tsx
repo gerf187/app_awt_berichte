@@ -74,16 +74,16 @@ export function BerichteBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => voi
               <button
                 type="button"
                 onClick={() => zeige({ name: 'bericht', id: bericht.id })}
-                className="active:bg-sika-hell flex-1 p-4 text-left"
+                className="active:bg-sika-hell min-w-0 flex-1 p-4 text-left"
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-start gap-2">
                   <span
                     aria-hidden
-                    className={`h-3 w-3 shrink-0 rounded-full ${
+                    className={`mt-2 h-3 w-3 shrink-0 rounded-full ${
                       bericht.status === 'Abgeschlossen' ? 'bg-sika-gruen' : 'bg-sika-grau'
                     }`}
                   />
-                  <span className="truncate text-lg font-semibold">
+                  <span className="line-clamp-2 text-lg leading-snug font-semibold break-words">
                     {bericht.kopf.projekt || 'Ohne Bezeichnung'}
                   </span>
                 </span>
@@ -106,7 +106,11 @@ export function BerichteBildschirm({ zeige }: { zeige: (ansicht: Ansicht) => voi
       </main>
 
       {loeschKandidat && (
-        <div className="fixed inset-0 z-30 flex items-end bg-black/50 p-4" role="dialog" aria-modal>
+        <div
+          className="unten-frei fixed inset-0 z-30 flex items-end bg-black/50 px-4 pt-4"
+          role="dialog"
+          aria-modal
+        >
           <div className="mx-auto w-full max-w-3xl rounded-2xl bg-white p-5">
             <h2 className="text-xl font-bold">Bericht löschen?</h2>
             <p className="text-sika-grau mt-2">

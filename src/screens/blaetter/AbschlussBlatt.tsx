@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Knopf } from '../../components/Knopf'
-import { Unterschrift } from '../../components/Unterschrift'
 import { absenderzeilen, fehlendePflichtfelder } from '../../lib/bericht'
 import { dateiname } from '../../lib/dateiname'
 import { einstellungenLaden } from '../../lib/db'
@@ -41,6 +40,16 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt, zeigeAnsicht }: B
   const [vorlage, setVorlage] = useState<Briefvorlage | undefined>(undefined)
   const [ordner, setOrdner] = useState('')
   const [onedriveAdresse, setOneDriveAdresse] = useState('')
+  /** Die zuletzt erzeugte PDF als Blob-Adresse – für „PDF öffnen". */
+  const [pdfAdresse, setPdfAdresse] = useState('')
+
+  // Eine abgelöste PDF gibt ihren Speicher frei, ebenso beim Verlassen.
+  useEffect(
+    () => () => {
+      if (pdfAdresse) URL.revokeObjectURL(pdfAdresse)
+    },
+    [pdfAdresse],
+  )
   // Verbunden ist ein Gerät, kein Bericht – das steht schon beim Aufbau fest.
   const konto = verbundenesKonto()
 
@@ -75,11 +84,68 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt, zeigeAnsicht }: B
       : `${text} Der Bericht gilt damit als abgeschlossen.`
   }
 
-  async function erzeugen(format: Format) {
-    setLaeuft(format)
+  /**
+   * PDF erzeugen, gleich öffnen und – wenn verbunden – zugleich in OneDrive
+   * ablegen.
+   *
+   * Das Fenster geht sofort beim Tippen auf, noch bevor die PDF fertig ist:
+   * Ein Fenster, das erst Sekunden später kommt, hält der Browser für Werbung
+   * und blockiert es. Geht es trotzdem nicht auf, wird heruntergeladen wie
+   * bisher, und „PDF öffnen" steht bereit.
+   */
+  async function pdfAusgeben() {
+    const fenster = window.open('', '_blank')
+    setLaeuft('pdf')
+    setMeldung('')
+    setOneDriveAdresse('')
+    try {
+      const fertig = await datei(bericht, 'pdf')
+      const adresse = URL.createObjectURL(fertig)
+      setPdfAdresse(adresse)
+
+      const geoeffnet = Boolean(fenster && !fenster.closed)
+      if (geoeffnet) fenster!.location.href = adresse
+      else herunterladen(fertig, fertig.name)
+      abschliessen()
+
+      const teile = [
+        geoeffnet
+          ? `${fertig.name} wurde erzeugt und geöffnet.`
+          : `${fertig.name} wurde erzeugt und heruntergeladen.`,
+      ]
+      if (!konto) {
+        setMeldung(mitStatus(teile.join(' ')))
+        return
+      }
+
+      // Die PDF ist schon zu sehen, während sie hochgeht.
+      setLaeuft('onedrive')
+      setMeldung(`${teile[0]} Wird in OneDrive abgelegt …`)
+      try {
+        setOneDriveAdresse(await hochladen(fertig, ordner))
+        teile.push(`In OneDrive unter „${ordner}" abgelegt.`)
+      } catch (fehler) {
+        teile.push(
+          `Nicht in OneDrive abgelegt: ${
+            fehler instanceof OneDriveFehler ? fehler.message : 'Besteht eine Internetverbindung?'
+          } Mit Empfang einfach noch einmal „PDF erzeugen" – die Fassung in OneDrive wird dann ersetzt.`,
+        )
+      }
+      setMeldung(mitStatus(teile.join(' ')))
+    } catch {
+      fenster?.close()
+      setMeldung('Die Datei konnte nicht erzeugt werden.')
+    } finally {
+      setLaeuft('')
+    }
+  }
+
+  /** Word lässt sich im Browser nicht anzeigen – die Datei wird heruntergeladen. */
+  async function wordAusgeben() {
+    setLaeuft('docx')
     setMeldung('')
     try {
-      const fertig = await datei(bericht, format)
+      const fertig = await datei(bericht, 'docx')
       herunterladen(fertig, fertig.name)
       setMeldung(mitStatus(`${fertig.name} wurde erzeugt.`))
       abschliessen()
@@ -117,31 +183,6 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt, zeigeAnsicht }: B
       abschliessen()
     } catch {
       setMeldung('Der Versand hat nicht geklappt.')
-    } finally {
-      setLaeuft('')
-    }
-  }
-
-  /**
-   * Bericht als PDF in OneDrive ablegen. Ein abgelegter Bericht ist ebenso
-   * abgegeben wie ein versendeter – also gilt er danach als abgeschlossen.
-   */
-  async function inOneDrive() {
-    setLaeuft('onedrive')
-    setMeldung('')
-    setOneDriveAdresse('')
-    try {
-      const fertig = await datei(bericht, 'pdf')
-      const adresse = await hochladen(fertig, ordner)
-      setOneDriveAdresse(adresse)
-      setMeldung(mitStatus(`${fertig.name} liegt in OneDrive unter „${ordner}".`))
-      abschliessen()
-    } catch (fehler) {
-      setMeldung(
-        fehler instanceof OneDriveFehler
-          ? fehler.message
-          : 'Der Bericht konnte nicht hochgeladen werden. Besteht eine Internetverbindung?',
-      )
     } finally {
       setLaeuft('')
     }
@@ -207,36 +248,29 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt, zeigeAnsicht }: B
         )}
       </section>
 
-      {/* --- Unterschrift ------------------------------------------------ */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-bold">Unterschrift</h2>
-        <Unterschrift
-          vorhanden={bericht.unterschrift}
-          setzen={(dataUrl) => aendern((vorher) => ({ ...vorher, unterschrift: dataUrl }))}
-          loeschen={() => aendern((vorher) => ({ ...vorher, unterschrift: undefined }))}
-        />
-      </section>
-
       {/* --- Ausgabe ----------------------------------------------------- */}
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-bold">Bericht ausgeben</h2>
-        <Knopf art="haupt" breit disabled={laeuft !== ''} onClick={() => void erzeugen('pdf')}>
-          {laeuft === 'pdf' ? 'PDF wird erzeugt …' : 'PDF erzeugen'}
+        <Knopf art="haupt" breit disabled={laeuft !== ''} onClick={() => void pdfAusgeben()}>
+          {laeuft === 'pdf'
+            ? 'PDF wird erzeugt …'
+            : laeuft === 'onedrive'
+              ? 'Wird in OneDrive abgelegt …'
+              : 'PDF erzeugen'}
         </Knopf>
-        <Knopf art="zweit" breit disabled={laeuft !== ''} onClick={() => void erzeugen('docx')}>
+        {/* Was „PDF erzeugen" außer dem Öffnen noch tut – sonst wundert sich
+            niemand, wie der Bericht in OneDrive kommt, aber jeder, ob. */}
+        <p className="text-sika-grau -mt-1 text-sm">
+          {konto
+            ? `Öffnet den Bericht und legt ihn zugleich in OneDrive unter „${ordner}" ab.`
+            : 'Öffnet den Bericht. OneDrive lässt sich unter Einstellungen verbinden.'}
+        </p>
+        <Knopf art="zweit" breit disabled={laeuft !== ''} onClick={() => void wordAusgeben()}>
           {laeuft === 'docx' ? 'Word wird erzeugt …' : 'Word erzeugen'}
         </Knopf>
         <Knopf art="zweit" breit disabled={laeuft !== ''} onClick={() => void versenden()}>
           {laeuft === 'versand' ? 'Wird vorbereitet …' : 'Bericht versenden'}
         </Knopf>
-
-        {/* OneDrive nur zeigen, wenn dieses Gerät verbunden ist – ein toter
-            Knopf auf der Baustelle hilft niemandem. */}
-        {konto && (
-          <Knopf art="zweit" breit disabled={laeuft !== ''} onClick={() => void inOneDrive()}>
-            {laeuft === 'onedrive' ? 'Wird hochgeladen …' : 'PDF in OneDrive ablegen'}
-          </Knopf>
-        )}
 
         <p className="text-sika-grau text-sm">
           {vorlage
@@ -248,6 +282,18 @@ export function AbschlussBlatt({ bericht, aendern, zeigeBlatt, zeigeAnsicht }: B
           <p role="status" className="font-semibold">
             {meldung}
           </p>
+        )}
+
+        {/* Falls das Fenster nicht aufging – oder man es schon geschlossen hat. */}
+        {pdfAdresse && (
+          <a
+            href={pdfAdresse}
+            target="_blank"
+            rel="noopener"
+            className="border-sika-schwarz/15 tippziel flex items-center justify-center rounded-xl border-2 bg-white px-5 py-3 text-lg font-semibold"
+          >
+            PDF öffnen
+          </a>
         )}
 
         {onedriveAdresse && (

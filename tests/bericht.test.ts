@@ -233,6 +233,12 @@ describe('berichtAuffuellen', () => {
     expect(aufgefuellt.kopf.berichtsnummer).toBe('2026-08-25-01')
   })
 
+  it('wirft eine Unterschrift aus früheren Berichten weg', () => {
+    const alt = { ...neuerBericht('2026-08-25-01', einstellungen, EIN_TAG), unterschrift: 'data:image/png;base64,AAAA' }
+
+    expect('unterschrift' in berichtAuffuellen(alt)).toBe(false)
+  })
+
   it('macht aus den früheren Messwerten am Untergrund Prüfungen', () => {
     // So sah ein Bericht aus, bevor es das Blatt „Prüfungen" gab.
     const alt = neuerBericht('2026-08-25-01', einstellungen, EIN_TAG)

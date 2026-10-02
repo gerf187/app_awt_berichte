@@ -79,7 +79,6 @@ export async function docxErzeugen(bericht: Bericht, vorlage?: Briefvorlage): Pr
     ...klima(bericht),
     ...aufbau(bericht),
     ...freitexte(bericht),
-    ...unterschrift(bericht),
     ...fotos(bericht),
   ]
 
@@ -494,22 +493,6 @@ function freitexte(bericht: Bericht): Paragraph[] {
   return bloecke
     .filter(([, text]) => text.trim())
     .flatMap(([titel, text]) => [ueberschrift(titel), ...absatz(text)])
-}
-
-function unterschrift(bericht: Bericht): Paragraph[] {
-  if (!bericht.unterschrift) return []
-  return [
-    ueberschrift('Unterschrift'),
-    new Paragraph({
-      children: [
-        new ImageRun({
-          type: 'png',
-          data: ausDataUrl(bericht.unterschrift),
-          transformation: { width: 280, height: 100 },
-        }),
-      ],
-    }),
-  ]
 }
 
 function fotos(bericht: Bericht): Paragraph[] {

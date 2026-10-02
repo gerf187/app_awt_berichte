@@ -296,6 +296,64 @@ async function token(): Promise<string> {
   }
 }
 
+// --- Ordner ----------------------------------------------------------------
+
+/** Ein Ordner in OneDrive, wie ihn die Ordnerwahl anzeigt. */
+export type OneDriveOrdner = { name: string; unterordner: number }
+
+/** Adresse eines Ordners für Graph: die Wurzel oder ein Pfad darunter. */
+function ordnerAdresse(pfad: string): string {
+  const sauber = ordnerpfad(pfad)
+  return sauber
+    ? `${GRAPH}/me/drive/root:/${sauber.split('/').map(encodeURIComponent).join('/')}:`
+    : `${GRAPH}/me/drive/root`
+}
+
+/**
+ * Die Ordner in einem Ordner, alphabetisch. Dateien bleiben weg – gewählt
+ * wird hier nur, wohin die Berichte kommen.
+ */
+export async function ordnerAuflisten(pfad: string): Promise<OneDriveOrdner[]> {
+  const ordner: OneDriveOrdner[] = []
+  let adresse: string | undefined = `${ordnerAdresse(pfad)}/children?$select=name,folder&$top=200`
+  // Graph liefert seitenweise; mehr als ein paar Seiten Ordner hat niemand.
+  for (let seite = 0; adresse && seite < 10; seite++) {
+    const ziel: string = adresse
+    const antwort = await mitToken((zugriff) =>
+      fetch(ziel, { headers: { Authorization: `Bearer ${zugriff}` } }),
+    )
+    const daten = (await antwort.json()) as {
+      value?: { name: string; folder?: { childCount?: number } }[]
+      '@odata.nextLink'?: string
+    }
+    for (const eintrag of daten.value ?? []) {
+      if (eintrag.folder) {
+        ordner.push({ name: eintrag.name, unterordner: eintrag.folder.childCount ?? 0 })
+      }
+    }
+    adresse = daten['@odata.nextLink']
+  }
+  return ordner.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+}
+
+/** Neuen Ordner anlegen. Gibt den vollständigen Pfad des neuen Ordners zurück. */
+export async function ordnerAnlegen(elternPfad: string, name: string): Promise<string> {
+  const sauber = ordnerpfad(name.replace(/\//g, ' '))
+  if (!sauber) throw new OneDriveFehler('Bitte einen Namen für den Ordner eingeben.')
+  await mitToken((zugriff) =>
+    fetch(`${ordnerAdresse(elternPfad)}/children`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${zugriff}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: sauber,
+        folder: {},
+        '@microsoft.graph.conflictBehavior': 'fail',
+      }),
+    }),
+  )
+  return [ordnerpfad(elternPfad), sauber].filter(Boolean).join('/')
+}
+
 // --- Hochladen -------------------------------------------------------------
 
 /** Ordnernamen entschärfen: OneDrive verbietet einige Zeichen. */
@@ -316,6 +374,10 @@ function graphPfad(ordner: string, name: string): string {
 /**
  * Bericht in OneDrive ablegen. Gibt die Adresse der Datei zurück, damit die
  * App darauf verweisen kann.
+ *
+ * Eine Datei gleichen Namens wird ersetzt: Der Name enthält die
+ * Berichtsnummer, und wer nach einer Korrektur neu erzeugt, will den
+ * berichtigten Bericht dort haben – nicht daneben eine „(1)".
  */
 export async function hochladen(datei: File, ordner: string): Promise<string> {
   const pfad = graphPfad(ordner, datei.name)
@@ -326,7 +388,7 @@ export async function hochladen(datei: File, ordner: string): Promise<string> {
 
 async function amStueck(pfad: string, datei: File): Promise<string> {
   const antwort = await mitToken((zugriff) =>
-    fetch(`${GRAPH}/me/drive/root:/${pfad}:/content?@microsoft.graph.conflictBehavior=rename`, {
+    fetch(`${GRAPH}/me/drive/root:/${pfad}:/content?@microsoft.graph.conflictBehavior=replace`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${zugriff}`,
@@ -348,7 +410,7 @@ async function inAbschnitten(pfad: string, datei: File): Promise<string> {
     fetch(`${GRAPH}/me/drive/root:/${pfad}:/createUploadSession`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${zugriff}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'rename' } }),
+      body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'replace' } }),
     }),
   )
   const { uploadUrl } = (await start.json()) as { uploadUrl: string }

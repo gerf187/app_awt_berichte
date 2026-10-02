@@ -124,11 +124,13 @@ export function KlimaBlatt({ bericht, aendern }: BlattEigenschaften) {
             aendern={(wert) => messungAendern(index, { feuchte: wert })}
           />
 
-          <div className="bg-sika-hell flex justify-between rounded-xl p-3 text-lg">
-            <span>
+          {/* Zahl und Einheit bleiben zusammen; wird es zu eng, rutscht lieber
+              der Abstand als Ganzes in die nächste Zeile. */}
+          <div className="bg-sika-hell flex flex-wrap justify-between gap-x-4 rounded-xl p-3 text-lg">
+            <span className="whitespace-nowrap">
               Taupunkt: <strong>{kommazahl(messung.taupunkt)} °C</strong>
             </span>
-            <span>
+            <span className="whitespace-nowrap">
               Abstand: <strong>{kommazahl(messung.abstandTaupunkt)} K</strong>
             </span>
           </div>

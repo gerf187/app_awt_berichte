@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Ansicht } from '../App'
 import { Knopf } from '../components/Knopf'
 import { Kopfzeile } from '../components/Kopfzeile'
+import { OrdnerWahl } from '../components/OrdnerWahl'
 import { Textfeld, Zahlfeld } from '../components/Felder'
 import { EIGENE_FIRMA, EIGENE_FUNKTION } from '../data/stammdaten'
 import { LEERE_EINSTELLUNGEN, alsDatumstext } from '../lib/bericht'
@@ -47,6 +48,7 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
   const [loeschenBestaetigen, setLoeschenBestaetigen] = useState(false)
   const [onedriveMeldung, setOneDriveMeldung] = useState('')
   const [konto, setKonto] = useState<string | null>(() => verbundenesKonto())
+  const [ordnerWahlOffen, setOrdnerWahlOffen] = useState(false)
   const dateiFeld = useRef<HTMLInputElement>(null)
   const vorlagenFeld = useRef<HTMLInputElement>(null)
 
@@ -465,8 +467,8 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
             <>
               <p className="font-semibold">Verbunden als {konto}</p>
               <p className="text-sika-grau text-sm">
-                Fertige Berichte lassen sich auf dem Abschlussblatt mit „In OneDrive ablegen"
-                hochladen – in den Ordner „{onedrive.ordner || STANDARD_ORDNER}".
+                „PDF erzeugen" auf dem Abschlussblatt legt den Bericht zugleich hier ab. Ein
+                Bericht, der neu erzeugt wird, ersetzt seine ältere Fassung.
               </p>
             </>
           ) : (
@@ -500,12 +502,33 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
             </p>
           )}
 
-          <Textfeld
-            beschriftung="Ordner in OneDrive"
-            hinweis="Wird beim ersten Hochladen angelegt. Unterordner mit Schrägstrich, z. B. Berichte/2026."
-            value={onedrive.ordner}
-            onChange={(e) => aendernOneDrive({ ordner: e.target.value })}
-          />
+          {/* Der Ordner wird ausgewählt, nicht getippt. Ohne Verbindung lässt
+              sich nicht nachsehen, welche es gibt – dann steht er nur da. */}
+          <div className="bg-sika-hell flex flex-col gap-1 rounded-xl p-3">
+            <span className="text-sm font-semibold">Ordner in OneDrive</span>
+            <span className="break-words">📁 {onedrive.ordner || STANDARD_ORDNER}</span>
+            <span className="text-sika-grau text-sm">
+              {konto
+                ? 'Fehlt der Ordner noch, legt ihn das erste Hochladen an.'
+                : 'Nach dem Verbinden lässt sich hier ein Ordner auswählen.'}
+            </span>
+          </div>
+          {konto && (
+            <Knopf art="zweit" breit onClick={() => setOrdnerWahlOffen(true)}>
+              Ordner wählen
+            </Knopf>
+          )}
+          {ordnerWahlOffen && (
+            <OrdnerWahl
+              start={onedrive.ordner || STANDARD_ORDNER}
+              schliessen={() => setOrdnerWahlOffen(false)}
+              waehlen={(pfad) => {
+                aendernOneDrive({ ordner: pfad })
+                setOrdnerWahlOffen(false)
+                setOneDriveMeldung(`Berichte landen jetzt in „${pfad}".`)
+              }}
+            />
+          )}
 
           {/* Zugeklappt, weil das im Alltag niemanden angeht: leer lassen heißt
               „die eingebaute Registrierung nehmen". */}
@@ -562,8 +585,8 @@ export function EinstellungenBildschirm({ zeige }: { zeige: (ansicht: Ansicht) =
         <section className="border-sika-schwarz/10 flex flex-col gap-3 rounded-xl border-2 bg-white p-4">
           <h2 className="text-lg font-bold">Anleitung</h2>
           <p className="text-sika-grau text-sm">
-            Jeder Schritt mit Bildern erklärt – vom Profil über die Briefvorlage bis zum fertigen
-            Bericht. Die Datei liegt in der App und lässt sich auch ohne Empfang öffnen.
+            Drei Seiten: einrichten, erfassen, abschließen. Die Datei liegt in der App und lässt
+            sich auch ohne Empfang öffnen.
           </p>
           {/* Bewusst ein Verweis auf eine mitgelieferte Datei: kein Netzaufruf. */}
           <a

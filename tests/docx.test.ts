@@ -33,7 +33,6 @@ describe('docxErzeugen', () => {
         klima: [],
         aufbau: [],
         fotos: [],
-        unterschrift: undefined,
         text: {
           ausgefuehrteArbeiten: '',
           besprochenes: '',

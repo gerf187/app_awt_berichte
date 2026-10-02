@@ -36,7 +36,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
         'Anwesende Personen mit Name, Firma und Funktion',
         'Ihr eigenes Profil: Name, Funktion, Firma, Anschrift, Telefon, E-Mail',
         'Messwerte, Aufbau, Freitexte und offene Fragen',
-        'Fotos von der Baustelle und die Unterschrift auf dem Bildschirm',
+        'Fotos von der Baustelle',
         'Die hinterlegte Briefvorlage – auf ihr stehen in der Regel ebenfalls Namen und Kontaktdaten',
       ),
     ],

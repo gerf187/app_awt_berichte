@@ -192,7 +192,7 @@ export function FotoBlatt({ bericht, aendern }: BlattEigenschaften) {
 
       {aktuell && (
         <div
-          className="fixed inset-0 z-30 flex flex-col overflow-y-auto bg-black/50 p-3"
+          className="unten-frei fixed inset-0 z-30 flex flex-col overflow-y-auto overscroll-contain bg-black/50 px-3 pt-3"
           role="dialog"
           aria-modal
           aria-label="Foto beschreiben"
